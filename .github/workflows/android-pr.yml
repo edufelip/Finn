@@ -1,0 +1,62 @@
+name: Android PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write .env
+        run: |
+          cat <<'EOF' > .env
+          ${{ secrets.ENV_FILE }}
+          EOF
+        working-directory: mobile
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS deps
+        run: npm ci
+        working-directory: mobile
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set CI version code
+        run: echo "CI_VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Write google-services.json
+        run: |
+          mkdir -p app
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
+
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+          build-root-directory: mobile/android
+          arguments: |
+            lint
+            test
+            assembleDebug
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-reports
+          path: |
+            mobile/android/app/build/reports
+            mobile/android/app/build/outputs/apk/debug/*.apk

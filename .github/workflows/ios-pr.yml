@@ -1,0 +1,55 @@
+name: iOS PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write .env
+        run: |
+          cat <<'EOF' > .env
+          ${{ secrets.ENV_FILE }}
+          EOF
+        working-directory: mobile
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS deps
+        run: npm ci
+        working-directory: mobile
+
+      - name: Install pods
+        env:
+          COCOAPODS_CACHE_DIR: ${{ runner.temp }}/.cocoapods-cache
+        run: |
+          mkdir -p "$COCOAPODS_CACHE_DIR"
+          cd mobile/ios
+          pod install --silent
+
+      - name: Write GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        run: |
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST_BASE64" ]; then
+            echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > mobile/ios/Finn/GoogleService-Info.plist
+          fi
+
+      - name: Build (simulator debug)
+        run: |
+          cd mobile/ios
+          xcodebuild \
+            -workspace Finn.xcworkspace \
+            -scheme Finn \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            build

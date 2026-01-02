@@ -1,0 +1,100 @@
+name: Android Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write .env
+        run: |
+          cat <<'EOF' > .env
+          ${{ secrets.ENV_FILE }}
+          EOF
+        working-directory: mobile
+
+      - name: Export env vars
+        run: |
+          tr -d '\r' < .env | \
+            awk '/^[[:space:]]*(export[[:space:]]+)?EXPO_PUBLIC_[A-Za-z0-9_]+=/ { sub(/^[[:space:]]*export[[:space:]]+/, "", $0); print $0; }' \
+            >> "$GITHUB_ENV"
+        working-directory: mobile
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS deps
+        run: npm ci
+        working-directory: mobile
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set CI version code
+        run: echo "CI_VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > app/finn-release-key.jks
+
+      - name: Create keystore.properties
+        run: |
+          cat <<EOF > keystore.properties
+          storeFile=app/finn-release-key.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
+          EOF
+
+      - name: Write google-services.json
+        run: |
+          mkdir -p app
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
+
+      - name: Build release bundle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+          build-root-directory: mobile/android
+          arguments: |
+            clean
+            bundleRelease
+
+      - name: Sign bundle with jarsigner
+        env:
+          STOREPASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEYPASS: ${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
+        run: |
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore app/finn-release-key.jks \
+            -storepass "$STOREPASS" \
+            -keypass "$KEYPASS" \
+            app/build/outputs/bundle/release/app-release.aab \
+            ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.aab
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload to Play (internal track)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.edufelip.finn
+          releaseFiles: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: draft

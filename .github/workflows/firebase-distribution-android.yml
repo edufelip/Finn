@@ -1,0 +1,88 @@
+name: Android Firebase Distribution
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  firebase-distribution:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write .env
+        run: |
+          cat <<'ENVEOF' > .env
+          ${{ secrets.ENV_FILE }}
+          ENVEOF
+        working-directory: mobile
+
+      - name: Export env vars
+        run: |
+          set -a
+          source .env
+          set +a
+          env | grep '^EXPO_PUBLIC_' >> "$GITHUB_ENV" || true
+        working-directory: mobile
+
+      - name: Set debug API flag
+        run: |
+          echo "EXPO_PUBLIC_USE_DEV_API=true" >> "$GITHUB_ENV"
+        working-directory: mobile
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS deps
+        run: npm ci
+        working-directory: mobile
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set CI version code
+        run: echo "CI_VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Write google-services.json
+        run: |
+          mkdir -p app
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
+
+      - name: Build debug APK
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+          build-root-directory: mobile/android
+          arguments: |
+            clean
+            assembleDebug
+
+      - name: Release notes
+        run: |
+          NOTES=$(git log -1 --pretty=%B)
+          echo "RELEASE_NOTES<<EOF" >> "$GITHUB_ENV"
+          echo "$NOTES" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+        working-directory: mobile
+
+      - name: Write Firebase service account
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > "$RUNNER_TEMP/firebase-service-account.json"
+        working-directory: mobile
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
+          groups: base-group
+          file: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          releaseNotes: ${{ env.RELEASE_NOTES }}
