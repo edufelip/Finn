@@ -20,6 +20,16 @@
 ## Download
 Go to [Google Play](https://play.google.com/store/apps/details?id=com.edufelip.finn) to download the latest App version.
 
+## React Native rewrite (in progress)
+The React Native + Expo rewrite lives in `mobile/`. The legacy Android app remains in this repo for reference until migration is complete.
+
+Quick start:
+```bash
+cd mobile
+npm install
+npm run ios
+```
+
 ## This project uses
 * MVVM Architecture and LiveData
 * Retrofit
