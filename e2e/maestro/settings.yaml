@@ -1,0 +1,13 @@
+appId: com.edufelip.finn
+---
+- launchApp
+- assertVisible: "Home"
+- tapOn:
+    id: "home-avatar"
+- tapOn:
+    id: "drawer-settings"
+- assertVisible: "Settings"
+- tapOn:
+    id: "settings-dark-toggle"
+- tapOn:
+    id: "settings-notifications-toggle"

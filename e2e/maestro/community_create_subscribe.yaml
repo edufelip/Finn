@@ -1,0 +1,31 @@
+appId: com.edufelip.finn
+---
+- launchApp
+- assertVisible: "Home"
+- tapOn:
+    id: "tab-add"
+- assertVisible: "Create a new"
+- tapOn:
+    id: "create-community-action"
+- assertVisible: "Your community name"
+- assertVisible:
+    id: "create-community-image"
+- tapOn:
+    id: "create-community-title"
+- inputText: "Maestro Community"
+- tapOn:
+    id: "create-community-description"
+- inputText: "Community built in tests"
+- tapOn:
+    id: "create-community-submit"
+- tapOn: "OK"
+- tapOn:
+    id: "tab-search"
+- assertVisible: "Search"
+- assertVisible: "Maestro Community"
+- tapOn:
+    id: "community-card-3"
+- assertVisible: "Maestro Community"
+- tapOn:
+    id: "community-detail-subscribe"
+- assertVisible: "Unsubscribe"

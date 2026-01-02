@@ -1,0 +1,13 @@
+appId: com.edufelip.finn
+---
+- launchApp
+- assertVisible: "Home"
+- tapOn:
+    id: "post-options-1"
+- tapOn: "Save"
+- tapOn:
+    id: "home-avatar"
+- tapOn:
+    id: "drawer-saved"
+- assertVisible: "Saved"
+- assertVisible: "Welcome to Finn!"

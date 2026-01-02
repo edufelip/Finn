@@ -1,0 +1,30 @@
+appId: com.edufelip.finn
+---
+- launchApp
+- assertVisible: "Home"
+- tapOn:
+    id: "tab-add"
+- assertVisible: "Create a new"
+- tapOn:
+    id: "create-post-action"
+- assertVisible: "New Post"
+- assertVisible:
+    id: "create-post-image"
+- tapOn:
+    id: "create-post-content"
+- inputText: "Maestro post"
+- tapOn:
+    id: "create-post-submit"
+- tapOn: "OK"
+- assertVisible: "Maestro post"
+- tapOn:
+    id: "post-like-1"
+- tapOn:
+    id: "post-comment-1"
+- assertVisible: "Comments"
+- tapOn:
+    id: "post-detail-comment-input"
+- inputText: "Nice one!"
+- tapOn:
+    id: "post-detail-comment-submit"
+- assertVisible: "Nice one!"

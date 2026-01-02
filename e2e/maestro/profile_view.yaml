@@ -1,0 +1,11 @@
+appId: com.edufelip.finn
+---
+- launchApp
+- assertVisible: "Home"
+- tapOn:
+    id: "home-avatar"
+- tapOn:
+    id: "drawer-profile"
+- assertVisible: "Posts"
+- assertVisible: "Mock User"
+- assertVisible: "Welcome to Finn!"
