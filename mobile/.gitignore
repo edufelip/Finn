@@ -1,0 +1,9 @@
+.expo/
+.expo-shared/
+node_modules/
+ios/build/
+android/build/
+android/app/build/
+*.log
+.env
+.npm-cache/
