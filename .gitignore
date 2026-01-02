@@ -9,3 +9,6 @@
 .cxx
 local.properties
 gradle.properties
+.npm-cache/
+node_modules/
+supabase/.temp/
