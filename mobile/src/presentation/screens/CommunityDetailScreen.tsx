@@ -1,0 +1,429 @@
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
+import * as Network from 'expo-network';
+
+import PostCard from '../components/PostCard';
+import type { Community } from '../../domain/models/community';
+import type { Subscription } from '../../domain/models/subscription';
+import type { Post } from '../../domain/models/post';
+import { useAuth } from '../../app/providers/AuthProvider';
+import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { enqueueWrite } from '../../data/offline/queueStore';
+import { isMockMode } from '../../config/appConfig';
+import type { MainStackParamList } from '../navigation/MainStack';
+import Divider from '../components/Divider';
+import { colors } from '../theme/colors';
+
+type RouteParams = {
+  communityId: number;
+};
+
+export default function CommunityDetailScreen() {
+  const navigation = useNavigation<NavigationProp<MainStackParamList>>();
+  const route = useRoute();
+  const { communityId } = route.params as RouteParams;
+  const { session } = useAuth();
+  const { communities: communityRepository, posts: postRepository } = useRepositories();
+  const [community, setCommunity] = useState<Community | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscribersCount, setSubscribersCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [communityData, count, postData, subscriptionData, savedPosts] = await Promise.all([
+          communityRepository.getCommunity(communityId),
+          communityRepository.getCommunitySubscribersCount(communityId),
+          postRepository.getPostsFromCommunity(communityId, 0),
+          session?.user?.id
+            ? communityRepository.getSubscription(session.user.id, communityId)
+            : Promise.resolve(null),
+          session?.user?.id ? postRepository.getSavedPosts(session.user.id, 0) : Promise.resolve([]),
+        ]);
+        if (!mounted) return;
+        if (!communityData) {
+          setError('Community not found.');
+          return;
+        }
+        setCommunity(communityData);
+        setSubscribersCount(count ?? 0);
+        const savedSet = new Set((savedPosts ?? []).map((post) => post.id));
+        let mappedPosts = (postData ?? []).map((post) => ({
+          ...post,
+          isSaved: savedSet.has(post.id),
+        }));
+
+        if (session?.user?.id && mappedPosts.length > 0) {
+          const likes = await Promise.all(
+            mappedPosts.map((postItem) => postRepository.findLike(postItem.id, session.user.id).catch(() => false))
+          );
+          mappedPosts = mappedPosts.map((postItem, index) => ({
+            ...postItem,
+            isLiked: likes[index],
+          }));
+        }
+
+        setPosts(mappedPosts);
+        setSubscription(subscriptionData ?? null);
+      } catch (err) {
+        if (err instanceof Error && mounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [communityId, communityRepository, postRepository, session?.user?.id]);
+
+  const handleToggleLike = async (post: Post) => {
+    if (!session?.user?.id) {
+      Alert.alert('Sign in required', 'Please sign in again.');
+      return;
+    }
+
+    const nextLiked = !post.isLiked;
+    setPosts((prev) =>
+      prev.map((item) =>
+        item.id === post.id
+          ? {
+              ...item,
+              isLiked: nextLiked,
+              likesCount: Math.max(0, (item.likesCount ?? 0) + (nextLiked ? 1 : -1)),
+            }
+          : item
+      )
+    );
+
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      await enqueueWrite({
+        id: `${Date.now()}`,
+        type: nextLiked ? 'like_post' : 'unlike_post',
+        payload: { postId: post.id, userId: session.user.id },
+        createdAt: Date.now(),
+      });
+      return;
+    }
+
+    try {
+      if (nextLiked) {
+        await postRepository.likePost(post.id, session.user.id);
+      } else {
+        await postRepository.dislikePost(post.id, session.user.id);
+      }
+    } catch (err) {
+      setPosts((prev) =>
+        prev.map((item) =>
+          item.id === post.id
+            ? {
+                ...item,
+                isLiked: post.isLiked,
+                likesCount: post.likesCount,
+              }
+            : item
+        )
+      );
+      if (err instanceof Error) {
+        Alert.alert('Failed to update like', err.message);
+      }
+    }
+  };
+
+  const handleToggleSave = async (post: Post) => {
+    if (!session?.user?.id) {
+      Alert.alert('Sign in required', 'Please sign in again.');
+      return;
+    }
+
+    const nextSaved = !post.isSaved;
+    setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: nextSaved } : item)));
+
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      await enqueueWrite({
+        id: `${Date.now()}`,
+        type: nextSaved ? 'save_post' : 'unsave_post',
+        payload: { postId: post.id, userId: session.user.id },
+        createdAt: Date.now(),
+      });
+      return;
+    }
+
+    try {
+      if (nextSaved) {
+        await postRepository.bookmarkPost(post.id, session.user.id);
+      } else {
+        await postRepository.unbookmarkPost(post.id, session.user.id);
+      }
+    } catch (err) {
+      setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: post.isSaved } : item)));
+      if (err instanceof Error) {
+        Alert.alert('Failed to update saved posts', err.message);
+      }
+    }
+  };
+
+  const handleToggleSubscription = async () => {
+    if (!session?.user?.id) {
+      Alert.alert('Sign in required', 'Please sign in again.');
+      return;
+    }
+
+    const current = subscription;
+    const nextSubscribed = !current;
+    const previousCount = subscribersCount;
+    setSubscription(
+      nextSubscribed
+        ? {
+            id: current?.id ?? 0,
+            userId: session.user.id,
+            communityId,
+          }
+        : null
+    );
+    setSubscribersCount((prev) => Math.max(0, prev + (nextSubscribed ? 1 : -1)));
+
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      await enqueueWrite({
+        id: `${Date.now()}`,
+        type: nextSubscribed ? 'subscribe_community' : 'unsubscribe_community',
+        payload: {
+          id: current?.id ?? 0,
+          userId: session.user.id,
+          communityId,
+        },
+        createdAt: Date.now(),
+      });
+      Alert.alert('Offline', 'Your subscription will update when you are back online.');
+      return;
+    }
+
+    try {
+      if (nextSubscribed) {
+        const created = await communityRepository.subscribe({
+          id: 0,
+          userId: session.user.id,
+          communityId,
+        });
+        setSubscription(created);
+      } else {
+        await communityRepository.unsubscribe({
+          id: current?.id ?? 0,
+          userId: session.user.id,
+          communityId,
+        });
+        setSubscription(null);
+      }
+    } catch (err) {
+      setSubscription(current ?? null);
+      setSubscribersCount(previousCount);
+      if (err instanceof Error) {
+        Alert.alert('Failed to update subscription', err.message);
+      }
+    }
+  };
+
+  const header = community ? (
+    <View>
+      <View style={styles.toolbar}>
+        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.white} />
+        </Pressable>
+      </View>
+      <View style={styles.blueStrip} />
+      <View style={styles.imageSpacer} />
+      <View style={styles.imageWrapper}>
+        <View style={styles.imageOuter}>
+          <Image
+            source={community.imageUrl ? { uri: community.imageUrl } : require('../../../assets/user_icon.png')}
+            style={styles.communityImage}
+            testID="community-detail-image"
+            accessibilityLabel="community-detail-image"
+          />
+        </View>
+      </View>
+      <Pressable
+        style={styles.subscribeButton}
+        onPress={handleToggleSubscription}
+        testID="community-detail-subscribe"
+        accessibilityLabel="community-detail-subscribe"
+      >
+        <Text style={styles.subscribeText}>{subscription ? 'Unsubscribe' : 'Subscribe'}</Text>
+      </Pressable>
+      <Text style={styles.title} testID="community-detail-title">
+        {community.title}
+      </Text>
+      <Text style={styles.description} testID="community-detail-description">
+        {community.description}
+      </Text>
+      <View style={styles.subInfo}>
+        <Text style={styles.subCount}>{subscribersCount}</Text>
+        <Text style={styles.subLabel}>Subscriber(s)</Text>
+        <Text style={styles.sinceLabel}>Since</Text>
+        <Text style={styles.sinceValue}>
+          {community.createdAt
+            ? new Date(community.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            : '—'}
+        </Text>
+      </View>
+      <Divider />
+    </View>
+  ) : null;
+
+  return (
+    <View style={styles.container}>
+      {loading && !community ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.mainBlueDeep} />
+        </View>
+      ) : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <FlatList
+        testID="community-post-list"
+        data={posts}
+        keyExtractor={(item) => `${item.id}`}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onToggleLike={() => handleToggleLike(item)}
+            onToggleSave={() => handleToggleSave(item)}
+            onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+          />
+        )}
+        ListHeaderComponent={header}
+        ListEmptyComponent={!loading ? <Text style={styles.empty}>This community has no posts yet</Text> : null}
+        ListFooterComponent={
+          loading && posts.length > 0 ? (
+            <View style={styles.footer}>
+              <ActivityIndicator size="small" color={colors.mainBlueDeep} />
+            </View>
+          ) : null
+        }
+        style={styles.list}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
+  toolbar: {
+    height: 56,
+    backgroundColor: colors.mainBlueDeep,
+    justifyContent: 'center',
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: 16,
+  },
+  blueStrip: {
+    height: 72,
+    backgroundColor: colors.mainBlue,
+  },
+  imageSpacer: {
+    height: 76,
+  },
+  imageWrapper: {
+    position: 'absolute',
+    left: 32,
+    top: 56 + 12,
+  },
+  imageOuter: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  communityImage: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+  },
+  subscribeButton: {
+    position: 'absolute',
+    right: 20,
+    top: 56 + 72 + 12,
+    height: 32,
+    width: 128,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.mainBlue,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subscribeText: {
+    color: colors.mainBlue,
+    fontSize: 10,
+  },
+  title: {
+    marginTop: 12,
+    marginLeft: 24,
+    fontSize: 20,
+  },
+  description: {
+    marginTop: 4,
+    marginHorizontal: 24,
+  },
+  subInfo: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+    gap: 4,
+    paddingHorizontal: 24,
+  },
+  subCount: {
+    fontWeight: '700',
+  },
+  subLabel: {
+    marginRight: 12,
+  },
+  sinceLabel: {
+    fontWeight: '700',
+  },
+  sinceValue: {
+    marginLeft: 4,
+  },
+  list: {
+    backgroundColor: colors.backgroundLight,
+  },
+  empty: {
+    marginTop: 32,
+    alignSelf: 'center',
+  },
+  error: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    color: colors.danger,
+  },
+  center: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  footer: {
+    paddingVertical: 16,
+  },
+});

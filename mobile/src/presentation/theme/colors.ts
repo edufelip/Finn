@@ -1,0 +1,16 @@
+export const colors = {
+  mainBlue: '#44A2D7',
+  mainBlueAlt: '#1A9AE1',
+  mainBlueDeep: '#1275AC',
+  black: '#000000',
+  white: '#FFFFFF',
+  darkGrey: '#323232',
+  darkerGrey: '#202020',
+  backgroundLight: '#F7F7F7',
+  searchBackground: '#F2F2F2',
+  dividerStart: '#DDDDDD',
+  borderGrey: '#A9A9A9',
+  linkBlue: '#0099CC',
+  danger: '#DC2626',
+  success: '#16A34A',
+};
