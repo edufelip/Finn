@@ -15,6 +15,13 @@ export type RepositoryContextValue = {
 
 const RepositoryContext = createContext<RepositoryContextValue | undefined>(undefined);
 
+const applyOverrides = <T extends object>(base: T, override?: Partial<T>) => {
+  if (!override) {
+    return base;
+  }
+  return Object.assign(Object.create(Object.getPrototypeOf(base)), base, override);
+};
+
 type RepositoryProviderProps = {
   children: React.ReactNode;
   overrides?: {
@@ -29,10 +36,10 @@ export function RepositoryProvider({ children, overrides }: RepositoryProviderPr
   const defaultRepositories = useMemo(() => createRepositories(), []);
   const value = useMemo(
     () => ({
-      posts: { ...defaultRepositories.posts, ...overrides?.posts },
-      communities: { ...defaultRepositories.communities, ...overrides?.communities },
-      users: { ...defaultRepositories.users, ...overrides?.users },
-      comments: { ...defaultRepositories.comments, ...overrides?.comments },
+      posts: applyOverrides(defaultRepositories.posts, overrides?.posts),
+      communities: applyOverrides(defaultRepositories.communities, overrides?.communities),
+      users: applyOverrides(defaultRepositories.users, overrides?.users),
+      comments: applyOverrides(defaultRepositories.comments, overrides?.comments),
     }),
     [defaultRepositories, overrides]
   );
