@@ -3,15 +3,17 @@ import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import AuthScreen from '../src/presentation/screens/AuthScreen';
+import { authCopy } from '../src/presentation/content/authCopy';
 
 const mockNavigate = jest.fn();
+const mockUseAuthRequest = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
 jest.mock('expo-auth-session/providers/google', () => ({
-  useAuthRequest: () => [null, null, jest.fn()],
+  useAuthRequest: () => mockUseAuthRequest(),
 }));
 
 jest.mock('expo-auth-session', () => ({
@@ -43,6 +45,7 @@ jest.mock('../src/data/supabase/client', () => ({
 
 const network = jest.requireMock('expo-network');
 const { supabase } = jest.requireMock('../src/data/supabase/client');
+const appleAuth = jest.requireMock('expo-apple-authentication');
 
 describe('AuthScreen', () => {
   beforeAll(() => {
@@ -55,6 +58,30 @@ describe('AuthScreen', () => {
     supabase.auth.signInWithPassword.mockReset();
     network.getNetworkStateAsync.mockReset();
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    appleAuth.isAvailableAsync.mockResolvedValue(false);
+    appleAuth.signInAsync.mockReset();
+    mockUseAuthRequest.mockReturnValue([null, null, jest.fn()]);
+  });
+
+  it('renders all primary copy', async () => {
+    appleAuth.isAvailableAsync.mockResolvedValue(true);
+    const { getByText, getByPlaceholderText } = render(<AuthScreen />);
+
+    expect(getByText(authCopy.heading)).toBeTruthy();
+    expect(getByText(authCopy.subheading)).toBeTruthy();
+    expect(getByPlaceholderText(authCopy.emailPlaceholder)).toBeTruthy();
+    expect(getByPlaceholderText(authCopy.passwordPlaceholder)).toBeTruthy();
+    expect(getByText(authCopy.login)).toBeTruthy();
+    expect(getByText(authCopy.forgotPrompt)).toBeTruthy();
+    expect(getByText(authCopy.forgotAction)).toBeTruthy();
+    expect(getByText(authCopy.divider)).toBeTruthy();
+    expect(getByText(authCopy.google)).toBeTruthy();
+    expect(getByText(authCopy.signupPrompt)).toBeTruthy();
+    expect(getByText(authCopy.signupAction)).toBeTruthy();
+
+    await waitFor(() => {
+      expect(getByText(authCopy.apple)).toBeTruthy();
+    });
   });
 
   it('signs in with email and password', async () => {
@@ -72,6 +99,89 @@ describe('AuthScreen', () => {
         password: 'password123',
       })
     );
+  });
+
+  it('shows sign-in failed alert when credentials are rejected', async () => {
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: {},
+      error: { message: 'Invalid credentials' },
+    });
+    const { getByTestId } = render(<AuthScreen />);
+
+    fireEvent.changeText(getByTestId(authCopy.testIds.email), 'user@example.com');
+    fireEvent.changeText(getByTestId(authCopy.testIds.password), 'password123');
+    fireEvent.press(getByTestId(authCopy.testIds.signin));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(authCopy.alerts.signInFailed.title, 'Invalid credentials');
+    });
+  });
+
+  it('shows validation alerts', async () => {
+    const { getByTestId } = render(<AuthScreen />);
+
+    fireEvent.press(getByTestId(authCopy.testIds.signin));
+    expect(Alert.alert).toHaveBeenCalledWith(
+      authCopy.alerts.emailRequired.title,
+      authCopy.alerts.emailRequired.message
+    );
+
+    fireEvent.changeText(getByTestId(authCopy.testIds.email), 'invalid-email');
+    fireEvent.press(getByTestId(authCopy.testIds.signin));
+    expect(Alert.alert).toHaveBeenCalledWith(
+      authCopy.alerts.invalidEmail.title,
+      authCopy.alerts.invalidEmail.message
+    );
+
+    fireEvent.changeText(getByTestId(authCopy.testIds.email), 'user@example.com');
+    fireEvent.press(getByTestId(authCopy.testIds.signin));
+    expect(Alert.alert).toHaveBeenCalledWith(
+      authCopy.alerts.passwordRequired.title,
+      authCopy.alerts.passwordRequired.message
+    );
+  });
+
+  it('shows offline alert', async () => {
+    network.getNetworkStateAsync.mockResolvedValue({ isConnected: false });
+    const { getByTestId } = render(<AuthScreen />);
+
+    fireEvent.changeText(getByTestId(authCopy.testIds.email), 'user@example.com');
+    fireEvent.changeText(getByTestId(authCopy.testIds.password), 'password123');
+    fireEvent.press(getByTestId(authCopy.testIds.signin));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(authCopy.alerts.offline.title, authCopy.alerts.offline.message);
+    });
+  });
+
+  it('shows google missing token alert', async () => {
+    mockUseAuthRequest.mockReturnValue([null, { type: 'success', authentication: {} }, jest.fn()]);
+    render(<AuthScreen />);
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        authCopy.alerts.googleFailed.title,
+        authCopy.alerts.googleFailed.missingToken
+      );
+    });
+  });
+
+  it('shows apple missing token alert', async () => {
+    appleAuth.isAvailableAsync.mockResolvedValue(true);
+    appleAuth.signInAsync.mockResolvedValue({ identityToken: null });
+    const { getByText } = render(<AuthScreen />);
+
+    await waitFor(() => {
+      expect(getByText(authCopy.apple)).toBeTruthy();
+    });
+    fireEvent.press(getByText(authCopy.apple));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        authCopy.alerts.appleFailed.title,
+        authCopy.alerts.appleFailed.missingToken
+      );
+    });
   });
 
   it('navigates to register and forgot password', () => {
