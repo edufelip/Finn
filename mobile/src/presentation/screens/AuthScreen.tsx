@@ -15,6 +15,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as Network from 'expo-network';
 import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 
@@ -23,6 +24,7 @@ import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { colors } from '../theme/colors';
 import { authCopy } from '../content/authCopy';
+import type { AuthStackParamList } from '../navigation/AuthStack';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -50,7 +52,7 @@ const GoogleLogo = ({ size = 20 }: { size?: number }) => (
 );
 
 export default function AuthScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -197,7 +199,6 @@ export default function AuthScreen() {
       await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: credential.identityToken,
-        nonce: credential.nonce ?? undefined,
       });
     } catch (error) {
       if (error instanceof Error) {

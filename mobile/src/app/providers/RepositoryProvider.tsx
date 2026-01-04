@@ -17,17 +17,22 @@ const RepositoryContext = createContext<RepositoryContextValue | undefined>(unde
 
 type RepositoryProviderProps = {
   children: React.ReactNode;
-  overrides?: Partial<RepositoryContextValue>;
+  overrides?: {
+    posts?: Partial<PostRepository>;
+    communities?: Partial<CommunityRepository>;
+    users?: Partial<UserRepository>;
+    comments?: Partial<CommentRepository>;
+  };
 };
 
 export function RepositoryProvider({ children, overrides }: RepositoryProviderProps) {
   const defaultRepositories = useMemo(() => createRepositories(), []);
   const value = useMemo(
     () => ({
-      posts: overrides?.posts ?? defaultRepositories.posts,
-      communities: overrides?.communities ?? defaultRepositories.communities,
-      users: overrides?.users ?? defaultRepositories.users,
-      comments: overrides?.comments ?? defaultRepositories.comments,
+      posts: { ...defaultRepositories.posts, ...overrides?.posts },
+      communities: { ...defaultRepositories.communities, ...overrides?.communities },
+      users: { ...defaultRepositories.users, ...overrides?.users },
+      comments: { ...defaultRepositories.comments, ...overrides?.comments },
     }),
     [defaultRepositories, overrides]
   );

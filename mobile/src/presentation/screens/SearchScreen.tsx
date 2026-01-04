@@ -3,21 +3,20 @@ import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextIn
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
 
 import type { Community } from '../../domain/models/community';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useAuth } from '../../app/providers/AuthProvider';
 import type { MainStackParamList } from '../navigation/MainStack';
 import type { MainTabParamList } from '../navigation/MainTabs';
+import type { MainDrawerParamList } from '../navigation/MainDrawer';
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
 import { searchCopy } from '../content/searchCopy';
-
-type RouteParams = {
-  focus?: boolean;
-};
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Search'>,
@@ -26,7 +25,7 @@ type Navigation = CompositeNavigationProp<
 
 export default function SearchScreen() {
   const navigation = useNavigation<Navigation>();
-  const route = useRoute<NativeStackScreenProps<{ Search: RouteParams }>['route']>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Search'>>();
   const { session } = useAuth();
   const { communities: communityRepository, users: userRepository } = useRepositories();
   const [search, setSearch] = useState('');
@@ -80,7 +79,7 @@ export default function SearchScreen() {
       <View style={styles.headerRow}>
         <Pressable
           style={styles.avatarCard}
-          onPress={() => navigation.getParent()?.openDrawer?.()}
+          onPress={() => navigation.getParent<DrawerNavigationProp<MainDrawerParamList>>()?.openDrawer()}
           testID={searchCopy.testIds.avatar}
           accessibilityLabel={searchCopy.testIds.avatar}
         >

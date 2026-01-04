@@ -121,7 +121,6 @@ export default function MainTabs() {
           options={{
             tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
             tabBarLabel: tabCopy.profile,
-            tabBarTestID: tabCopy.testIds.profile,
             tabBarButton: (props) => (
               <Pressable
                 accessibilityRole="button"

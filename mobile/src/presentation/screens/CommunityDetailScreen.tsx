@@ -7,7 +7,7 @@ import * as Network from 'expo-network';
 
 import PostCard from '../components/PostCard';
 import type { Community } from '../../domain/models/community';
-import type { Subscription } from '../../domain/models/subscription';
+import type { Subscription as CommunitySubscription } from '../../domain/models/subscription';
 import type { Post } from '../../domain/models/post';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -31,7 +31,7 @@ export default function CommunityDetailScreen() {
   const { communities: communityRepository, posts: postRepository } = useRepositories();
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<CommunitySubscription | null>(null);
   const [subscribersCount, setSubscribersCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -196,13 +196,14 @@ export default function CommunityDetailScreen() {
       return;
     }
 
-    const current = subscription;
+    const current = subscription as CommunitySubscription | null;
+    const currentId = current?.id ?? 0;
     const nextSubscribed = !current;
     const previousCount = subscribersCount;
     setSubscription(
       nextSubscribed
         ? {
-            id: current?.id ?? 0,
+            id: currentId,
             userId: session.user.id,
             communityId,
           }

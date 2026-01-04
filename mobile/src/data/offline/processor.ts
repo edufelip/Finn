@@ -26,10 +26,13 @@ type SubscriptionPayload = {
   communityId: number;
 };
 
-export async function processQueuedWrite(
-  item: QueuedWrite,
-  repositories: { posts: PostRepository; comments: CommentRepository; communities: CommunityRepository }
-) {
+type ProcessQueuedWriteRepositories = {
+  posts: Pick<PostRepository, 'savePost' | 'likePost' | 'bookmarkPost' | 'dislikePost' | 'unbookmarkPost'>;
+  comments: Pick<CommentRepository, 'saveComment'>;
+  communities: Pick<CommunityRepository, 'saveCommunity' | 'subscribe' | 'unsubscribe'>;
+};
+
+export async function processQueuedWrite(item: QueuedWrite, repositories: ProcessQueuedWriteRepositories) {
   if (item.type === 'create_post') {
     const payload = item.payload as CreatePostPayload;
     if (!isMockMode()) {
