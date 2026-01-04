@@ -54,6 +54,8 @@ describe('ProfileScreen', () => {
         name: 'Jane Doe',
         photoUrl: null,
         createdAt: '2024-01-01T00:00:00Z',
+        followersCount: 128,
+        followingCount: 45,
       }),
     };
     const postsRepo = {
@@ -86,9 +88,13 @@ describe('ProfileScreen', () => {
     await waitFor(() =>
       expect(getByTestId(profileCopy.testIds.name).props.children).toBe('Jane Doe')
     );
-    const joinedText = profileCopy.joinedSince(formatMonthYear('2024-01-01T00:00:00Z'));
-    expect(getByTestId(profileCopy.testIds.joined).props.children).toContain(joinedText);
-    expect(getByText(profileCopy.postsTab)).toBeTruthy();
+    expect(getByTestId(profileCopy.testIds.email).props.children).toBe('user@example.com');
+    const joinedText = profileCopy.memberSince(formatMonthYear('2024-01-01T00:00:00Z'));
+    expect(getByTestId(profileCopy.testIds.memberSince).props.children).toContain(joinedText);
+    expect(getByText(profileCopy.tabs.posts)).toBeTruthy();
+    expect(getByTestId(profileCopy.testIds.statsPosts).props.children).toBe(1);
+    expect(getByTestId(profileCopy.testIds.statsFollowers).props.children).toBe(128);
+    expect(getByTestId(profileCopy.testIds.statsFollowing).props.children).toBe(45);
     expect(getByTestId('post-card-1')).toBeTruthy();
   });
 
@@ -158,7 +164,7 @@ describe('ProfileScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByText(profileCopy.emptyPosts)).toBeTruthy());
+    await waitFor(() => expect(getByText(profileCopy.empty.title)).toBeTruthy());
   });
 
   it('likes a post', async () => {

@@ -3,4 +3,6 @@ export type User = {
   name: string;
   photoUrl?: string | null;
   createdAt?: string;
+  followersCount?: number;
+  followingCount?: number;
 };

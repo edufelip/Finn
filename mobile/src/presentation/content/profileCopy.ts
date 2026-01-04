@@ -1,10 +1,23 @@
 import { t } from '../i18n';
 
 export const profileCopy = {
-  postsTab: t('profile.postsTab'),
-  emptyPosts: t('profile.emptyPosts'),
+  title: t('profile.title'),
+  tabs: {
+    posts: t('profile.tab.posts'),
+    saved: t('profile.tab.saved'),
+  },
+  stats: {
+    posts: t('profile.stats.posts'),
+    followers: t('profile.stats.followers'),
+    following: t('profile.stats.following'),
+  },
+  empty: {
+    title: t('profile.empty.title'),
+    body: t('profile.empty.body'),
+    cta: t('profile.empty.cta'),
+  },
   errorSignInRequired: t('profile.error.signInRequired'),
-  joinedSince: (date: string) => t('profile.joinedSince', { date }),
+  memberSince: (date: string) => t('profile.memberSince', { date }),
   alerts: {
     signInRequired: {
       title: t('profile.alert.signInRequired.title'),
@@ -18,8 +31,17 @@ export const profileCopy = {
     },
   },
   testIds: {
+    title: 'profile-title',
     name: 'profile-name',
-    joined: 'profile-joined',
+    email: 'profile-email',
+    memberSince: 'profile-member-since',
+    statsPosts: 'profile-stats-posts',
+    statsFollowers: 'profile-stats-followers',
+    statsFollowing: 'profile-stats-following',
+    tabPosts: 'profile-tab-posts',
+    tabSaved: 'profile-tab-saved',
+    emptyTitle: 'profile-empty-title',
+    createPost: 'profile-create-post',
     list: 'profile-post-list',
   },
 };
