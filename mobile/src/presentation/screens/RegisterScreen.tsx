@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { colors } from '../theme/colors';
+import { registerCopy } from '../content/registerCopy';
 
 const emailRegex = /\S+@\S+\.\S+/;
 
@@ -23,27 +24,27 @@ export default function RegisterScreen() {
 
   const submit = async () => {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Enter your name.');
+      Alert.alert(registerCopy.alerts.nameRequired.title, registerCopy.alerts.nameRequired.message);
       return;
     }
     if (!email.trim()) {
-      Alert.alert('Email required', 'Enter your email address.');
+      Alert.alert(registerCopy.alerts.emailRequired.title, registerCopy.alerts.emailRequired.message);
       return;
     }
     if (!emailRegex.test(email.trim())) {
-      Alert.alert('Invalid email', 'Enter a valid email address.');
+      Alert.alert(registerCopy.alerts.invalidEmail.title, registerCopy.alerts.invalidEmail.message);
       return;
     }
     if (!password) {
-      Alert.alert('Password required', 'Enter a password.');
+      Alert.alert(registerCopy.alerts.passwordRequired.title, registerCopy.alerts.passwordRequired.message);
       return;
     }
     if (!confirm) {
-      Alert.alert('Confirm password', 'Enter your password again.');
+      Alert.alert(registerCopy.alerts.confirmRequired.title, registerCopy.alerts.confirmRequired.message);
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Passwords do not match', 'Make sure both passwords match.');
+      Alert.alert(registerCopy.alerts.mismatch.title, registerCopy.alerts.mismatch.message);
       return;
     }
 
@@ -51,7 +52,7 @@ export default function RegisterScreen() {
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
       setLoading(false);
-      Alert.alert('Offline', 'Connect to the internet to create your account.');
+      Alert.alert(registerCopy.alerts.offline.title, registerCopy.alerts.offline.message);
       return;
     }
 
@@ -66,9 +67,9 @@ export default function RegisterScreen() {
     });
 
     if (error) {
-      Alert.alert('Registration failed', error.message);
+      Alert.alert(registerCopy.alerts.failed.title, error.message);
     } else {
-      Alert.alert('Check your email', 'Confirm your email to finish creating your account.');
+      Alert.alert(registerCopy.alerts.checkEmail.title, registerCopy.alerts.checkEmail.message);
       navigation.goBack();
     }
     setLoading(false);
@@ -80,35 +81,35 @@ export default function RegisterScreen() {
         <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
       </Pressable>
       <View style={styles.container}>
-        <Text style={styles.title}>Create your account</Text>
+        <Text style={styles.title}>{registerCopy.title}</Text>
         <TextInput
           style={[styles.input, styles.firstInput]}
-          placeholder="name"
+          placeholder={registerCopy.placeholders.name}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
-          testID="register-name"
-          accessibilityLabel="register-name"
+          testID={registerCopy.testIds.name}
+          accessibilityLabel={registerCopy.testIds.name}
         />
         <TextInput
           style={[styles.input, styles.inputSpacing]}
-          placeholder="e-mail"
+          placeholder={registerCopy.placeholders.email}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-          testID="register-email"
-          accessibilityLabel="register-email"
+          testID={registerCopy.testIds.email}
+          accessibilityLabel={registerCopy.testIds.email}
         />
         <View style={styles.inputWrapper}>
           <TextInput
             style={[styles.input, styles.inputSpacing, styles.passwordInput]}
-            placeholder="password"
+            placeholder={registerCopy.placeholders.password}
             secureTextEntry={!passwordVisible}
             value={password}
             onChangeText={setPassword}
-            testID="register-password"
-            accessibilityLabel="register-password"
+            testID={registerCopy.testIds.password}
+            accessibilityLabel={registerCopy.testIds.password}
           />
           <Pressable style={styles.passwordToggle} onPress={() => setPasswordVisible((prev) => !prev)}>
             <MaterialIcons
@@ -121,12 +122,12 @@ export default function RegisterScreen() {
         <View style={styles.inputWrapper}>
           <TextInput
             style={[styles.input, styles.inputSpacing, styles.passwordInput]}
-            placeholder="password again"
+            placeholder={registerCopy.placeholders.confirm}
             secureTextEntry={!confirmVisible}
             value={confirm}
             onChangeText={setConfirm}
-            testID="register-confirm"
-            accessibilityLabel="register-confirm"
+            testID={registerCopy.testIds.confirm}
+            accessibilityLabel={registerCopy.testIds.confirm}
           />
           <Pressable style={styles.passwordToggle} onPress={() => setConfirmVisible((prev) => !prev)}>
             <MaterialIcons
@@ -140,15 +141,17 @@ export default function RegisterScreen() {
           style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
           onPress={submit}
           disabled={loading}
-          testID="register-submit"
-          accessibilityLabel="register-submit"
+          testID={registerCopy.testIds.submit}
+          accessibilityLabel={registerCopy.testIds.submit}
         >
-          <Text style={styles.primaryButtonText}>{loading ? 'Registering...' : 'Register'}</Text>
+          <Text style={styles.primaryButtonText}>
+            {loading ? registerCopy.submitLoading : registerCopy.submit}
+          </Text>
         </Pressable>
-        <Text style={styles.orText}>or</Text>
+        <Text style={styles.orText}>{registerCopy.or}</Text>
         <Pressable style={styles.googleButton}>
           <MaterialCommunityIcons name="google" size={20} color={colors.darkGrey} />
-          <Text style={styles.googleText}>Sign in with Google</Text>
+          <Text style={styles.googleText}>{registerCopy.google}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -228,7 +231,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     height: 65,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

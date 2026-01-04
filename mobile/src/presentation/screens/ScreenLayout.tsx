@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors } from '../theme/colors';
 
 type ScreenLayoutProps = {
   title: string;
@@ -21,7 +22,7 @@ export default function ScreenLayout({ title, children }: ScreenLayoutProps) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.white,
   },
   header: {
     paddingHorizontal: 20,
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#0f172a',
+    color: colors.slate900,
   },
   content: {
     flex: 1,

@@ -9,6 +9,8 @@ import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
+import { colors } from '../theme/colors';
+import { postCommentsCopy } from '../content/postCommentsCopy';
 
 type RouteParams = {
   postId: number;
@@ -29,18 +31,18 @@ export default function PostCommentsScreen() {
       .then((data) => setComments(data))
       .catch((error) => {
         if (error instanceof Error) {
-          Alert.alert('Failed to load comments', error.message);
+          Alert.alert(postCommentsCopy.alerts.loadFailed.title, error.message);
         }
       });
   }, [commentsRepository, postId]);
 
   const submit = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(postCommentsCopy.alerts.signInRequired.title, postCommentsCopy.alerts.signInRequired.message);
       return;
     }
     if (!content.trim()) {
-      Alert.alert('Content required', 'Write a comment before sending.');
+      Alert.alert(postCommentsCopy.alerts.contentRequired.title, postCommentsCopy.alerts.contentRequired.message);
       return;
     }
 
@@ -50,7 +52,7 @@ export default function PostCommentsScreen() {
       id: Date.now(),
       postId,
       userId: session.user.id,
-      userName: session.user.email ?? 'You',
+      userName: session.user.email ?? postCommentsCopy.currentUserFallback,
       content: content.trim(),
     };
 
@@ -68,7 +70,7 @@ export default function PostCommentsScreen() {
       setComments((prev) => [...prev, newComment]);
       setContent('');
       setLoading(false);
-      Alert.alert('Offline', 'Your comment will be posted when you are back online.');
+      Alert.alert(postCommentsCopy.alerts.offline.title, postCommentsCopy.alerts.offline.message);
       return;
     }
 
@@ -83,7 +85,7 @@ export default function PostCommentsScreen() {
       setContent('');
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Failed to comment', error.message);
+        Alert.alert(postCommentsCopy.alerts.commentFailed.title, error.message);
       }
     } finally {
       setLoading(false);
@@ -91,34 +93,34 @@ export default function PostCommentsScreen() {
   };
 
   return (
-    <ScreenLayout title="Comments">
+    <ScreenLayout title={postCommentsCopy.title}>
       <FlatList
-        testID="comment-list"
+        testID={postCommentsCopy.testIds.list}
         data={comments}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
           <View style={styles.comment} testID={`comment-item-${item.id}`}>
-            <Text style={styles.author}>{item.userName ?? 'Unknown'}</Text>
+            <Text style={styles.author}>{item.userName ?? postCommentsCopy.commentAuthorFallback}</Text>
             <Text style={styles.body}>{item.content}</Text>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No comments yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{postCommentsCopy.empty}</Text>}
       />
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="Add a comment..."
+          placeholder={postCommentsCopy.inputPlaceholder}
           value={content}
           onChangeText={setContent}
-          testID="comment-input"
-          accessibilityLabel="comment-input"
+          testID={postCommentsCopy.testIds.input}
+          accessibilityLabel={postCommentsCopy.testIds.input}
         />
         <Button
-          title={loading ? 'Sending...' : 'Send'}
+          title={loading ? postCommentsCopy.submitLoading : postCommentsCopy.submit}
           onPress={submit}
           disabled={loading}
-          testID="comment-submit"
-          accessibilityLabel="comment-submit"
+          testID={postCommentsCopy.testIds.submit}
+          accessibilityLabel={postCommentsCopy.testIds.submit}
         />
       </View>
     </ScreenLayout>
@@ -130,22 +132,22 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#ffffff',
+    borderColor: colors.slate200,
+    backgroundColor: colors.white,
     marginBottom: 8,
   },
   author: {
     fontWeight: '600',
-    color: '#0f172a',
+    color: colors.slate900,
   },
   body: {
     marginTop: 4,
-    color: '#334155',
+    color: colors.slate700,
   },
   empty: {
     textAlign: 'center',
     marginVertical: 16,
-    color: '#64748b',
+    color: colors.slate500,
   },
   inputRow: {
     marginTop: 12,
@@ -154,8 +156,8 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: colors.slate200,
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.white,
   },
 });

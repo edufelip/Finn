@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { colors } from '../theme/colors';
+import { forgotPasswordCopy } from '../content/forgotPasswordCopy';
 
 const emailRegex = /\S+@\S+\.\S+/;
 
@@ -18,11 +19,11 @@ export default function ForgotPasswordScreen() {
 
   const submit = async () => {
     if (!email.trim()) {
-      Alert.alert('Email required', 'Enter your email address.');
+      Alert.alert(forgotPasswordCopy.alerts.emailRequired.title, forgotPasswordCopy.alerts.emailRequired.message);
       return;
     }
     if (!emailRegex.test(email.trim())) {
-      Alert.alert('Invalid email', 'Enter a valid email address.');
+      Alert.alert(forgotPasswordCopy.alerts.invalidEmail.title, forgotPasswordCopy.alerts.invalidEmail.message);
       return;
     }
 
@@ -30,15 +31,15 @@ export default function ForgotPasswordScreen() {
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
       setLoading(false);
-      Alert.alert('Offline', 'Connect to the internet to reset your password.');
+      Alert.alert(forgotPasswordCopy.alerts.offline.title, forgotPasswordCopy.alerts.offline.message);
       return;
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
     if (error) {
-      Alert.alert('Reset failed', error.message);
+      Alert.alert(forgotPasswordCopy.alerts.failed.title, error.message);
     } else {
-      Alert.alert('Check your email', 'We sent a password reset link.');
+      Alert.alert(forgotPasswordCopy.alerts.success.title, forgotPasswordCopy.alerts.success.message);
     }
     setLoading(false);
   };
@@ -49,29 +50,31 @@ export default function ForgotPasswordScreen() {
         <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
       </Pressable>
       <View style={styles.container}>
-        <Text style={styles.title}>Forgot your password?</Text>
-        <Text style={styles.subtitle}>Confirm your email and we will send the instructions</Text>
+        <Text style={styles.title}>{forgotPasswordCopy.title}</Text>
+        <Text style={styles.subtitle}>{forgotPasswordCopy.subtitle}</Text>
         <View style={styles.inputRow}>
           <MaterialIcons name="person-outline" size={20} color={colors.darkGrey} />
           <TextInput
             style={styles.input}
-            placeholder="e-mail"
+            placeholder={forgotPasswordCopy.emailPlaceholder}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
-            testID="forgot-email"
-            accessibilityLabel="forgot-email"
+            testID={forgotPasswordCopy.testIds.email}
+            accessibilityLabel={forgotPasswordCopy.testIds.email}
           />
         </View>
         <Pressable
           style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
           onPress={submit}
           disabled={loading}
-          testID="forgot-submit"
-          accessibilityLabel="forgot-submit"
+          testID={forgotPasswordCopy.testIds.submit}
+          accessibilityLabel={forgotPasswordCopy.testIds.submit}
         >
-          <Text style={styles.primaryButtonText}>{loading ? 'Resetting...' : 'Reset Password'}</Text>
+          <Text style={styles.primaryButtonText}>
+            {loading ? forgotPasswordCopy.submitLoading : forgotPasswordCopy.submit}
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>

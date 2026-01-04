@@ -13,6 +13,7 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import TopBar from '../components/TopBar';
 import { colors } from '../theme/colors';
+import { savedPostsCopy } from '../content/savedPostsCopy';
 
 export default function SavedPostsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -24,7 +25,7 @@ export default function SavedPostsScreen() {
 
   const loadSaved = useCallback(async () => {
     if (!session?.user?.id) {
-      setError('Sign in required.');
+      setError(savedPostsCopy.errorSignInRequired);
       return;
     }
 
@@ -50,7 +51,7 @@ export default function SavedPostsScreen() {
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(savedPostsCopy.alerts.signInRequired.title, savedPostsCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -70,7 +71,7 @@ export default function SavedPostsScreen() {
         payload: { postId: post.id, userId: session.user.id },
         createdAt: Date.now(),
       });
-      Alert.alert('Offline', 'Your saved posts will sync when you are back online.');
+      Alert.alert(savedPostsCopy.alerts.offline.title, savedPostsCopy.alerts.offline.message);
       return;
     }
 
@@ -83,14 +84,14 @@ export default function SavedPostsScreen() {
     } catch (err) {
       setPosts(previous);
       if (err instanceof Error) {
-        Alert.alert('Failed to update saved posts', err.message);
+        Alert.alert(savedPostsCopy.alerts.savedFailed.title, err.message);
       }
     }
   };
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(savedPostsCopy.alerts.signInRequired.title, savedPostsCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -137,17 +138,17 @@ export default function SavedPostsScreen() {
         )
       );
       if (err instanceof Error) {
-        Alert.alert('Failed to update like', err.message);
+        Alert.alert(savedPostsCopy.alerts.likeFailed.title, err.message);
       }
     }
   };
 
   return (
     <View style={styles.container}>
-      <TopBar title="Saved" titleSize={18} onBack={() => navigation.goBack()} />
+      <TopBar title={savedPostsCopy.title} titleSize={18} onBack={() => navigation.goBack()} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
-        testID="saved-post-list"
+        testID={savedPostsCopy.testIds.list}
         data={posts}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (

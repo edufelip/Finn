@@ -12,6 +12,7 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import { persistOfflineImage } from '../../data/offline/offlineImages';
 import { colors } from '../theme/colors';
+import { createCommunityCopy } from '../content/createCommunityCopy';
 
 export default function CreateCommunityScreen() {
   const navigation = useNavigation();
@@ -25,7 +26,10 @@ export default function CreateCommunityScreen() {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow access to your photos to select an image.');
+      Alert.alert(
+        createCommunityCopy.alerts.permission.title,
+        createCommunityCopy.alerts.permission.message
+      );
       return;
     }
 
@@ -41,15 +45,24 @@ export default function CreateCommunityScreen() {
 
   const submit = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(
+        createCommunityCopy.alerts.signInRequired.title,
+        createCommunityCopy.alerts.signInRequired.message
+      );
       return;
     }
     if (!title.trim()) {
-      Alert.alert('Title required', 'Provide a community title.');
+      Alert.alert(
+        createCommunityCopy.alerts.titleRequired.title,
+        createCommunityCopy.alerts.titleRequired.message
+      );
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Description required', 'Provide a community description.');
+      Alert.alert(
+        createCommunityCopy.alerts.descriptionRequired.title,
+        createCommunityCopy.alerts.descriptionRequired.message
+      );
       return;
     }
 
@@ -69,7 +82,7 @@ export default function CreateCommunityScreen() {
         createdAt: Date.now(),
       });
       setLoading(false);
-      Alert.alert('Offline', 'Your community will be created when you are back online.');
+      Alert.alert(createCommunityCopy.alerts.offline.title, createCommunityCopy.alerts.offline.message);
       navigation.goBack();
       return;
     }
@@ -84,11 +97,11 @@ export default function CreateCommunityScreen() {
         },
         imageUri ?? null
       );
-      Alert.alert('Community created', 'Your community is live.');
+      Alert.alert(createCommunityCopy.alerts.created.title, createCommunityCopy.alerts.created.message);
       navigation.goBack();
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Failed to create community', error.message);
+        Alert.alert(createCommunityCopy.alerts.failed.title, error.message);
       }
     } finally {
       setLoading(false);
@@ -101,39 +114,39 @@ export default function CreateCommunityScreen() {
         <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
       </Pressable>
       <View style={styles.container}>
-        <Text style={styles.title}>Your community name</Text>
+        <Text style={styles.title}>{createCommunityCopy.titleLabel}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Community Name"
+          placeholder={createCommunityCopy.titlePlaceholder}
           value={title}
           onChangeText={setTitle}
           maxLength={25}
-          testID="create-community-title"
-          accessibilityLabel="create-community-title"
+          testID={createCommunityCopy.testIds.title}
+          accessibilityLabel={createCommunityCopy.testIds.title}
         />
-        <Text style={styles.title}>Tell us what is your community is about</Text>
+        <Text style={styles.title}>{createCommunityCopy.descriptionLabel}</Text>
         <TextInput
           style={styles.input}
-          placeholder="About your community"
+          placeholder={createCommunityCopy.descriptionPlaceholder}
           value={description}
           onChangeText={setDescription}
           maxLength={100}
-          testID="create-community-description"
-          accessibilityLabel="create-community-description"
+          testID={createCommunityCopy.testIds.description}
+          accessibilityLabel={createCommunityCopy.testIds.description}
         />
-        <Text style={styles.title}>Choose your icon</Text>
+        <Text style={styles.title}>{createCommunityCopy.iconLabel}</Text>
         <Pressable
           style={styles.iconSelect}
           onPress={pickImage}
-          testID="create-community-image"
-          accessibilityLabel="create-community-image"
+          testID={createCommunityCopy.testIds.image}
+          accessibilityLabel={createCommunityCopy.testIds.image}
         >
           <View style={styles.iconOuter}>
             <Image
               source={imageUri ? { uri: imageUri } : require('../../../assets/user_icon.png')}
               style={styles.iconImage}
-              testID={imageUri ? 'create-community-image-preview' : undefined}
-              accessibilityLabel={imageUri ? 'create-community-image-preview' : undefined}
+              testID={imageUri ? createCommunityCopy.testIds.imagePreview : undefined}
+              accessibilityLabel={imageUri ? createCommunityCopy.testIds.imagePreview : undefined}
             />
           </View>
           <View style={styles.iconBadge}>
@@ -144,10 +157,12 @@ export default function CreateCommunityScreen() {
           style={[styles.createButton, loading && styles.createButtonDisabled]}
           onPress={submit}
           disabled={loading}
-          testID="create-community-submit"
-          accessibilityLabel="create-community-submit"
+          testID={createCommunityCopy.testIds.submit}
+          accessibilityLabel={createCommunityCopy.testIds.submit}
         >
-          <Text style={styles.createButtonText}>{loading ? 'Creating...' : 'Create'}</Text>
+          <Text style={styles.createButtonText}>
+            {loading ? createCommunityCopy.submitLoading : createCommunityCopy.submit}
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -204,7 +219,7 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     borderRadius: 17.5,
-    backgroundColor: '#FF8C00',
+    backgroundColor: colors.accentOrange,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -14,6 +14,7 @@ import { persistOfflineImage } from '../../data/offline/offlineImages';
 import TopBar from '../components/TopBar';
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
+import { createPostCopy } from '../content/createPostCopy';
 
 export default function CreatePostScreen() {
   const navigation = useNavigation();
@@ -38,7 +39,7 @@ export default function CreatePostScreen() {
       })
       .catch((error) => {
         if (error instanceof Error) {
-          Alert.alert('Failed to load communities', error.message);
+          Alert.alert(createPostCopy.alerts.loadCommunitiesFailed.title, error.message);
         }
       });
   }, [communityRepository, selectedCommunityId]);
@@ -46,7 +47,7 @@ export default function CreatePostScreen() {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow access to your photos to select an image.');
+      Alert.alert(createPostCopy.alerts.permission.title, createPostCopy.alerts.permission.message);
       return;
     }
 
@@ -62,15 +63,15 @@ export default function CreatePostScreen() {
 
   const submit = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(createPostCopy.alerts.signInRequired.title, createPostCopy.alerts.signInRequired.message);
       return;
     }
     if (!content.trim()) {
-      Alert.alert('Content required', 'Write something before posting.');
+      Alert.alert(createPostCopy.alerts.contentRequired.title, createPostCopy.alerts.contentRequired.message);
       return;
     }
     if (!selectedCommunityId) {
-      Alert.alert('Community required', 'Select a community to post in.');
+      Alert.alert(createPostCopy.alerts.communityRequired.title, createPostCopy.alerts.communityRequired.message);
       return;
     }
 
@@ -90,7 +91,7 @@ export default function CreatePostScreen() {
         createdAt: Date.now(),
       });
       setLoading(false);
-      Alert.alert('Offline', 'Your post will be published when you are back online.');
+      Alert.alert(createPostCopy.alerts.offline.title, createPostCopy.alerts.offline.message);
       navigation.goBack();
       return;
     }
@@ -105,11 +106,11 @@ export default function CreatePostScreen() {
         },
         imageUri ?? null
       );
-      Alert.alert('Posted', 'Your post is live.');
+      Alert.alert(createPostCopy.alerts.posted.title, createPostCopy.alerts.posted.message);
       navigation.goBack();
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Failed to post', error.message);
+        Alert.alert(createPostCopy.alerts.failed.title, error.message);
       }
     } finally {
       setLoading(false);
@@ -120,21 +121,28 @@ export default function CreatePostScreen() {
 
   return (
     <View style={styles.container}>
-      <TopBar title="New Post" onBack={() => navigation.goBack()} />
-      <Pressable style={styles.communityPicker} onPress={() => setPickerOpen(true)}>
+      <TopBar title={createPostCopy.title} onBack={() => navigation.goBack()} />
+      <Pressable
+        style={styles.communityPicker}
+        onPress={() => setPickerOpen(true)}
+        testID={createPostCopy.testIds.communityPicker}
+        accessibilityLabel={createPostCopy.testIds.communityPicker}
+      >
         <MaterialIcons name="language" size={20} color={colors.darkGrey} />
-        <Text style={styles.communityText}>{selectedCommunity?.title ?? 'Pick a community'}</Text>
+        <Text style={styles.communityText}>
+          {selectedCommunity?.title ?? createPostCopy.communityPlaceholder}
+        </Text>
         <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.darkGrey} />
       </Pressable>
       <Divider />
       <TextInput
         style={styles.textArea}
-        placeholder="Your post content"
+        placeholder={createPostCopy.contentPlaceholder}
         value={content}
         onChangeText={setContent}
         multiline
-        testID="create-post-content"
-        accessibilityLabel="create-post-content"
+        testID={createPostCopy.testIds.content}
+        accessibilityLabel={createPostCopy.testIds.content}
       />
       <Divider />
       <View style={styles.imageCard}>
@@ -142,15 +150,15 @@ export default function CreatePostScreen() {
           <Image
             source={{ uri: imageUri }}
             style={styles.imagePreview}
-            testID="create-post-image-preview"
-            accessibilityLabel="create-post-image-preview"
+            testID={createPostCopy.testIds.imagePreview}
+            accessibilityLabel={createPostCopy.testIds.imagePreview}
           />
         ) : null}
         <Pressable
           style={styles.fab}
           onPress={pickImage}
-          testID="create-post-image"
-          accessibilityLabel="create-post-image"
+          testID={createPostCopy.testIds.image}
+          accessibilityLabel={createPostCopy.testIds.image}
         >
           <MaterialIcons name="add" size={24} color={colors.black} />
         </Pressable>
@@ -159,15 +167,17 @@ export default function CreatePostScreen() {
         style={[styles.createButton, loading && styles.createButtonDisabled]}
         onPress={submit}
         disabled={loading}
-        testID="create-post-submit"
-        accessibilityLabel="create-post-submit"
+        testID={createPostCopy.testIds.submit}
+        accessibilityLabel={createPostCopy.testIds.submit}
       >
-        <Text style={styles.createButtonText}>{loading ? 'Creating...' : 'Create'}</Text>
+        <Text style={styles.createButtonText}>
+          {loading ? createPostCopy.submitLoading : createPostCopy.submit}
+        </Text>
       </Pressable>
       <Modal visible={pickerOpen} transparent animationType="slide">
         <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)} />
         <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>Pick a community</Text>
+          <Text style={styles.modalTitle}>{createPostCopy.modalTitle}</Text>
           <FlatList
             data={communities}
             keyExtractor={(item) => `${item.id}`}
@@ -211,7 +221,7 @@ const styles = StyleSheet.create({
     height: 300,
     padding: 16,
     textAlignVertical: 'top',
-    backgroundColor: 'transparent',
+    backgroundColor: colors.transparent,
   },
   imageCard: {
     width: 150,
@@ -220,7 +230,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderRadius: 4,
     backgroundColor: colors.white,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOpacity: 0.2,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
@@ -262,7 +272,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.overlayDark,
   },
   modalSheet: {
     backgroundColor: colors.white,

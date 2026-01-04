@@ -15,6 +15,7 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
+import { postDetailCopy } from '../content/postDetailCopy';
 
 type RouteParams = {
   post: Post;
@@ -37,14 +38,14 @@ export default function PostDetailScreen() {
       .then((data) => setComments(data))
       .catch((error) => {
         if (error instanceof Error) {
-          Alert.alert('Failed to load comments', error.message);
+          Alert.alert(postDetailCopy.alerts.loadFailed.title, error.message);
         }
       });
   }, [commentsRepository, post.id]);
 
   const handleToggleLike = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(postDetailCopy.alerts.signInRequired.title, postDetailCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -79,14 +80,14 @@ export default function PostDetailScreen() {
         likesCount: post.likesCount,
       }));
       if (error instanceof Error) {
-        Alert.alert('Failed to update like', error.message);
+        Alert.alert(postDetailCopy.alerts.likeFailed.title, error.message);
       }
     }
   };
 
   const handleToggleSave = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(postDetailCopy.alerts.signInRequired.title, postDetailCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -119,22 +120,22 @@ export default function PostDetailScreen() {
         isSaved: post.isSaved,
       }));
       if (error instanceof Error) {
-        Alert.alert('Failed to update saved posts', error.message);
+        Alert.alert(postDetailCopy.alerts.savedFailed.title, error.message);
       }
     }
   };
 
   const handleShare = () => {
-    Alert.alert('Not available', 'Sharing is not available yet.');
+    Alert.alert(postDetailCopy.alerts.shareUnavailable.title, postDetailCopy.alerts.shareUnavailable.message);
   };
 
   const submitComment = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(postDetailCopy.alerts.signInRequired.title, postDetailCopy.alerts.signInRequired.message);
       return;
     }
     if (!content.trim()) {
-      Alert.alert('Content required', 'Write a comment before sending.');
+      Alert.alert(postDetailCopy.alerts.contentRequired.title, postDetailCopy.alerts.contentRequired.message);
       return;
     }
 
@@ -144,7 +145,7 @@ export default function PostDetailScreen() {
       id: Date.now(),
       postId: post.id,
       userId: session.user.id,
-      userName: session.user.email ?? 'You',
+      userName: session.user.email ?? postDetailCopy.currentUserFallback,
       content: content.trim(),
     };
 
@@ -166,7 +167,7 @@ export default function PostDetailScreen() {
       }));
       setContent('');
       setLoading(false);
-      Alert.alert('Offline', 'Your comment will be posted when you are back online.');
+      Alert.alert(postDetailCopy.alerts.offline.title, postDetailCopy.alerts.offline.message);
       return;
     }
 
@@ -185,7 +186,7 @@ export default function PostDetailScreen() {
       setContent('');
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Failed to comment', error.message);
+        Alert.alert(postDetailCopy.alerts.commentFailed.title, error.message);
       }
     } finally {
       setLoading(false);
@@ -201,7 +202,7 @@ export default function PostDetailScreen() {
         <Divider />
       </View>
       <FlatList
-        testID="post-detail-comments"
+        testID={postDetailCopy.testIds.list}
         data={comments}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
@@ -210,8 +211,8 @@ export default function PostDetailScreen() {
               <View style={styles.commentAvatar}>
                 <Image source={require('../../../assets/user_icon.png')} style={styles.commentAvatarImage} />
               </View>
-              <Text style={styles.commentAuthor}>{item.userName ?? 'Unknown'}</Text>
-              <Text style={styles.commentDate}> - 7 days ago</Text>
+              <Text style={styles.commentAuthor}>{item.userName ?? postDetailCopy.commentAuthorFallback}</Text>
+              <Text style={styles.commentDate}>{postDetailCopy.commentAge}</Text>
             </View>
             <Text style={styles.commentBody}>{item.content}</Text>
           </View>
@@ -225,11 +226,11 @@ export default function PostDetailScreen() {
               onShare={handleShare}
             />
             <View style={styles.commentsHeader}>
-              <Text style={styles.commentsHeaderText}>Comments</Text>
+              <Text style={styles.commentsHeaderText}>{postDetailCopy.commentsTitle}</Text>
             </View>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>No comments yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{postDetailCopy.empty}</Text>}
         style={styles.list}
       />
       <View style={styles.bottomBar}>
@@ -240,15 +241,15 @@ export default function PostDetailScreen() {
           style={styles.commentInput}
           value={content}
           onChangeText={setContent}
-          testID="post-detail-comment-input"
-          accessibilityLabel="post-detail-comment-input"
+          testID={postDetailCopy.testIds.input}
+          accessibilityLabel={postDetailCopy.testIds.input}
         />
         <Pressable
           style={styles.commentButton}
           onPress={submitComment}
           disabled={loading}
-          testID="post-detail-comment-submit"
-          accessibilityLabel="post-detail-comment-submit"
+          testID={postDetailCopy.testIds.submit}
+          accessibilityLabel={postDetailCopy.testIds.submit}
         >
           <MaterialIcons name="add" size={24} color={colors.white} />
         </Pressable>

@@ -10,6 +10,7 @@ import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import TopBar from '../components/TopBar';
 import { colors } from '../theme/colors';
+import { settingsCopy } from '../content/settingsCopy';
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
@@ -20,34 +21,34 @@ export default function SettingsScreen() {
   const [loading, setLoading] = useState(false);
 
   const showUnavailable = () => {
-    Alert.alert('Not available', 'This setting is not available yet.');
+    Alert.alert(settingsCopy.alerts.unavailable.title, settingsCopy.alerts.unavailable.message);
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete account', 'Are you sure you want to delete your account?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(settingsCopy.alerts.deleteConfirm.title, settingsCopy.alerts.deleteConfirm.message, [
+      { text: settingsCopy.alerts.deleteConfirm.cancel, style: 'cancel' },
       {
-        text: 'Delete',
+        text: settingsCopy.alerts.deleteConfirm.confirm,
         style: 'destructive',
         onPress: async () => {
           if (!session?.user?.id) {
-            Alert.alert('Sign in required', 'Please sign in again.');
+            Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
             return;
           }
           setLoading(true);
           const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
           if (!status.isConnected) {
             setLoading(false);
-            Alert.alert('Offline', 'Connect to the internet to delete your account.');
+            Alert.alert(settingsCopy.alerts.offline.title, settingsCopy.alerts.offline.message);
             return;
           }
           try {
             await userRepository.deleteUser(session.user.id);
             await supabase.auth.signOut();
-            Alert.alert('Account deleted', 'Your profile data has been deleted.');
+            Alert.alert(settingsCopy.alerts.deleted.title, settingsCopy.alerts.deleted.message);
           } catch (error) {
             if (error instanceof Error) {
-              Alert.alert('Delete failed', error.message);
+              Alert.alert(settingsCopy.alerts.failed.title, error.message);
             }
           } finally {
             setLoading(false);
@@ -60,13 +61,13 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <TopBar onBack={() => navigation.goBack()} />
-      <Text style={styles.title}>Settings</Text>
-      <Text style={styles.sectionTitle}>Preferences</Text>
+      <Text style={styles.title}>{settingsCopy.title}</Text>
+      <Text style={styles.sectionTitle}>{settingsCopy.sections.preferences}</Text>
       <View style={styles.sectionBox}>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <MaterialIcons name="wb-sunny" size={18} color={colors.darkGrey} />
-            <Text style={styles.rowText}>Dark Mode</Text>
+            <Text style={styles.rowText}>{settingsCopy.options.darkMode}</Text>
           </View>
           <Switch
             value={darkMode}
@@ -74,14 +75,14 @@ export default function SettingsScreen() {
               setDarkMode(value);
               showUnavailable();
             }}
-            testID="settings-dark-toggle"
-            accessibilityLabel="settings-dark-toggle"
+            testID={settingsCopy.testIds.darkMode}
+            accessibilityLabel={settingsCopy.testIds.darkMode}
           />
         </View>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <MaterialIcons name="content-copy" size={18} color={colors.darkGrey} />
-            <Text style={styles.rowText}>Notifications</Text>
+            <Text style={styles.rowText}>{settingsCopy.options.notifications}</Text>
           </View>
           <Switch
             value={notificationsEnabled}
@@ -89,23 +90,25 @@ export default function SettingsScreen() {
               setNotificationsEnabled(value);
               showUnavailable();
             }}
-            testID="settings-notifications-toggle"
-            accessibilityLabel="settings-notifications-toggle"
+            testID={settingsCopy.testIds.notifications}
+            accessibilityLabel={settingsCopy.testIds.notifications}
           />
         </View>
       </View>
-      <Text style={styles.sectionTitle}>Account</Text>
+      <Text style={styles.sectionTitle}>{settingsCopy.sections.account}</Text>
       <View style={styles.sectionBox}>
         <View style={styles.deleteRow}>
-          <Text style={styles.deleteLabel}>Delete Account</Text>
+          <Text style={styles.deleteLabel}>{settingsCopy.options.deleteAccount}</Text>
           <Pressable
             style={[styles.deleteButton, loading && styles.deleteButtonDisabled]}
             onPress={handleDelete}
             disabled={loading}
-            testID="settings-delete"
-            accessibilityLabel="settings-delete"
+            testID={settingsCopy.testIds.delete}
+            accessibilityLabel={settingsCopy.testIds.delete}
           >
-            <Text style={styles.deleteButtonText}>{loading ? 'Deleting...' : 'delete'}</Text>
+            <Text style={styles.deleteButtonText}>
+              {loading ? settingsCopy.deleteButtonLoading : settingsCopy.deleteButton}
+            </Text>
           </Pressable>
         </View>
       </View>

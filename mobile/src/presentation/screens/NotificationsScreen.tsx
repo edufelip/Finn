@@ -4,17 +4,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
+import { notificationsCopy } from '../content/notificationsCopy';
 
 export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Notifications</Text>
+        <Text style={styles.headerText}>{notificationsCopy.title}</Text>
         <Divider />
       </View>
       <View style={styles.body}>
         <MaterialIcons name="settings" size={40} color={colors.darkGrey} />
-        <Text style={styles.bodyText}>Coming soon…</Text>
+        <Text style={styles.bodyText}>{notificationsCopy.body}</Text>
       </View>
     </View>
   );

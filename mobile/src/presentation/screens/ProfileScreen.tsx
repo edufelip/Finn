@@ -15,6 +15,9 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
+import { profileCopy } from '../content/profileCopy';
+import { commonCopy } from '../content/commonCopy';
+import { formatMonthYear } from '../i18n/formatters';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -27,7 +30,7 @@ export default function ProfileScreen() {
 
   const loadProfile = useCallback(async () => {
     if (!session?.user?.id) {
-      setError('Sign in required.');
+      setError(profileCopy.errorSignInRequired);
       return;
     }
 
@@ -67,7 +70,7 @@ export default function ProfileScreen() {
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(profileCopy.alerts.signInRequired.title, profileCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -114,14 +117,14 @@ export default function ProfileScreen() {
         )
       );
       if (err instanceof Error) {
-        Alert.alert('Failed to update like', err.message);
+        Alert.alert(profileCopy.alerts.likeFailed.title, err.message);
       }
     }
   };
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(profileCopy.alerts.signInRequired.title, profileCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -148,16 +151,15 @@ export default function ProfileScreen() {
     } catch (err) {
       setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: post.isSaved } : item)));
       if (err instanceof Error) {
-        Alert.alert('Failed to update saved posts', err.message);
+        Alert.alert(profileCopy.alerts.savedFailed.title, err.message);
       }
     }
   };
 
-  const joinedLabel = user?.createdAt
-    ? `Joined since ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
-    : null;
+  const joinedDate = user?.createdAt ? formatMonthYear(user.createdAt) : '';
+  const joinedLabel = joinedDate ? profileCopy.joinedSince(joinedDate) : null;
 
-  const displayName = user?.name ?? session?.user?.email ?? 'User';
+  const displayName = user?.name ?? session?.user?.email ?? commonCopy.userFallback;
 
   return (
     <View style={styles.container}>
@@ -175,24 +177,32 @@ export default function ProfileScreen() {
           </View>
         </View>
       </View>
-      <Text style={styles.name} testID="profile-name" accessibilityLabel="profile-name">
+      <Text
+        style={styles.name}
+        testID={profileCopy.testIds.name}
+        accessibilityLabel={profileCopy.testIds.name}
+      >
         {displayName}
       </Text>
       {joinedLabel ? (
         <View style={styles.joinedRow}>
           <MaterialIcons name="date-range" size={16} color={colors.darkGrey} />
-          <Text style={styles.joinedText} testID="profile-joined" accessibilityLabel="profile-joined">
+          <Text
+            style={styles.joinedText}
+            testID={profileCopy.testIds.joined}
+            accessibilityLabel={profileCopy.testIds.joined}
+          >
             {joinedLabel}
           </Text>
         </View>
       ) : null}
       <View style={styles.tabHeader}>
-        <Text style={styles.tabText}>Posts</Text>
+        <Text style={styles.tabText}>{profileCopy.postsTab}</Text>
       </View>
       <Divider />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
-        testID="profile-post-list"
+        testID={profileCopy.testIds.list}
         data={posts}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
@@ -203,7 +213,7 @@ export default function ProfileScreen() {
             onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
           />
         )}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>You have no posts yet =(</Text> : null}
+        ListEmptyComponent={!loading ? <Text style={styles.empty}>{profileCopy.emptyPosts}</Text> : null}
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>

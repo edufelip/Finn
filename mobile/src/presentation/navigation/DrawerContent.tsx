@@ -9,8 +9,9 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { supabase } from '../../data/supabase/client';
 import type { User } from '../../domain/models/user';
 import { colors } from '../theme/colors';
-
-const PRIVACY_POLICY_URL = 'https://portfolio-edufelip.vercel.app/projects/finn/privacy_policy';
+import { drawerCopy } from '../content/drawerCopy';
+import { commonCopy } from '../content/commonCopy';
+import { links } from '../../config/links';
 
 export default function DrawerContent(props: DrawerContentComponentProps) {
   const { navigation } = props;
@@ -28,7 +29,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
       });
   }, [session?.user?.id, userRepository]);
 
-  const displayName = user?.name ?? session?.user?.email ?? 'User';
+  const displayName = user?.name ?? session?.user?.email ?? commonCopy.userFallback;
   const email = session?.user?.email ?? '';
   const photo = user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png');
 
@@ -52,36 +53,36 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
         </View>
         <View style={styles.menu}>
           <DrawerItem
-            label="Profile"
+            label={drawerCopy.profile}
             icon={({ color, size }) => <MaterialIcons name="person-outline" size={size} color={color} />}
             onPress={() => navigateTo('Profile')}
             labelStyle={styles.label}
-            testID="drawer-profile"
+            testID={drawerCopy.testIds.profile}
           />
           <DrawerItem
-            label="Saved"
+            label={drawerCopy.saved}
             icon={({ color, size }) => <MaterialIcons name="bookmark-border" size={size} color={color} />}
             onPress={() => navigateTo('SavedPosts')}
             labelStyle={styles.label}
-            testID="drawer-saved"
+            testID={drawerCopy.testIds.saved}
           />
           <DrawerItem
-            label="Posts"
+            label={drawerCopy.posts}
             icon={({ color, size }) => <MaterialIcons name="content-copy" size={size} color={color} />}
             onPress={() => navigateTo('Profile')}
             labelStyle={styles.label}
           />
           <DrawerItem
-            label="Settings"
+            label={drawerCopy.settings}
             icon={({ color, size }) => <MaterialIcons name="settings" size={size} color={color} />}
             onPress={() => navigateTo('Settings')}
             labelStyle={styles.label}
-            testID="drawer-settings"
+            testID={drawerCopy.testIds.settings}
           />
           <DrawerItem
-            label="Privacy Policy"
+            label={drawerCopy.privacyPolicy}
             icon={({ color, size }) => <MaterialIcons name="security" size={size} color={color} />}
-            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+            onPress={() => Linking.openURL(links.privacyPolicy)}
             labelStyle={styles.label}
           />
         </View>
@@ -92,7 +93,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
           supabase.auth.signOut();
         }}
       >
-        <Text style={styles.logoutText}>Log out</Text>
+        <Text style={styles.logoutText}>{drawerCopy.logout}</Text>
       </Pressable>
     </View>
   );

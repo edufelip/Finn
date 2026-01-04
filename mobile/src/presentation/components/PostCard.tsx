@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import type { Post } from '../../domain/models/post';
 import { colors } from '../theme/colors';
+import { postCardCopy } from '../content/postCardCopy';
 
 type PostCardProps = {
   post: Post;
@@ -22,12 +23,12 @@ export default function PostCard({
 }: PostCardProps) {
   const handleOptions = () => {
     if (!onToggleSave) return;
-    Alert.alert('Options', undefined, [
+    Alert.alert(postCardCopy.optionsTitle, undefined, [
       {
-        text: post.isSaved ? 'Unsave' : 'Save',
+        text: post.isSaved ? postCardCopy.unsave : postCardCopy.save,
         onPress: onToggleSave,
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: postCardCopy.cancel, style: 'cancel' },
     ]);
   };
 
@@ -48,8 +49,10 @@ export default function PostCard({
             )}
           </View>
           <View style={styles.headerText}>
-            <Text style={styles.community}>{post.communityTitle ?? 'Community'}</Text>
-            <Text style={styles.author}>Posted by {post.userName ?? 'Unknown'}</Text>
+            <Text style={styles.community}>{post.communityTitle ?? postCardCopy.communityFallback}</Text>
+            <Text style={styles.author}>
+              {postCardCopy.postedBy(post.userName ?? postCardCopy.authorFallback)}
+            </Text>
           </View>
         </View>
         <Pressable
@@ -58,7 +61,7 @@ export default function PostCard({
           testID={`post-options-${post.id}`}
           accessibilityLabel={`post-options-${post.id}`}
         >
-          <Text style={styles.options}>⋮</Text>
+          <MaterialIcons name="more-vert" size={20} color={colors.darkGrey} />
         </Pressable>
         <Text style={styles.content}>{post.content}</Text>
         {post.imageUrl ? (
@@ -94,7 +97,7 @@ export default function PostCard({
             accessibilityLabel={`post-share-${post.id}`}
           >
             <MaterialIcons name="share" size={16} color={colors.darkGrey} />
-            <Text style={styles.actionText}>Share</Text>
+            <Text style={styles.actionText}>{postCardCopy.share}</Text>
           </Pressable>
         </View>
       </View>
@@ -137,11 +140,6 @@ const styles = StyleSheet.create({
   author: {
     marginTop: 2,
     color: colors.darkGrey,
-  },
-  options: {
-    fontSize: 20,
-    paddingHorizontal: 12,
-    textAlign: 'center',
   },
   optionsButton: {
     position: 'absolute',

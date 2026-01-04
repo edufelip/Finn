@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.authSurface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.transparent,
     paddingHorizontal: 16,
     marginBottom: 12,
   },

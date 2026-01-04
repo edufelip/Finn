@@ -30,6 +30,7 @@ export default function MainTabs() {
 
   const openCreate = () => setCreateOpen(true);
   const closeCreate = () => setCreateOpen(false);
+  const tabColor = (focused?: boolean) => (focused ? colors.mainBlue : colors.darkGrey);
 
   return (
     <>
@@ -45,9 +46,23 @@ export default function MainTabs() {
           name="Home"
           component={HomeScreen}
           options={{
-            tabBarIcon: ({ color }) => <MaterialIcons name="home" size={24} color={color} />,
-            tabBarLabel: tabCopy.home,
-            tabBarTestID: tabCopy.testIds.home,
+            tabBarButton: (props) => {
+              const focused = props.accessibilityState?.selected;
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={props.accessibilityState}
+                  onPress={props.onPress}
+                  onLongPress={props.onLongPress}
+                  style={[styles.tabButton, props.style]}
+                  testID={tabCopy.testIds.home}
+                  accessibilityLabel={tabCopy.testIds.home}
+                >
+                  <MaterialIcons name="home" size={24} color={tabColor(focused)} />
+                  <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{tabCopy.home}</Text>
+                </Pressable>
+              );
+            },
           }}
         />
         <Tab.Screen
@@ -81,9 +96,23 @@ export default function MainTabs() {
           name="Search"
           component={SearchScreen}
           options={{
-            tabBarIcon: ({ color }) => <MaterialIcons name="search" size={24} color={color} />,
-            tabBarLabel: tabCopy.search,
-            tabBarTestID: tabCopy.testIds.search,
+            tabBarButton: (props) => {
+              const focused = props.accessibilityState?.selected;
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={props.accessibilityState}
+                  onPress={props.onPress}
+                  onLongPress={props.onLongPress}
+                  style={[styles.tabButton, props.style]}
+                  testID={tabCopy.testIds.search}
+                  accessibilityLabel={tabCopy.testIds.search}
+                >
+                  <MaterialIcons name="search" size={24} color={tabColor(focused)} />
+                  <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{tabCopy.search}</Text>
+                </Pressable>
+              );
+            },
           }}
         />
         <Tab.Screen
@@ -140,6 +169,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.darkGrey,
     marginTop: 2,
+  },
+  tabLabelActive: {
+    color: colors.mainBlue,
   },
   fab: {
     width: 56,

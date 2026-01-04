@@ -33,7 +33,7 @@ export default function TopBar({
           <Pressable
             onPress={onBack}
             style={styles.backButton}
-            android_ripple={{ color: '#bdbdbd', borderless: true }}
+            android_ripple={{ color: colors.rippleGrey, borderless: true }}
           >
             <MaterialIcons name="keyboard-arrow-left" size={24} color={textColor} />
           </Pressable>

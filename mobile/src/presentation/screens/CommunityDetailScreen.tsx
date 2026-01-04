@@ -16,6 +16,8 @@ import { isMockMode } from '../../config/appConfig';
 import type { MainStackParamList } from '../navigation/MainStack';
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
+import { communityDetailCopy } from '../content/communityDetailCopy';
+import { formatMonthYear } from '../i18n/formatters';
 
 type RouteParams = {
   communityId: number;
@@ -51,7 +53,7 @@ export default function CommunityDetailScreen() {
         ]);
         if (!mounted) return;
         if (!communityData) {
-          setError('Community not found.');
+          setError(communityDetailCopy.errorNotFound);
           return;
         }
         setCommunity(communityData);
@@ -93,7 +95,10 @@ export default function CommunityDetailScreen() {
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(
+        communityDetailCopy.alerts.signInRequired.title,
+        communityDetailCopy.alerts.signInRequired.message
+      );
       return;
     }
 
@@ -140,14 +145,17 @@ export default function CommunityDetailScreen() {
         )
       );
       if (err instanceof Error) {
-        Alert.alert('Failed to update like', err.message);
+        Alert.alert(communityDetailCopy.alerts.likeFailed.title, err.message);
       }
     }
   };
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(
+        communityDetailCopy.alerts.signInRequired.title,
+        communityDetailCopy.alerts.signInRequired.message
+      );
       return;
     }
 
@@ -174,14 +182,17 @@ export default function CommunityDetailScreen() {
     } catch (err) {
       setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: post.isSaved } : item)));
       if (err instanceof Error) {
-        Alert.alert('Failed to update saved posts', err.message);
+        Alert.alert(communityDetailCopy.alerts.savedFailed.title, err.message);
       }
     }
   };
 
   const handleToggleSubscription = async () => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(
+        communityDetailCopy.alerts.signInRequired.title,
+        communityDetailCopy.alerts.signInRequired.message
+      );
       return;
     }
 
@@ -211,7 +222,7 @@ export default function CommunityDetailScreen() {
         },
         createdAt: Date.now(),
       });
-      Alert.alert('Offline', 'Your subscription will update when you are back online.');
+      Alert.alert(communityDetailCopy.alerts.offline.title, communityDetailCopy.alerts.offline.message);
       return;
     }
 
@@ -235,7 +246,7 @@ export default function CommunityDetailScreen() {
       setSubscription(current ?? null);
       setSubscribersCount(previousCount);
       if (err instanceof Error) {
-        Alert.alert('Failed to update subscription', err.message);
+        Alert.alert(communityDetailCopy.alerts.subscriptionFailed.title, err.message);
       }
     }
   };
@@ -254,33 +265,33 @@ export default function CommunityDetailScreen() {
           <Image
             source={community.imageUrl ? { uri: community.imageUrl } : require('../../../assets/user_icon.png')}
             style={styles.communityImage}
-            testID="community-detail-image"
-            accessibilityLabel="community-detail-image"
+            testID={communityDetailCopy.testIds.image}
+            accessibilityLabel={communityDetailCopy.testIds.image}
           />
         </View>
       </View>
       <Pressable
         style={styles.subscribeButton}
         onPress={handleToggleSubscription}
-        testID="community-detail-subscribe"
-        accessibilityLabel="community-detail-subscribe"
+        testID={communityDetailCopy.testIds.subscribe}
+        accessibilityLabel={communityDetailCopy.testIds.subscribe}
       >
-        <Text style={styles.subscribeText}>{subscription ? 'Unsubscribe' : 'Subscribe'}</Text>
+        <Text style={styles.subscribeText}>
+          {subscription ? communityDetailCopy.unsubscribe : communityDetailCopy.subscribe}
+        </Text>
       </Pressable>
-      <Text style={styles.title} testID="community-detail-title">
+      <Text style={styles.title} testID={communityDetailCopy.testIds.title}>
         {community.title}
       </Text>
-      <Text style={styles.description} testID="community-detail-description">
+      <Text style={styles.description} testID={communityDetailCopy.testIds.description}>
         {community.description}
       </Text>
       <View style={styles.subInfo}>
-        <Text style={styles.subCount}>{subscribersCount}</Text>
-        <Text style={styles.subLabel}>Subscriber(s)</Text>
-        <Text style={styles.sinceLabel}>Since</Text>
+        <Text style={styles.subCount}>{communityDetailCopy.subscribers(subscribersCount)}</Text>
         <Text style={styles.sinceValue}>
-          {community.createdAt
-            ? new Date(community.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-            : '—'}
+          {communityDetailCopy.since(
+            (community.createdAt ? formatMonthYear(community.createdAt) : '') || communityDetailCopy.emptyDash
+          )}
         </Text>
       </View>
       <Divider />
@@ -296,7 +307,7 @@ export default function CommunityDetailScreen() {
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
-        testID="community-post-list"
+        testID={communityDetailCopy.testIds.list}
         data={posts}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
@@ -308,7 +319,7 @@ export default function CommunityDetailScreen() {
           />
         )}
         ListHeaderComponent={header}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>This community has no posts yet</Text> : null}
+        ListEmptyComponent={!loading ? <Text style={styles.empty}>{communityDetailCopy.empty}</Text> : null}
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
@@ -396,12 +407,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   subCount: {
-    fontWeight: '700',
-  },
-  subLabel: {
-    marginRight: 12,
-  },
-  sinceLabel: {
     fontWeight: '700',
   },
   sinceValue: {

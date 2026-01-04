@@ -13,6 +13,7 @@ import type { MainStackParamList } from '../navigation/MainStack';
 import type { MainTabParamList } from '../navigation/MainTabs';
 import Divider from '../components/Divider';
 import { colors } from '../theme/colors';
+import { searchCopy } from '../content/searchCopy';
 
 type RouteParams = {
   focus?: boolean;
@@ -80,8 +81,8 @@ export default function SearchScreen() {
         <Pressable
           style={styles.avatarCard}
           onPress={() => navigation.getParent()?.openDrawer?.()}
-          testID="search-avatar"
-          accessibilityLabel="search-avatar"
+          testID={searchCopy.testIds.avatar}
+          accessibilityLabel={searchCopy.testIds.avatar}
         >
           <Image
             source={profilePhoto ? { uri: profilePhoto } : require('../../../assets/user_icon.png')}
@@ -93,23 +94,23 @@ export default function SearchScreen() {
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder={searchCopy.placeholder}
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={() => loadCommunities(search)}
             returnKeyType="search"
-            testID="community-search"
-            accessibilityLabel="community-search"
+            testID={searchCopy.testIds.searchInput}
+            accessibilityLabel={searchCopy.testIds.searchInput}
           />
         </View>
       </View>
       <View style={styles.trendingHeader}>
-        <Text style={styles.trendingText}>Trending</Text>
+        <Text style={styles.trendingText}>{searchCopy.trending}</Text>
       </View>
       <Divider />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
-        testID="community-list"
+        testID={searchCopy.testIds.list}
         data={communities}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
@@ -136,7 +137,7 @@ export default function SearchScreen() {
                 <Text style={styles.communityTitle}>{item.title}</Text>
                 <Text style={styles.communityDescription}>{item.description}</Text>
                 <Text style={styles.communityFollowers}>
-                  {(item.subscribersCount ?? 0).toString()} Followers
+                  {(item.subscribersCount ?? 0).toString()} {searchCopy.followersLabel}
                 </Text>
               </View>
             </View>
@@ -148,7 +149,7 @@ export default function SearchScreen() {
               <ActivityIndicator size="large" color={colors.mainBlueDeep} />
             </View>
           ) : (
-            <Text style={styles.empty}>No communities found.</Text>
+            <Text style={styles.empty}>{searchCopy.empty}</Text>
           )
         }
         ListFooterComponent={
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 8,
     backgroundColor: colors.white,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
