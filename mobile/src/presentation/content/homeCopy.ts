@@ -1,22 +1,23 @@
+import { t, tList } from '../i18n';
+
 export const homeCopy = {
-  searchPlaceholder: 'Search communities...',
-  emptyTitle: "It's quiet in here...",
-  emptyBody:
-    'Your feed is waiting for some activity. Join communities to discover discussions, insights, and connect with peers.',
-  primaryCta: 'Explore Communities',
-  secondaryCta: 'Find Connections',
-  tagsTitle: 'Suggested Topics',
-  tags: ['#Technology', '#Design', '#Productivity'],
+  searchPlaceholder: t('home.searchPlaceholder'),
+  emptyTitle: t('home.emptyTitle'),
+  emptyBody: t('home.emptyBody'),
+  primaryCta: t('home.primaryCta'),
+  secondaryCta: t('home.secondaryCta'),
+  tagsTitle: t('home.tagsTitle'),
+  tags: tList('home.tags'),
   alerts: {
     signInRequired: {
-      title: 'Sign in required',
-      message: 'Please sign in again.',
+      title: t('home.alert.signInRequired.title'),
+      message: t('home.alert.signInRequired.message'),
     },
     likeFailed: {
-      title: 'Failed to update like',
+      title: t('home.alert.likeFailed.title'),
     },
     savedFailed: {
-      title: 'Failed to update saved posts',
+      title: t('home.alert.savedFailed.title'),
     },
   },
   testIds: {

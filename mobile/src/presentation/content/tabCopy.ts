@@ -1,8 +1,10 @@
+import { t } from '../i18n';
+
 export const tabCopy = {
-  home: 'Home',
-  add: 'Add',
-  search: 'Search',
-  profile: 'Profile',
+  home: t('tabs.home'),
+  add: t('tabs.add'),
+  search: t('tabs.search'),
+  profile: t('tabs.profile'),
   testIds: {
     home: 'tab-home',
     add: 'tab-add',
