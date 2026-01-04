@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { posts: repository, users: userRepository } = useRepositories();
@@ -49,6 +51,7 @@ export default function HomeScreen() {
         const data = await repository.getUserFeed(session.user.id, pageToLoad);
         setPosts((prev) => (replace ? data : [...prev, ...data]));
         setPage(pageToLoad);
+        setHasMore(data.length > 0);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -72,7 +75,7 @@ export default function HomeScreen() {
   };
 
   const handleLoadMore = () => {
-    if (loading) return;
+    if (loading || refreshing || !hasMore || posts.length === 0) return;
     loadPage(page + 1);
   };
 
@@ -172,7 +175,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
         <Pressable
           style={styles.avatarCard}
@@ -215,7 +218,7 @@ export default function HomeScreen() {
         refreshing={refreshing}
         onRefresh={handleRefresh}
         onEndReachedThreshold={0.3}
-        onEndReached={handleLoadMore}
+        onEndReached={hasMore && posts.length > 0 ? handleLoadMore : undefined}
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
@@ -235,7 +238,7 @@ export default function HomeScreen() {
         style={styles.list}
         contentContainerStyle={posts.length === 0 ? styles.emptyContainer : undefined}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

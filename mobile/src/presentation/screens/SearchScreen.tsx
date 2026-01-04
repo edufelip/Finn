@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -74,7 +75,7 @@ export default function SearchScreen() {
   }, [session?.user?.id, userRepository]);
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
         <Pressable
           style={styles.avatarCard}
@@ -159,7 +160,7 @@ export default function SearchScreen() {
         }
         style={styles.list}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
