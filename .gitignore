@@ -12,3 +12,4 @@ gradle.properties
 .npm-cache/
 node_modules/
 supabase/.temp/
+AGENTS.md
