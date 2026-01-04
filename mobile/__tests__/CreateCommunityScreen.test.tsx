@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import CreateCommunityScreen from '../src/presentation/screens/CreateCommunityScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { createCommunityCopy } from '../src/presentation/content/createCommunityCopy';
 
 const mockGoBack = jest.fn();
 
@@ -68,9 +69,9 @@ describe('CreateCommunityScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.changeText(getByTestId('create-community-title'), 'New Community');
-    fireEvent.changeText(getByTestId('create-community-description'), 'Community details');
-    fireEvent.press(getByTestId('create-community-submit'));
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'New Community');
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Community details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
 
     await waitFor(() => {
       expect(communitiesRepo.saveCommunity).toHaveBeenCalledWith(
@@ -81,6 +82,10 @@ describe('CreateCommunityScreen', () => {
           ownerId: 'user-1',
         },
         null
+      );
+      expect(Alert.alert).toHaveBeenCalledWith(
+        createCommunityCopy.alerts.created.title,
+        createCommunityCopy.alerts.created.message
       );
       expect(mockGoBack).toHaveBeenCalled();
     });
@@ -98,9 +103,9 @@ describe('CreateCommunityScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.changeText(getByTestId('create-community-title'), 'Offline Community');
-    fireEvent.changeText(getByTestId('create-community-description'), 'Offline details');
-    fireEvent.press(getByTestId('create-community-submit'));
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'Offline Community');
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Offline details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
 
     await waitFor(() => {
       expect(enqueueWrite).toHaveBeenCalledWith(
@@ -115,6 +120,10 @@ describe('CreateCommunityScreen', () => {
         })
       );
       expect(communitiesRepo.saveCommunity).not.toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        createCommunityCopy.alerts.offline.title,
+        createCommunityCopy.alerts.offline.message
+      );
       expect(mockGoBack).toHaveBeenCalled();
     });
   });
@@ -138,13 +147,13 @@ describe('CreateCommunityScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.changeText(getByTestId('create-community-title'), 'Offline Community');
-    fireEvent.changeText(getByTestId('create-community-description'), 'Offline details');
-    fireEvent.press(getByTestId('create-community-image'));
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'Offline Community');
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Offline details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
 
-    await waitFor(() => expect(getByTestId('create-community-image-preview')).toBeTruthy());
+    await waitFor(() => expect(getByTestId(createCommunityCopy.testIds.imagePreview)).toBeTruthy());
 
-    fireEvent.press(getByTestId('create-community-submit'));
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
 
     await waitFor(() => {
       expect(enqueueWrite).toHaveBeenCalledWith(
@@ -176,12 +185,27 @@ describe('CreateCommunityScreen', () => {
       </RepositoryProvider>
     );
 
-    expect(queryByTestId('create-community-image-preview')).toBeNull();
-    fireEvent.press(getByTestId('create-community-image'));
+    expect(queryByTestId(createCommunityCopy.testIds.imagePreview)).toBeNull();
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
 
     await waitFor(() => {
       expect(imagePicker.launchImageLibraryAsync).toHaveBeenCalled();
-      expect(getByTestId('create-community-image-preview')).toBeTruthy();
+      expect(getByTestId(createCommunityCopy.testIds.imagePreview)).toBeTruthy();
     });
+  });
+
+  it('renders community form copy', () => {
+    const { getByText, getByPlaceholderText } = render(
+      <RepositoryProvider overrides={{ communities: { saveCommunity: jest.fn() } }}>
+        <CreateCommunityScreen />
+      </RepositoryProvider>
+    );
+
+    expect(getByText(createCommunityCopy.titleLabel)).toBeTruthy();
+    expect(getByPlaceholderText(createCommunityCopy.titlePlaceholder)).toBeTruthy();
+    expect(getByText(createCommunityCopy.descriptionLabel)).toBeTruthy();
+    expect(getByPlaceholderText(createCommunityCopy.descriptionPlaceholder)).toBeTruthy();
+    expect(getByText(createCommunityCopy.iconLabel)).toBeTruthy();
+    expect(getByText(createCommunityCopy.submit)).toBeTruthy();
   });
 });

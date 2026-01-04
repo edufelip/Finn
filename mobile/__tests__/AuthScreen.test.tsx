@@ -46,6 +46,8 @@ jest.mock('../src/data/supabase/client', () => ({
 const network = jest.requireMock('expo-network');
 const { supabase } = jest.requireMock('../src/data/supabase/client');
 const appleAuth = jest.requireMock('expo-apple-authentication');
+const waitForAppleAvailability = () =>
+  waitFor(() => expect(appleAuth.isAvailableAsync).toHaveBeenCalled());
 
 describe('AuthScreen', () => {
   beforeAll(() => {
@@ -89,9 +91,9 @@ describe('AuthScreen', () => {
 
     const { getByTestId } = render(<AuthScreen />);
 
-    fireEvent.changeText(getByTestId('auth-email'), 'user@example.com');
-    fireEvent.changeText(getByTestId('auth-password'), 'password123');
-    fireEvent.press(getByTestId('auth-signin'));
+    fireEvent.changeText(getByTestId(authCopy.testIds.email), 'user@example.com');
+    fireEvent.changeText(getByTestId(authCopy.testIds.password), 'password123');
+    fireEvent.press(getByTestId(authCopy.testIds.signin));
 
     await waitFor(() =>
       expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
@@ -139,6 +141,8 @@ describe('AuthScreen', () => {
       authCopy.alerts.passwordRequired.title,
       authCopy.alerts.passwordRequired.message
     );
+
+    await waitForAppleAvailability();
   });
 
   it('shows offline alert', async () => {
@@ -184,13 +188,15 @@ describe('AuthScreen', () => {
     });
   });
 
-  it('navigates to register and forgot password', () => {
+  it('navigates to register and forgot password', async () => {
     const { getByTestId } = render(<AuthScreen />);
 
-    fireEvent.press(getByTestId('auth-register'));
+    fireEvent.press(getByTestId(authCopy.testIds.register));
     expect(mockNavigate).toHaveBeenCalledWith('Register');
 
-    fireEvent.press(getByTestId('auth-forgot'));
+    fireEvent.press(getByTestId(authCopy.testIds.forgot));
     expect(mockNavigate).toHaveBeenCalledWith('ForgotPassword');
+
+    await waitForAppleAvailability();
   });
 });

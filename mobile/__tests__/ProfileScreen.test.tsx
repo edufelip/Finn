@@ -4,6 +4,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import ProfileScreen from '../src/presentation/screens/ProfileScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { profileCopy } from '../src/presentation/content/profileCopy';
+import { formatMonthYear } from '../src/presentation/i18n/formatters';
 
 const mockNavigate = jest.fn();
 
@@ -11,7 +13,8 @@ jest.mock('@react-navigation/native', () => {
   const React = require('react');
   return {
     useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
-    useFocusEffect: (effect: () => void | (() => void)) => React.useEffect(effect, []),
+    useFocusEffect: (effect: () => void | (() => void)) =>
+      React.useEffect(() => effect(), [effect]),
   };
 });
 
@@ -80,9 +83,12 @@ describe('ProfileScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByTestId('profile-name').props.children).toBe('Jane Doe'));
-    expect(getByTestId('profile-joined').props.children).toContain('Joined since');
-    expect(getByText('Posts')).toBeTruthy();
+    await waitFor(() =>
+      expect(getByTestId(profileCopy.testIds.name).props.children).toBe('Jane Doe')
+    );
+    const joinedText = profileCopy.joinedSince(formatMonthYear('2024-01-01T00:00:00Z'));
+    expect(getByTestId(profileCopy.testIds.joined).props.children).toContain(joinedText);
+    expect(getByText(profileCopy.postsTab)).toBeTruthy();
     expect(getByTestId('post-card-1')).toBeTruthy();
   });
 
@@ -152,7 +158,7 @@ describe('ProfileScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByText('You have no posts yet =(')).toBeTruthy());
+    await waitFor(() => expect(getByText(profileCopy.emptyPosts)).toBeTruthy());
   });
 
   it('likes a post', async () => {

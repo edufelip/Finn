@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import CommunityDetailScreen from '../src/presentation/screens/CommunityDetailScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { communityDetailCopy } from '../src/presentation/content/communityDetailCopy';
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
@@ -82,16 +83,21 @@ describe('CommunityDetailScreen', () => {
       unbookmarkPost: jest.fn(),
     };
 
-    const { getByTestId } = render(
+    const { getByTestId, getByText } = render(
       <RepositoryProvider overrides={{ communities: communitiesRepo, posts: postsRepo }}>
         <CommunityDetailScreen />
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByTestId('community-detail-title').props.children).toBe('General'));
-    expect(getByTestId('community-detail-image')).toBeTruthy();
-    expect(getByTestId('community-detail-description').props.children).toBe('General');
+    await waitFor(() =>
+      expect(getByTestId(communityDetailCopy.testIds.title).props.children).toBe('General')
+    );
+    expect(getByTestId(communityDetailCopy.testIds.image)).toBeTruthy();
+    expect(getByTestId(communityDetailCopy.testIds.description).props.children).toBe('General');
     expect(getByTestId('post-card-1')).toBeTruthy();
+    expect(getByText(communityDetailCopy.subscribe)).toBeTruthy();
+    expect(getByText(communityDetailCopy.subscribers(3))).toBeTruthy();
+    expect(getByText(communityDetailCopy.since(communityDetailCopy.emptyDash))).toBeTruthy();
   });
 
   it('subscribes when online', async () => {
@@ -125,8 +131,8 @@ describe('CommunityDetailScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByTestId('community-detail-subscribe')).toBeTruthy());
-    fireEvent.press(getByTestId('community-detail-subscribe'));
+    await waitFor(() => expect(getByTestId(communityDetailCopy.testIds.subscribe)).toBeTruthy());
+    fireEvent.press(getByTestId(communityDetailCopy.testIds.subscribe));
 
     await waitFor(() =>
       expect(communitiesRepo.subscribe).toHaveBeenCalledWith({ id: 0, userId: 'user-1', communityId: 1 })
@@ -164,8 +170,8 @@ describe('CommunityDetailScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByTestId('community-detail-subscribe')).toBeTruthy());
-    fireEvent.press(getByTestId('community-detail-subscribe'));
+    await waitFor(() => expect(getByTestId(communityDetailCopy.testIds.subscribe)).toBeTruthy());
+    fireEvent.press(getByTestId(communityDetailCopy.testIds.subscribe));
 
     await waitFor(() =>
       expect(enqueueWrite).toHaveBeenCalledWith(
@@ -174,6 +180,10 @@ describe('CommunityDetailScreen', () => {
           payload: { id: 0, userId: 'user-1', communityId: 1 },
         })
       )
+    );
+    expect(Alert.alert).toHaveBeenCalledWith(
+      communityDetailCopy.alerts.offline.title,
+      communityDetailCopy.alerts.offline.message
     );
   });
 

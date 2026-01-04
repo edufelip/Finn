@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import CreatePostScreen from '../src/presentation/screens/CreatePostScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { createPostCopy } from '../src/presentation/content/createPostCopy';
 
 const mockGoBack = jest.fn();
 
@@ -74,10 +75,10 @@ describe('CreatePostScreen', () => {
     );
 
     await waitFor(() => expect(getByText('General')).toBeTruthy());
-    expect(getByTestId('create-post-content')).toBeTruthy();
-    expect(getByTestId('create-post-submit')).toBeTruthy();
-    fireEvent.changeText(getByPlaceholderText('Your post content'), 'My post');
-    fireEvent.press(getByTestId('create-post-submit'));
+    expect(getByTestId(createPostCopy.testIds.content)).toBeTruthy();
+    expect(getByTestId(createPostCopy.testIds.submit)).toBeTruthy();
+    fireEvent.changeText(getByPlaceholderText(createPostCopy.contentPlaceholder), 'My post');
+    fireEvent.press(getByTestId(createPostCopy.testIds.submit));
 
     await waitFor(() => {
       expect(postsRepo.savePost).toHaveBeenCalledWith(
@@ -88,6 +89,10 @@ describe('CreatePostScreen', () => {
           userId: 'user-1',
         },
         null
+      );
+      expect(Alert.alert).toHaveBeenCalledWith(
+        createPostCopy.alerts.posted.title,
+        createPostCopy.alerts.posted.message
       );
       expect(mockGoBack).toHaveBeenCalled();
     });
@@ -117,12 +122,12 @@ describe('CreatePostScreen', () => {
     );
 
     await waitFor(() => expect(getByText('General')).toBeTruthy());
-    expect(getByTestId('create-post-content')).toBeTruthy();
-    expect(getByTestId('create-post-submit')).toBeTruthy();
-    fireEvent.press(getByTestId('create-post-image'));
-    await waitFor(() => expect(getByTestId('create-post-image-preview')).toBeTruthy());
-    fireEvent.changeText(getByPlaceholderText('Your post content'), 'Offline post');
-    fireEvent.press(getByTestId('create-post-submit'));
+    expect(getByTestId(createPostCopy.testIds.content)).toBeTruthy();
+    expect(getByTestId(createPostCopy.testIds.submit)).toBeTruthy();
+    fireEvent.press(getByTestId(createPostCopy.testIds.image));
+    await waitFor(() => expect(getByTestId(createPostCopy.testIds.imagePreview)).toBeTruthy());
+    fireEvent.changeText(getByPlaceholderText(createPostCopy.contentPlaceholder), 'Offline post');
+    fireEvent.press(getByTestId(createPostCopy.testIds.submit));
 
     await waitFor(() => {
       expect(enqueueWrite).toHaveBeenCalledWith(
@@ -135,6 +140,10 @@ describe('CreatePostScreen', () => {
             imageUri: 'file://persisted/offline-post.jpg',
           },
         })
+      );
+      expect(Alert.alert).toHaveBeenCalledWith(
+        createPostCopy.alerts.offline.title,
+        createPostCopy.alerts.offline.message
       );
       expect(persistOfflineImage).toHaveBeenCalledWith('file://offline-post.jpg');
       expect(postsRepo.savePost).not.toHaveBeenCalled();
@@ -162,12 +171,12 @@ describe('CreatePostScreen', () => {
       </RepositoryProvider>
     );
 
-    expect(queryByTestId('create-post-image-preview')).toBeNull();
-    fireEvent.press(getByTestId('create-post-image'));
+    expect(queryByTestId(createPostCopy.testIds.imagePreview)).toBeNull();
+    fireEvent.press(getByTestId(createPostCopy.testIds.image));
 
     await waitFor(() => {
       expect(imagePicker.launchImageLibraryAsync).toHaveBeenCalled();
-      expect(getByTestId('create-post-image-preview')).toBeTruthy();
+      expect(getByTestId(createPostCopy.testIds.imagePreview)).toBeTruthy();
     });
   });
 
@@ -195,10 +204,10 @@ describe('CreatePostScreen', () => {
     );
 
     await waitFor(() => expect(getByText('General')).toBeTruthy());
-    fireEvent.press(getByTestId('create-post-image'));
-    await waitFor(() => expect(getByTestId('create-post-image-preview')).toBeTruthy());
-    fireEvent.changeText(getByPlaceholderText('Your post content'), 'My post with image');
-    fireEvent.press(getByTestId('create-post-submit'));
+    fireEvent.press(getByTestId(createPostCopy.testIds.image));
+    await waitFor(() => expect(getByTestId(createPostCopy.testIds.imagePreview)).toBeTruthy());
+    fireEvent.changeText(getByPlaceholderText(createPostCopy.contentPlaceholder), 'My post with image');
+    fireEvent.press(getByTestId(createPostCopy.testIds.submit));
 
     await waitFor(() => {
       expect(postsRepo.savePost).toHaveBeenCalledWith(
@@ -212,5 +221,25 @@ describe('CreatePostScreen', () => {
       );
       expect(mockGoBack).toHaveBeenCalled();
     });
+  });
+
+  it('renders create post copy', async () => {
+    const communitiesRepo = {
+      getCommunities: jest.fn().mockResolvedValue([
+        { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
+      ]),
+    };
+
+    const { getByText, getByPlaceholderText, getByTestId } = render(
+      <RepositoryProvider overrides={{ communities: communitiesRepo, posts: { savePost: jest.fn() } }}>
+        <CreatePostScreen />
+      </RepositoryProvider>
+    );
+
+    await waitFor(() => expect(getByText(createPostCopy.title)).toBeTruthy());
+    expect(getByPlaceholderText(createPostCopy.contentPlaceholder)).toBeTruthy();
+    expect(getByText(createPostCopy.submit)).toBeTruthy();
+    fireEvent.press(getByTestId(createPostCopy.testIds.communityPicker));
+    await waitFor(() => expect(getByText(createPostCopy.modalTitle)).toBeTruthy());
   });
 });

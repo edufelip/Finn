@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import SearchScreen from '../src/presentation/screens/SearchScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { searchCopy } from '../src/presentation/content/searchCopy';
 
 const mockNavigate = jest.fn();
 
@@ -14,7 +15,8 @@ jest.mock('@react-navigation/native', () => {
       getParent: () => ({ openDrawer: jest.fn() }),
     }),
     useRoute: () => ({ params: {} }),
-    useFocusEffect: (effect: () => void | (() => void)) => React.useEffect(effect, []),
+    useFocusEffect: (effect: () => void | (() => void)) =>
+      React.useEffect(() => effect(), [effect]),
   };
 });
 
@@ -51,8 +53,30 @@ describe('SearchScreen', () => {
     );
 
     await waitFor(() => expect(getAllByText('General').length).toBeGreaterThan(0));
+    expect(getAllByText(`12 ${searchCopy.followersLabel}`).length).toBeGreaterThan(0);
     fireEvent.press(getByTestId('community-card-1'));
 
     expect(mockNavigate).toHaveBeenCalledWith('CommunityDetail', { communityId: 1 });
+  });
+
+  it('renders search copy and empty state', async () => {
+    const communitiesRepo = {
+      getCommunities: jest.fn().mockResolvedValue([]),
+    };
+
+    const usersRepo = {
+      getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
+    };
+
+    const { getByText, getByPlaceholderText } = render(
+      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo }}>
+        <SearchScreen />
+      </RepositoryProvider>
+    );
+
+    expect(getByPlaceholderText(searchCopy.placeholder)).toBeTruthy();
+    expect(getByText(searchCopy.trending)).toBeTruthy();
+
+    await waitFor(() => expect(getByText(searchCopy.empty)).toBeTruthy());
   });
 });

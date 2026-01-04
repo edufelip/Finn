@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import ForgotPasswordScreen from '../src/presentation/screens/ForgotPasswordScreen';
+import { forgotPasswordCopy } from '../src/presentation/content/forgotPasswordCopy';
 
 const mockGoBack = jest.fn();
 
@@ -43,20 +44,39 @@ describe('ForgotPasswordScreen', () => {
 
     const { getByTestId } = render(<ForgotPasswordScreen />);
 
-    fireEvent.changeText(getByTestId('forgot-email'), 'user@example.com');
-    fireEvent.press(getByTestId('forgot-submit'));
+    fireEvent.changeText(getByTestId(forgotPasswordCopy.testIds.email), 'user@example.com');
+    fireEvent.press(getByTestId(forgotPasswordCopy.testIds.submit));
 
-    await waitFor(() =>
-      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('user@example.com')
-    );
+    await waitFor(() => {
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('user@example.com');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        forgotPasswordCopy.alerts.success.title,
+        forgotPasswordCopy.alerts.success.message
+      );
+    });
   });
 
   it('blocks invalid email', async () => {
     const { getByTestId } = render(<ForgotPasswordScreen />);
 
-    fireEvent.changeText(getByTestId('forgot-email'), 'invalid');
-    fireEvent.press(getByTestId('forgot-submit'));
+    fireEvent.changeText(getByTestId(forgotPasswordCopy.testIds.email), 'invalid');
+    fireEvent.press(getByTestId(forgotPasswordCopy.testIds.submit));
 
-    await waitFor(() => expect(supabase.auth.resetPasswordForEmail).not.toHaveBeenCalled());
+    await waitFor(() => {
+      expect(supabase.auth.resetPasswordForEmail).not.toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        forgotPasswordCopy.alerts.invalidEmail.title,
+        forgotPasswordCopy.alerts.invalidEmail.message
+      );
+    });
+  });
+
+  it('renders forgot password copy', () => {
+    const { getByText, getByPlaceholderText } = render(<ForgotPasswordScreen />);
+
+    expect(getByText(forgotPasswordCopy.title)).toBeTruthy();
+    expect(getByText(forgotPasswordCopy.subtitle)).toBeTruthy();
+    expect(getByPlaceholderText(forgotPasswordCopy.emailPlaceholder)).toBeTruthy();
+    expect(getByText(forgotPasswordCopy.submit)).toBeTruthy();
   });
 });

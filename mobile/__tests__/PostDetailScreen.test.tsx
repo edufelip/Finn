@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import PostDetailScreen from '../src/presentation/screens/PostDetailScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { postDetailCopy } from '../src/presentation/content/postDetailCopy';
 
 const mockGoBack = jest.fn();
 
@@ -67,7 +68,15 @@ describe('PostDetailScreen', () => {
       deletePost: jest.fn(),
     };
     const commentsRepo = {
-      getCommentsForPost: jest.fn().mockResolvedValue([]),
+      getCommentsForPost: jest.fn().mockResolvedValue([
+        {
+          id: 5,
+          postId: 1,
+          userId: 'user-2',
+          userName: 'Other',
+          content: 'Hello',
+        },
+      ]),
       saveComment: jest.fn().mockResolvedValue({
         id: 10,
         postId: 1,
@@ -76,15 +85,17 @@ describe('PostDetailScreen', () => {
       }),
     };
 
-    const { getByTestId } = render(
+    const { getByTestId, getByText } = render(
       <RepositoryProvider overrides={{ posts: postsRepo, comments: commentsRepo }}>
         <PostDetailScreen />
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(getByTestId('post-detail-comments')).toBeTruthy());
-    fireEvent.changeText(getByTestId('post-detail-comment-input'), 'Nice');
-    fireEvent.press(getByTestId('post-detail-comment-submit'));
+    await waitFor(() => expect(getByTestId(postDetailCopy.testIds.list)).toBeTruthy());
+    expect(getByText(postDetailCopy.commentsTitle)).toBeTruthy();
+    expect(getByText(postDetailCopy.commentAge)).toBeTruthy();
+    fireEvent.changeText(getByTestId(postDetailCopy.testIds.input), 'Nice');
+    fireEvent.press(getByTestId(postDetailCopy.testIds.submit));
 
     await waitFor(() =>
       expect(commentsRepo.saveComment).toHaveBeenCalledWith({
@@ -116,16 +127,42 @@ describe('PostDetailScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.changeText(getByTestId('post-detail-comment-input'), 'Offline');
-    fireEvent.press(getByTestId('post-detail-comment-submit'));
+    fireEvent.changeText(getByTestId(postDetailCopy.testIds.input), 'Offline');
+    fireEvent.press(getByTestId(postDetailCopy.testIds.submit));
 
-    await waitFor(() =>
+    await waitFor(() => {
       expect(enqueueWrite).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'add_comment',
           payload: { postId: 1, userId: 'user-1', content: 'Offline' },
         })
-      )
+      );
+      expect(Alert.alert).toHaveBeenCalledWith(
+        postDetailCopy.alerts.offline.title,
+        postDetailCopy.alerts.offline.message
+      );
+    });
+  });
+
+  it('shows empty comments copy', async () => {
+    const postsRepo = {
+      likePost: jest.fn(),
+      dislikePost: jest.fn(),
+      bookmarkPost: jest.fn(),
+      unbookmarkPost: jest.fn(),
+      deletePost: jest.fn(),
+    };
+    const commentsRepo = {
+      getCommentsForPost: jest.fn().mockResolvedValue([]),
+      saveComment: jest.fn(),
+    };
+
+    const { getByText } = render(
+      <RepositoryProvider overrides={{ posts: postsRepo, comments: commentsRepo }}>
+        <PostDetailScreen />
+      </RepositoryProvider>
     );
+
+    await waitFor(() => expect(getByText(postDetailCopy.empty)).toBeTruthy());
   });
 });

@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import SettingsScreen from '../src/presentation/screens/SettingsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { settingsCopy } from '../src/presentation/content/settingsCopy';
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
@@ -54,10 +55,13 @@ describe('SettingsScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent(getByTestId('settings-dark-toggle'), 'valueChange', true);
-    fireEvent(getByTestId('settings-notifications-toggle'), 'valueChange', false);
+    fireEvent(getByTestId(settingsCopy.testIds.darkMode), 'valueChange', true);
+    fireEvent(getByTestId(settingsCopy.testIds.notifications), 'valueChange', false);
 
-    expect(Alert.alert).toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalledWith(
+      settingsCopy.alerts.unavailable.title,
+      settingsCopy.alerts.unavailable.message
+    );
   });
 
   it('deletes profile data when online', async () => {
@@ -76,9 +80,15 @@ describe('SettingsScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.press(getByTestId('settings-delete'));
+    fireEvent.press(getByTestId(settingsCopy.testIds.delete));
 
-    await waitFor(() => expect(usersRepo.deleteUser).toHaveBeenCalledWith('user-1'));
+    await waitFor(() => {
+      expect(usersRepo.deleteUser).toHaveBeenCalledWith('user-1');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        settingsCopy.alerts.deleted.title,
+        settingsCopy.alerts.deleted.message
+      );
+    });
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
@@ -99,8 +109,34 @@ describe('SettingsScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.press(getByTestId('settings-delete'));
+    fireEvent.press(getByTestId(settingsCopy.testIds.delete));
 
-    await waitFor(() => expect(usersRepo.deleteUser).not.toHaveBeenCalled());
+    await waitFor(() => {
+      expect(usersRepo.deleteUser).not.toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        settingsCopy.alerts.offline.title,
+        settingsCopy.alerts.offline.message
+      );
+    });
+  });
+
+  it('renders settings copy', () => {
+    const usersRepo = {
+      deleteUser: jest.fn(),
+    };
+
+    const { getByText } = render(
+      <RepositoryProvider overrides={{ users: usersRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
+    );
+
+    expect(getByText(settingsCopy.title)).toBeTruthy();
+    expect(getByText(settingsCopy.sections.preferences)).toBeTruthy();
+    expect(getByText(settingsCopy.sections.account)).toBeTruthy();
+    expect(getByText(settingsCopy.options.darkMode)).toBeTruthy();
+    expect(getByText(settingsCopy.options.notifications)).toBeTruthy();
+    expect(getByText(settingsCopy.options.deleteAccount)).toBeTruthy();
+    expect(getByText(settingsCopy.deleteButton)).toBeTruthy();
   });
 });

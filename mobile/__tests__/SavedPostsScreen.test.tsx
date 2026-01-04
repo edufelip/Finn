@@ -4,6 +4,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import SavedPostsScreen from '../src/presentation/screens/SavedPostsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { savedPostsCopy } from '../src/presentation/content/savedPostsCopy';
+import { postCardCopy } from '../src/presentation/content/postCardCopy';
 
 const mockNavigate = jest.fn();
 
@@ -11,7 +13,8 @@ jest.mock('@react-navigation/native', () => {
   const React = require('react');
   return {
     useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
-    useFocusEffect: (effect: () => void | (() => void)) => React.useEffect(effect, []),
+    useFocusEffect: (effect: () => void | (() => void)) =>
+      React.useEffect(() => effect(), [effect]),
   };
 });
 
@@ -84,6 +87,12 @@ describe('SavedPostsScreen', () => {
     fireEvent.press(getByTestId('post-options-1'));
 
     await waitFor(() => expect(postsRepo.unbookmarkPost).toHaveBeenCalledWith(1, 'user-1'));
+    const alertArgs = alertSpy.mock.calls[0] ?? [];
+    const title = alertArgs[0];
+    const buttons = alertArgs[2];
+    expect(title).toBe(postCardCopy.optionsTitle);
+    expect(buttons?.[0]?.text).toBe(postCardCopy.unsave);
+    expect(buttons?.[1]?.text).toBe(postCardCopy.cancel);
     alertSpy.mockRestore();
   });
 
@@ -134,7 +143,31 @@ describe('SavedPostsScreen', () => {
         })
       )
     );
+    expect(alertSpy).toHaveBeenCalledWith(
+      savedPostsCopy.alerts.offline.title,
+      savedPostsCopy.alerts.offline.message
+    );
 
     alertSpy.mockRestore();
+  });
+
+  it('renders saved posts header copy', async () => {
+    const postsRepo = {
+      getSavedPosts: jest.fn().mockResolvedValue([]),
+      findLike: jest.fn().mockResolvedValue(false),
+      likePost: jest.fn(),
+      dislikePost: jest.fn(),
+      bookmarkPost: jest.fn(),
+      unbookmarkPost: jest.fn(),
+    };
+
+    const { getByText, getByTestId } = render(
+      <RepositoryProvider overrides={{ posts: postsRepo }}>
+        <SavedPostsScreen />
+      </RepositoryProvider>
+    );
+
+    await waitFor(() => expect(getByTestId(savedPostsCopy.testIds.list)).toBeTruthy());
+    expect(getByText(savedPostsCopy.title)).toBeTruthy();
   });
 });

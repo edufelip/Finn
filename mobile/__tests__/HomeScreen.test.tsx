@@ -9,6 +9,11 @@ import { homeCopy } from '../src/presentation/content/homeCopy';
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
 
+const waitForHomeEffects = async (postsRepo: { getUserFeed: jest.Mock }, usersRepo: { getUser: jest.Mock }) => {
+  await waitFor(() => expect(postsRepo.getUserFeed).toHaveBeenCalled());
+  await waitFor(() => expect(usersRepo.getUser).toHaveBeenCalled());
+};
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
@@ -64,6 +69,7 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(getByText('Hello world')).toBeTruthy();
     });
+    await waitForHomeEffects(postsRepo, usersRepo);
     expect(getByTestId(homeCopy.testIds.search)).toBeTruthy();
     expect(getByTestId(homeCopy.testIds.feedList)).toBeTruthy();
     expect(getByTestId('post-card-1')).toBeTruthy();
@@ -91,6 +97,7 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(getByText(homeCopy.emptyTitle)).toBeTruthy();
     });
+    await waitForHomeEffects(postsRepo, usersRepo);
 
     expect(getByText(homeCopy.emptyBody)).toBeTruthy();
     expect(getByText(homeCopy.primaryCta)).toBeTruthy();
@@ -122,6 +129,7 @@ describe('HomeScreen', () => {
       </RepositoryProvider>
     );
 
+    await waitForHomeEffects(postsRepo, usersRepo);
     fireEvent.press(getByTestId(homeCopy.testIds.notifications));
     expect(mockNavigate).toHaveBeenCalledWith('Notifications');
   });
@@ -163,6 +171,7 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(postsRepo.likePost).toHaveBeenCalledWith(2, 'user-1');
     });
+    await waitForHomeEffects(postsRepo, usersRepo);
   });
 
   it('shows alert when like fails', async () => {
@@ -202,6 +211,7 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(homeCopy.alerts.likeFailed.title, 'boom');
     });
+    await waitForHomeEffects(postsRepo, usersRepo);
   });
 
   it('shows alert when save fails', async () => {
@@ -248,6 +258,7 @@ describe('HomeScreen', () => {
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(homeCopy.alerts.savedFailed.title, 'save-error');
     });
+    await waitForHomeEffects(postsRepo, usersRepo);
 
     alertSpy.mockRestore();
   });
@@ -296,6 +307,7 @@ describe('HomeScreen', () => {
       homeCopy.alerts.signInRequired.title,
       homeCopy.alerts.signInRequired.message
     );
+    await waitForHomeEffects(postsRepo, usersRepo);
   });
 
   it('saves a post via options menu', async () => {
@@ -340,6 +352,7 @@ describe('HomeScreen', () => {
     fireEvent.press(getByTestId('post-options-3'));
 
     await waitFor(() => expect(postsRepo.bookmarkPost).toHaveBeenCalledWith(3, 'user-1'));
+    await waitForHomeEffects(postsRepo, usersRepo);
     alertSpy.mockRestore();
   });
 });

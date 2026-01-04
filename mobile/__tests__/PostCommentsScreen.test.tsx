@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import PostCommentsScreen from '../src/presentation/screens/PostCommentsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+import { postCommentsCopy } from '../src/presentation/content/postCommentsCopy';
 
 jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({ params: { postId: 1 } }),
@@ -67,8 +68,8 @@ describe('PostCommentsScreen', () => {
     );
 
     await waitFor(() => expect(getByText('Nice post')).toBeTruthy());
-    fireEvent.changeText(getByTestId('comment-input'), 'Thanks!');
-    fireEvent.press(getByTestId('comment-submit'));
+    fireEvent.changeText(getByTestId(postCommentsCopy.testIds.input), 'Thanks!');
+    fireEvent.press(getByTestId(postCommentsCopy.testIds.submit));
 
     await waitFor(() => {
       expect(commentsRepo.saveComment).toHaveBeenCalled();
@@ -89,12 +90,35 @@ describe('PostCommentsScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent.changeText(getByTestId('comment-input'), 'Offline comment');
-    fireEvent.press(getByTestId('comment-submit'));
+    fireEvent.changeText(getByTestId(postCommentsCopy.testIds.input), 'Offline comment');
+    fireEvent.press(getByTestId(postCommentsCopy.testIds.submit));
 
     await waitFor(() => {
       expect(enqueueWrite).toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        postCommentsCopy.alerts.offline.title,
+        postCommentsCopy.alerts.offline.message
+      );
       expect(getByText('Offline comment')).toBeTruthy();
     });
+  });
+
+  it('renders comment screen copy', async () => {
+    const commentsRepo = {
+      getCommentsForPost: jest.fn().mockResolvedValue([]),
+      saveComment: jest.fn(),
+    };
+
+    const { getByText, getByPlaceholderText } = render(
+      <RepositoryProvider overrides={{ comments: commentsRepo }}>
+        <PostCommentsScreen />
+      </RepositoryProvider>
+    );
+
+    expect(getByText(postCommentsCopy.title)).toBeTruthy();
+    expect(getByPlaceholderText(postCommentsCopy.inputPlaceholder)).toBeTruthy();
+    expect(getByText(postCommentsCopy.submit)).toBeTruthy();
+
+    await waitFor(() => expect(getByText(postCommentsCopy.empty)).toBeTruthy());
   });
 });
