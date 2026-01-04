@@ -9,6 +9,7 @@ import SavedPostsScreen from '../screens/SavedPostsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import type { Post } from '../../domain/models/post';
 
 export type MainStackParamList = {
@@ -20,6 +21,7 @@ export type MainStackParamList = {
   Settings: undefined;
   PostDetail: { post: Post };
   Profile: undefined;
+  Notifications: undefined;
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -34,6 +36,7 @@ export default function MainStack() {
       <Stack.Screen name="SavedPosts" component={SavedPostsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
     </Stack.Navigator>
   );

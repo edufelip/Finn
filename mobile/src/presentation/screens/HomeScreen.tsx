@@ -16,6 +16,7 @@ import type { MainTabParamList } from '../navigation/MainTabs';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import { colors } from '../theme/colors';
+import { homeCopy } from '../content/homeCopy';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -81,7 +82,7 @@ export default function HomeScreen() {
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(homeCopy.alerts.signInRequired.title, homeCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -128,14 +129,14 @@ export default function HomeScreen() {
         )
       );
       if (error instanceof Error) {
-        Alert.alert('Failed to update like', error.message);
+        Alert.alert(homeCopy.alerts.likeFailed.title, error.message);
       }
     }
   };
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert('Sign in required', 'Please sign in again.');
+      Alert.alert(homeCopy.alerts.signInRequired.title, homeCopy.alerts.signInRequired.message);
       return;
     }
 
@@ -162,7 +163,7 @@ export default function HomeScreen() {
     } catch (error) {
       setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: post.isSaved } : item)));
       if (error instanceof Error) {
-        Alert.alert('Failed to update saved posts', error.message);
+        Alert.alert(homeCopy.alerts.savedFailed.title, error.message);
       }
     }
   };
@@ -174,37 +175,96 @@ export default function HomeScreen() {
     }
   };
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <View style={styles.emptyGlowTop} />
+      <View style={styles.emptyGlowBottom} />
+      <View style={styles.emptyContent}>
+        <View style={styles.planetStack}>
+          <View style={styles.planet}>
+            <View style={styles.planetIconWrap}>
+              <MaterialIcons name="groups" size={54} color={colors.homeIconMuted} />
+              <MaterialIcons name="chat-bubble" size={20} color={colors.homeIconSoft} style={styles.iconBubble} />
+              <MaterialIcons name="favorite" size={24} color={colors.homeAccentSoft} style={styles.iconHeart} />
+              <MaterialIcons name="bolt" size={18} color={colors.homeIconSoft} style={styles.iconBolt} />
+            </View>
+          </View>
+          <View style={styles.planetShadow} />
+        </View>
+        <Text style={styles.emptyTitle}>{homeCopy.emptyTitle}</Text>
+        <Text style={styles.emptyBody}>{homeCopy.emptyBody}</Text>
+        <View style={styles.emptyCtas}>
+          <Pressable
+            style={styles.primaryCta}
+            onPress={() => navigation.navigate('Search', { focus: true })}
+            testID={homeCopy.testIds.explore}
+            accessibilityLabel={homeCopy.testIds.explore}
+          >
+            <MaterialIcons name="explore" size={20} color={colors.white} />
+            <Text style={styles.primaryCtaText}>{homeCopy.primaryCta}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryCta}
+            onPress={() => navigation.navigate('Search', { focus: true })}
+            testID={homeCopy.testIds.connections}
+            accessibilityLabel={homeCopy.testIds.connections}
+          >
+            <MaterialIcons name="person-add" size={20} color={colors.homeTextSub} />
+            <Text style={styles.secondaryCtaText}>{homeCopy.secondaryCta}</Text>
+          </Pressable>
+        </View>
+      </View>
+      <View style={styles.tagsSection}>
+        <Text style={styles.tagsTitle}>{homeCopy.tagsTitle}</Text>
+        <View style={styles.tagsRow}>
+          {homeCopy.tags.map((tag) => (
+            <View key={tag} style={styles.tagChip}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
         <Pressable
           style={styles.avatarCard}
           onPress={openDrawer}
-          testID="home-avatar"
-          accessibilityLabel="home-avatar"
+          testID={homeCopy.testIds.avatar}
+          accessibilityLabel={homeCopy.testIds.avatar}
         >
           <Image
             source={profilePhoto ? { uri: profilePhoto } : require('../../../assets/user_icon.png')}
             style={styles.avatar}
           />
+          <View style={styles.avatarBadge} />
         </Pressable>
         <View style={styles.searchContainer}>
-          <MaterialIcons name="search" size={18} color={colors.darkGrey} />
-          <Text style={styles.searchPlaceholder}>Search</Text>
+          <MaterialIcons name="search" size={20} color={colors.homeTextSub} />
+          <Text style={styles.searchPlaceholder}>{homeCopy.searchPlaceholder}</Text>
           <Pressable
             style={styles.searchOverlay}
             onPress={() => navigation.navigate('Search', { focus: true })}
-            testID="home-search"
-            accessibilityLabel="home-search"
+            testID={homeCopy.testIds.search}
+            accessibilityLabel={homeCopy.testIds.search}
           />
         </View>
-      </View>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Home</Text>
+        <Pressable
+          style={styles.notificationButton}
+          onPress={() => navigation.navigate('Notifications')}
+          testID={homeCopy.testIds.notifications}
+          accessibilityLabel={homeCopy.testIds.notifications}
+        >
+          <MaterialIcons name="notifications" size={20} color={colors.homeTextSub} />
+          <View style={styles.notificationDot} />
+        </Pressable>
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
-        testID="home-feed-list"
+        testID={homeCopy.testIds.feedList}
         data={posts}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
@@ -222,16 +282,16 @@ export default function HomeScreen() {
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.mainBlueDeep} />
+              <ActivityIndicator size="large" color={colors.homePrimary} />
             </View>
           ) : (
-            <Text style={styles.empty}>Subscribe to a community to start seeing posts =D</Text>
+            renderEmptyState()
           )
         }
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.mainBlueDeep} />
+              <ActivityIndicator size="small" color={colors.homePrimary} />
             </View>
           ) : null
         }
@@ -245,65 +305,90 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: colors.homeBackground,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 60,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: colors.homeBackground,
   },
   avatarCard: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginLeft: 10,
-    marginRight: 10,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.homeBorder,
+    backgroundColor: colors.homeSurfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
     width: '100%',
     height: '100%',
   },
+  avatarBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.danger,
+    borderWidth: 2,
+    borderColor: colors.homeBackground,
+  },
   searchContainer: {
     flex: 1,
-    height: 44,
-    marginTop: 8,
-    marginBottom: 8,
-    marginRight: 10,
-    borderRadius: 8,
-    backgroundColor: colors.searchBackground,
+    height: 42,
+    marginLeft: 12,
+    borderRadius: 14,
+    backgroundColor: colors.homeSurfaceAlt,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.homeBorder,
   },
   searchPlaceholder: {
-    color: colors.darkGrey,
+    color: colors.homeTextSub,
+    fontSize: 14,
+    fontWeight: '600',
   },
   searchOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  sectionHeader: {
-    height: 50,
-    justifyContent: 'flex-end',
+  notificationButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginLeft: 12,
     alignItems: 'center',
-    paddingBottom: 4,
-    backgroundColor: colors.white,
+    justifyContent: 'center',
+    backgroundColor: colors.homeSurfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.homeBorder,
   },
-  sectionTitle: {
-    fontSize: 16,
+  notificationDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
+    borderWidth: 2,
+    borderColor: colors.homeSurfaceAlt,
   },
   list: {
-    backgroundColor: colors.backgroundLight,
-  },
-  empty: {
-    width: 240,
-    textAlign: 'center',
-    marginTop: 32,
-    alignSelf: 'center',
+    backgroundColor: colors.homeBackground,
   },
   emptyContainer: {
-    paddingTop: 0,
+    flexGrow: 1,
   },
   center: {
     marginTop: 24,
@@ -316,5 +401,161 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     color: colors.danger,
+  },
+  emptyState: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 80,
+    paddingTop: 24,
+    justifyContent: 'center',
+  },
+  emptyGlowTop: {
+    position: 'absolute',
+    top: 80,
+    left: 30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: colors.homeGlowPrimary,
+  },
+  emptyGlowBottom: {
+    position: 'absolute',
+    bottom: 140,
+    right: 20,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: colors.homeGlowSecondary,
+  },
+  emptyContent: {
+    alignItems: 'center',
+  },
+  planetStack: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  planet: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: colors.homeSurfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.homeBorder,
+    shadowColor: colors.black,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  planetIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBubble: {
+    position: 'absolute',
+    top: -18,
+    right: -18,
+  },
+  iconHeart: {
+    position: 'absolute',
+    bottom: -12,
+    left: -24,
+  },
+  iconBolt: {
+    position: 'absolute',
+    top: 16,
+    left: -28,
+  },
+  planetShadow: {
+    marginTop: 14,
+    width: 90,
+    height: 10,
+    borderRadius: 50,
+    backgroundColor: colors.homeShadow,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.homeTextMain,
+    marginBottom: 8,
+  },
+  emptyBody: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
+    color: colors.homeTextSub,
+    marginBottom: 20,
+  },
+  emptyCtas: {
+    width: '100%',
+    gap: 12,
+  },
+  primaryCta: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.homePrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: colors.homePrimary,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  primaryCtaText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  secondaryCta: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.homeSurface,
+    borderWidth: 1,
+    borderColor: colors.homeBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  secondaryCtaText: {
+    color: colors.homeTextMain,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  tagsSection: {
+    marginTop: 28,
+    alignItems: 'center',
+    gap: 10,
+  },
+  tagsTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.homeTextSub,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  tagChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: colors.homeSurface,
+    borderWidth: 1,
+    borderColor: colors.homeBorder,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.homeTextSub,
   },
 });

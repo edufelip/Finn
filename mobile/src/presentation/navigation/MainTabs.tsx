@@ -3,19 +3,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
-import NotificationsScreen from '../screens/NotificationsScreen';
 import CreateBottomSheet from '../components/CreateBottomSheet';
 import type { MainStackParamList } from './MainStack';
 import { colors } from '../theme/colors';
+import { tabCopy } from '../content/tabCopy';
 
 export type MainTabParamList = {
   Home: undefined;
   Add: undefined;
   Search: { focus?: boolean } | undefined;
-  Notifications: undefined;
+  Profile: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -25,6 +26,7 @@ const EmptyScreen = () => <View />;
 export default function MainTabs() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const [createOpen, setCreateOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const openCreate = () => setCreateOpen(true);
   const closeCreate = () => setCreateOpen(false);
@@ -34,7 +36,7 @@ export default function MainTabs() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: [styles.tabBar, { paddingBottom: 24 + insets.bottom, height: 72 + insets.bottom }],
           tabBarActiveTintColor: colors.mainBlue,
           tabBarInactiveTintColor: colors.darkGrey,
         }}
@@ -44,25 +46,28 @@ export default function MainTabs() {
           component={HomeScreen}
           options={{
             tabBarIcon: ({ color }) => <MaterialIcons name="home" size={24} color={color} />,
-            tabBarTestID: 'tab-home',
+            tabBarLabel: tabCopy.home,
+            tabBarTestID: tabCopy.testIds.home,
           }}
         />
         <Tab.Screen
           name="Add"
           component={EmptyScreen}
           options={{
-            tabBarLabel: 'Add',
+            tabBarLabel: tabCopy.add,
             tabBarIcon: ({ color }) => <MaterialIcons name="add" size={24} color={color} />,
             tabBarButton: (props) => (
               <Pressable
                 accessibilityRole="button"
                 onPress={openCreate}
                 style={[styles.tabButton, props.style]}
-                testID="tab-add"
-                accessibilityLabel="tab-add"
+                testID={tabCopy.testIds.add}
+                accessibilityLabel={tabCopy.testIds.add}
               >
-                <MaterialIcons name="add" size={24} color={colors.darkGrey} />
-                <Text style={styles.tabLabel}>Add</Text>
+                <View style={styles.fab}>
+                  <MaterialIcons name="add" size={26} color={colors.white} />
+                </View>
+                <Text style={styles.tabLabel}>{tabCopy.add}</Text>
               </Pressable>
             ),
           }}
@@ -77,15 +82,29 @@ export default function MainTabs() {
           component={SearchScreen}
           options={{
             tabBarIcon: ({ color }) => <MaterialIcons name="search" size={24} color={color} />,
-            tabBarTestID: 'tab-search',
+            tabBarLabel: tabCopy.search,
+            tabBarTestID: tabCopy.testIds.search,
           }}
         />
         <Tab.Screen
-          name="Notifications"
-          component={NotificationsScreen}
+          name="Profile"
+          component={EmptyScreen}
           options={{
-            tabBarIcon: ({ color }) => <MaterialIcons name="notifications" size={24} color={color} />,
-            tabBarTestID: 'tab-notifications',
+            tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
+            tabBarLabel: tabCopy.profile,
+            tabBarTestID: tabCopy.testIds.profile,
+            tabBarButton: (props) => (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => navigation.navigate('Profile')}
+                style={[styles.tabButton, props.style]}
+                testID={tabCopy.testIds.profile}
+                accessibilityLabel={tabCopy.testIds.profile}
+              >
+                <MaterialIcons name="person" size={24} color={colors.darkGrey} />
+                <Text style={styles.tabLabel}>{tabCopy.profile}</Text>
+              </Pressable>
+            ),
           }}
         />
       </Tab.Navigator>
@@ -107,18 +126,33 @@ export default function MainTabs() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 60,
-    paddingBottom: 6,
-    paddingTop: 6,
+    height: 72,
+    paddingBottom: 24,
+    paddingTop: 8,
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
   },
   tabLabel: {
     fontSize: 10,
     color: colors.darkGrey,
     marginTop: 2,
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.homePrimary,
+    marginTop: -20,
+    shadowColor: colors.homePrimary,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
 });
