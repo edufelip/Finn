@@ -23,6 +23,10 @@ export class MockPostRepository implements PostRepository {
     return savedPosts.map((post) => ({ ...post, isSaved: true }));
   }
 
+  async getSavedPostsCount(userId: string): Promise<number> {
+    return mockSavedPosts.filter((saved) => saved.userId === userId).length;
+  }
+
   async getPostLikes(postId: number): Promise<number> {
     const post = mockPosts.find((item) => item.id === postId);
     return post?.likesCount ?? 0;

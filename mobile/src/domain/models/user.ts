@@ -5,4 +5,6 @@ export type User = {
   createdAt?: string;
   followersCount?: number;
   followingCount?: number;
+  onlineVisible?: boolean;
+  lastSeenAt?: string | null;
 };

@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from './providers/AuthProvider';
+import { PresenceProvider } from './providers/PresenceProvider';
 import { RepositoryProvider } from './providers/RepositoryProvider';
 import RootNavigator from '../presentation/navigation/RootNavigator';
 
@@ -13,8 +14,10 @@ export default function App() {
       <SafeAreaProvider>
         <RepositoryProvider>
           <AuthProvider>
-            <RootNavigator />
-            <StatusBar style="dark" />
+            <PresenceProvider>
+              <RootNavigator />
+              <StatusBar style="dark" />
+            </PresenceProvider>
           </AuthProvider>
         </RepositoryProvider>
       </SafeAreaProvider>

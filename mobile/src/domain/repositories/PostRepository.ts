@@ -5,6 +5,7 @@ export interface PostRepository {
   getPostsFromCommunity(communityId: number, page: number): Promise<Post[]>;
   getPostsFromUser(userId: string, page: number): Promise<Post[]>;
   getSavedPosts(userId: string, page: number): Promise<Post[]>;
+  getSavedPostsCount(userId: string): Promise<number>;
   getPostLikes(postId: number): Promise<number>;
   findLike(postId: number, userId: string): Promise<boolean>;
   findSavedPost(postId: number, userId: string): Promise<boolean>;

@@ -122,12 +122,18 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'forgot.alert.success.message': 'We sent a password reset link.',
 
     // Drawer
+    'drawer.section.main': 'Main',
+    'drawer.section.system': 'System',
     'drawer.profile': 'Profile',
     'drawer.saved': 'Saved',
     'drawer.posts': 'Posts',
     'drawer.settings': 'Settings',
     'drawer.privacyPolicy': 'Privacy Policy',
+    'drawer.darkMode': 'Dark Mode',
     'drawer.logout': 'Log out',
+    'drawer.version': 'Version {version}',
+    'drawer.alert.unavailable.title': 'Not available',
+    'drawer.alert.unavailable.message': 'This setting is not available yet.',
 
     // Create community
     'createCommunity.titleLabel': 'Your community name',
@@ -195,11 +201,14 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'settings.section.account': 'Account',
     'settings.option.darkMode': 'Dark Mode',
     'settings.option.notifications': 'Notifications',
+    'settings.option.onlineStatus': 'Show online status',
     'settings.option.deleteAccount': 'Delete Account',
     'settings.deleteButton': 'delete',
     'settings.deleteButtonLoading': 'Deleting...',
     'settings.alert.unavailable.title': 'Not available',
     'settings.alert.unavailable.message': 'This setting is not available yet.',
+    'settings.alert.onlineStatusFailed.title': 'Update failed',
+    'settings.alert.onlineStatusFailed.message': 'We could not update your online status.',
     'settings.alert.deleteConfirm.title': 'Delete account',
     'settings.alert.deleteConfirm.message': 'Are you sure you want to delete your account?',
     'settings.alert.deleteConfirm.cancel': 'Cancel',

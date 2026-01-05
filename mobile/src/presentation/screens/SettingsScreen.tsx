@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../../app/providers/AuthProvider';
+import { usePresence } from '../../app/providers/PresenceProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
@@ -16,9 +17,11 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();
+  const { isOnlineVisible, setOnlineVisibility } = usePresence();
   const [darkMode, setDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
 
   const showUnavailable = () => {
     Alert.alert(settingsCopy.alerts.unavailable.title, settingsCopy.alerts.unavailable.message);
@@ -58,6 +61,26 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleOnlineStatusChange = async (value: boolean) => {
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return;
+    }
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      Alert.alert(settingsCopy.alerts.offline.title, settingsCopy.alerts.offline.message);
+      return;
+    }
+    try {
+      setUpdatingOnlineStatus(true);
+      await setOnlineVisibility(value);
+    } catch {
+      Alert.alert(settingsCopy.alerts.onlineStatusFailed.title, settingsCopy.alerts.onlineStatusFailed.message);
+    } finally {
+      setUpdatingOnlineStatus(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TopBar onBack={() => navigation.goBack()} />
@@ -77,6 +100,19 @@ export default function SettingsScreen() {
             }}
             testID={settingsCopy.testIds.darkMode}
             accessibilityLabel={settingsCopy.testIds.darkMode}
+          />
+        </View>
+        <View style={styles.row}>
+          <View style={styles.rowLeft}>
+            <MaterialIcons name="visibility" size={18} color={colors.darkGrey} />
+            <Text style={styles.rowText}>{settingsCopy.options.onlineStatus}</Text>
+          </View>
+          <Switch
+            value={isOnlineVisible}
+            onValueChange={handleOnlineStatusChange}
+            testID={settingsCopy.testIds.onlineStatus}
+            accessibilityLabel={settingsCopy.testIds.onlineStatus}
+            disabled={updatingOnlineStatus}
           />
         </View>
         <View style={styles.row}>

@@ -9,6 +9,7 @@ export const settingsCopy = {
   options: {
     darkMode: t('settings.option.darkMode'),
     notifications: t('settings.option.notifications'),
+    onlineStatus: t('settings.option.onlineStatus'),
     deleteAccount: t('settings.option.deleteAccount'),
   },
   deleteButton: t('settings.deleteButton'),
@@ -17,6 +18,10 @@ export const settingsCopy = {
     unavailable: {
       title: t('settings.alert.unavailable.title'),
       message: t('settings.alert.unavailable.message'),
+    },
+    onlineStatusFailed: {
+      title: t('settings.alert.onlineStatusFailed.title'),
+      message: t('settings.alert.onlineStatusFailed.message'),
     },
     deleteConfirm: {
       title: t('settings.alert.deleteConfirm.title'),
@@ -43,6 +48,7 @@ export const settingsCopy = {
   testIds: {
     darkMode: 'settings-dark-toggle',
     notifications: 'settings-notifications-toggle',
+    onlineStatus: 'settings-online-status-toggle',
     delete: 'settings-delete',
   },
 };

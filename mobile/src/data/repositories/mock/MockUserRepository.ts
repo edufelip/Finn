@@ -5,6 +5,8 @@ const mockUser: User = {
   id: 'mock-user',
   name: 'Mock User',
   photoUrl: null,
+  onlineVisible: true,
+  lastSeenAt: new Date().toISOString(),
 };
 
 export class MockUserRepository implements UserRepository {
@@ -18,5 +20,13 @@ export class MockUserRepository implements UserRepository {
 
   async deleteUser(_id: string): Promise<void> {
     return;
+  }
+
+  async setOnlineVisibility(_id: string, visible: boolean): Promise<void> {
+    mockUser.onlineVisible = visible;
+  }
+
+  async updateLastSeenAt(_id: string, timestamp: string): Promise<void> {
+    mockUser.lastSeenAt = timestamp;
   }
 }

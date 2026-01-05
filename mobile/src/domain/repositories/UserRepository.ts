@@ -4,4 +4,6 @@ export interface UserRepository {
   getUser(id: string): Promise<User | null>;
   createUser(user: User): Promise<User>;
   deleteUser(id: string): Promise<void>;
+  setOnlineVisibility(id: string, visible: boolean): Promise<void>;
+  updateLastSeenAt(id: string, timestamp: string): Promise<void>;
 }
