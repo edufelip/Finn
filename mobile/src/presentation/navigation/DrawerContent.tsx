@@ -119,7 +119,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('Profile')}
             testID={drawerCopy.testIds.profile}
           >
-            <MaterialIcons name="person" size={iconSize} color={colors.drawerIcon} />
+            <MaterialIcons name="person" size={iconSize} color={theme.drawerIcon} />
             <Text style={styles.navLabel}>{drawerCopy.profile}</Text>
           </Pressable>
           <Pressable
@@ -127,7 +127,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('SavedPosts')}
             testID={drawerCopy.testIds.saved}
           >
-            <MaterialIcons name="bookmark-border" size={iconSize} color={colors.drawerIcon} />
+            <MaterialIcons name="bookmark-border" size={iconSize} color={theme.drawerIcon} />
             <Text style={styles.navLabel}>{drawerCopy.saved}</Text>
             {savedBadge ? (
               <View style={styles.badge}>
@@ -140,7 +140,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('Profile')}
             testID={drawerCopy.testIds.posts}
           >
-            <MaterialIcons name="article" size={iconSize} color={colors.drawerIcon} />
+            <MaterialIcons name="article" size={iconSize} color={theme.drawerIcon} />
             <Text style={styles.navLabel}>{drawerCopy.posts}</Text>
           </Pressable>
         </View>
@@ -154,7 +154,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('Settings')}
             testID={drawerCopy.testIds.settings}
           >
-            <MaterialIcons name="settings" size={iconSize} color={colors.drawerIcon} />
+            <MaterialIcons name="settings" size={iconSize} color={theme.drawerIcon} />
             <Text style={styles.navLabel}>{drawerCopy.settings}</Text>
           </Pressable>
           <Pressable
@@ -162,7 +162,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => Linking.openURL(links.privacyPolicy)}
             testID={drawerCopy.testIds.privacy}
           >
-            <MaterialIcons name="security" size={iconSize} color={colors.drawerIcon} />
+            <MaterialIcons name="security" size={iconSize} color={theme.drawerIcon} />
             <Text style={styles.navLabel}>{drawerCopy.privacyPolicy}</Text>
           </Pressable>
         </View>
@@ -171,7 +171,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
       >
         <View style={styles.toggleRow}>
           <View style={styles.toggleLeft}>
-            <MaterialIcons name="dark-mode" size={18} color={colors.drawerIcon} />
+            <MaterialIcons name="dark-mode" size={18} color={theme.drawerIcon} />
             <Text style={styles.toggleText}>{drawerCopy.darkMode}</Text>
           </View>
           <Switch
@@ -201,7 +201,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
           }}
           testID={drawerCopy.testIds.logout}
         >
-          <MaterialIcons name="logout" size={18} color={colors.drawerLogout} />
+          <MaterialIcons name="logout" size={18} color={theme.drawerLogout} />
           <Text style={styles.logoutText}>{drawerCopy.logout}</Text>
         </Pressable>
         <Text style={styles.version}>{versionLabel}</Text>
