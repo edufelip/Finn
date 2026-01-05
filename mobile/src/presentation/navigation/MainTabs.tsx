@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
@@ -9,7 +9,8 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import CreateBottomSheet from '../components/CreateBottomSheet';
 import type { MainStackParamList } from './MainStack';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { tabCopy } from '../content/tabCopy';
 
 export type MainTabParamList = {
@@ -27,19 +28,22 @@ export default function MainTabs() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const [createOpen, setCreateOpen] = useState(false);
   const insets = useSafeAreaInsets();
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const openCreate = () => setCreateOpen(true);
   const closeCreate = () => setCreateOpen(false);
-  const tabColor = (focused?: boolean) => (focused ? colors.mainBlue : colors.darkGrey);
+  const tabColor = (focused?: boolean) => (focused ? theme.tabActive : theme.tabInactive);
 
   return (
     <>
       <Tab.Navigator
+        initialRouteName="Home"
         screenOptions={{
           headerShown: false,
           tabBarStyle: [styles.tabBar, { paddingBottom: 24 + insets.bottom, height: 72 + insets.bottom }],
-          tabBarActiveTintColor: colors.mainBlue,
-          tabBarInactiveTintColor: colors.darkGrey,
+          tabBarActiveTintColor: theme.tabActive,
+          tabBarInactiveTintColor: theme.tabInactive,
         }}
       >
         <Tab.Screen
@@ -72,19 +76,19 @@ export default function MainTabs() {
             tabBarLabel: tabCopy.add,
             tabBarIcon: ({ color }) => <MaterialIcons name="add" size={24} color={color} />,
             tabBarButton: (props) => (
-              <Pressable
-                accessibilityRole="button"
-                onPress={openCreate}
-                style={[styles.tabButton, props.style]}
-                testID={tabCopy.testIds.add}
-                accessibilityLabel={tabCopy.testIds.add}
-              >
-                <View style={styles.fab}>
-                  <MaterialIcons name="add" size={26} color={colors.white} />
-                </View>
-                <Text style={styles.tabLabel}>{tabCopy.add}</Text>
-              </Pressable>
-            ),
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={openCreate}
+                  style={[styles.tabButton, props.style]}
+                  testID={tabCopy.testIds.add}
+                  accessibilityLabel={tabCopy.testIds.add}
+                >
+                  <View style={styles.fab}>
+                    <MaterialIcons name="add" size={26} color={theme.white} />
+                  </View>
+                  <Text style={styles.tabLabel}>{tabCopy.add}</Text>
+                </Pressable>
+              ),
           }}
           listeners={{
             tabPress: (e) => {
@@ -122,17 +126,17 @@ export default function MainTabs() {
             tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
             tabBarLabel: tabCopy.profile,
             tabBarButton: (props) => (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => navigation.navigate('Profile')}
-                style={[styles.tabButton, props.style]}
-                testID={tabCopy.testIds.profile}
-                accessibilityLabel={tabCopy.testIds.profile}
-              >
-                <MaterialIcons name="person" size={24} color={colors.darkGrey} />
-                <Text style={styles.tabLabel}>{tabCopy.profile}</Text>
-              </Pressable>
-            ),
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => navigation.navigate('Profile')}
+                  style={[styles.tabButton, props.style]}
+                  testID={tabCopy.testIds.profile}
+                  accessibilityLabel={tabCopy.testIds.profile}
+                >
+                  <MaterialIcons name="person" size={24} color={theme.tabInactive} />
+                  <Text style={styles.tabLabel}>{tabCopy.profile}</Text>
+                </Pressable>
+              ),
           }}
         />
       </Tab.Navigator>
@@ -152,38 +156,41 @@ export default function MainTabs() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    height: 72,
-    paddingBottom: 24,
-    paddingTop: 8,
-  },
-  tabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  tabLabel: {
-    fontSize: 10,
-    color: colors.darkGrey,
-    marginTop: 2,
-  },
-  tabLabelActive: {
-    color: colors.mainBlue,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.homePrimary,
-    marginTop: -20,
-    shadowColor: colors.homePrimary,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    tabBar: {
+      height: 72,
+      paddingBottom: 24,
+      paddingTop: 8,
+      backgroundColor: theme.tabBarBackground,
+      borderTopColor: theme.border,
+    },
+    tabButton: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 2,
+    },
+    tabLabel: {
+      fontSize: 10,
+      color: theme.tabInactive,
+      marginTop: 2,
+    },
+    tabLabelActive: {
+      color: theme.tabActive,
+    },
+    fab: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.homePrimary,
+      marginTop: -20,
+      shadowColor: theme.homePrimary,
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 6,
+    },
+  });

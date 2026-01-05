@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,7 +11,8 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import { persistOfflineImage } from '../../data/offline/offlineImages';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { createCommunityCopy } from '../content/createCommunityCopy';
 
 export default function CreateCommunityScreen() {
@@ -22,6 +23,8 @@ export default function CreateCommunityScreen() {
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -111,13 +114,14 @@ export default function CreateCommunityScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
+        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.title}>{createCommunityCopy.titleLabel}</Text>
         <TextInput
           style={styles.input}
           placeholder={createCommunityCopy.titlePlaceholder}
+          placeholderTextColor={theme.textSecondary}
           value={title}
           onChangeText={setTitle}
           maxLength={25}
@@ -128,6 +132,7 @@ export default function CreateCommunityScreen() {
         <TextInput
           style={styles.input}
           placeholder={createCommunityCopy.descriptionPlaceholder}
+          placeholderTextColor={theme.textSecondary}
           value={description}
           onChangeText={setDescription}
           maxLength={100}
@@ -150,7 +155,7 @@ export default function CreateCommunityScreen() {
             />
           </View>
           <View style={styles.iconBadge}>
-            <MaterialIcons name="date-range" size={18} color={colors.white} />
+            <MaterialIcons name="date-range" size={18} color={theme.white} />
           </View>
         </Pressable>
         <Pressable
@@ -169,75 +174,78 @@ export default function CreateCommunityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    top: 24,
-    padding: 8,
-    zIndex: 2,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 32,
-    justifyContent: 'center',
-    gap: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  input: {
-    borderBottomWidth: 1,
-    borderColor: colors.borderGrey,
-    paddingVertical: 8,
-  },
-  iconSelect: {
-    alignSelf: 'center',
-    marginTop: 16,
-    width: 64,
-    height: 64,
-  },
-  iconOuter: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    overflow: 'hidden',
-  },
-  iconImage: {
-    width: '100%',
-    height: '100%',
-  },
-  iconBadge: {
-    position: 'absolute',
-    left: 32,
-    top: 32,
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: colors.accentOrange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createButton: {
-    width: 150,
-    height: 60,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: colors.mainBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-  },
-  createButtonDisabled: {
-    opacity: 0.7,
-  },
-  createButtonText: {
-    fontSize: 16,
-    color: colors.mainBlue,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    backButton: {
+      position: 'absolute',
+      left: 24,
+      top: 24,
+      padding: 8,
+      zIndex: 2,
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 32,
+      justifyContent: 'center',
+      gap: 16,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: theme.textPrimary,
+    },
+    input: {
+      borderBottomWidth: 1,
+      borderColor: theme.borderGrey,
+      paddingVertical: 8,
+      color: theme.textPrimary,
+    },
+    iconSelect: {
+      alignSelf: 'center',
+      marginTop: 16,
+      width: 64,
+      height: 64,
+    },
+    iconOuter: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      overflow: 'hidden',
+    },
+    iconImage: {
+      width: '100%',
+      height: '100%',
+    },
+    iconBadge: {
+      position: 'absolute',
+      left: 32,
+      top: 32,
+      width: 35,
+      height: 35,
+      borderRadius: 17.5,
+      backgroundColor: theme.accentOrange,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    createButton: {
+      width: 150,
+      height: 60,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: theme.mainBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+    },
+    createButtonDisabled: {
+      opacity: 0.7,
+    },
+    createButtonText: {
+      fontSize: 16,
+      color: theme.mainBlue,
+    },
+  });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -15,7 +15,8 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import type { MainStackParamList } from '../navigation/MainStack';
 import Divider from '../components/Divider';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { communityDetailCopy } from '../content/communityDetailCopy';
 import { formatMonthYear } from '../i18n/formatters';
 
@@ -35,6 +36,8 @@ export default function CommunityDetailScreen() {
   const [subscribersCount, setSubscribersCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     let mounted = true;
@@ -256,7 +259,7 @@ export default function CommunityDetailScreen() {
     <View>
       <View style={styles.toolbar}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.white} />
+          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.white} />
         </Pressable>
       </View>
       <View style={styles.blueStrip} />
@@ -303,7 +306,7 @@ export default function CommunityDetailScreen() {
     <View style={styles.container}>
       {loading && !community ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.mainBlueDeep} />
+          <ActivityIndicator size="large" color={theme.mainBlueDeep} />
         </View>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -324,7 +327,7 @@ export default function CommunityDetailScreen() {
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.mainBlueDeep} />
+              <ActivityIndicator size="small" color={theme.mainBlueDeep} />
             </View>
           ) : null
         }
@@ -334,102 +337,110 @@ export default function CommunityDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  toolbar: {
-    height: 56,
-    backgroundColor: colors.mainBlueDeep,
-    justifyContent: 'center',
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: 16,
-  },
-  blueStrip: {
-    height: 72,
-    backgroundColor: colors.mainBlue,
-  },
-  imageSpacer: {
-    height: 76,
-  },
-  imageWrapper: {
-    position: 'absolute',
-    left: 32,
-    top: 56 + 12,
-  },
-  imageOuter: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  communityImage: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-  },
-  subscribeButton: {
-    position: 'absolute',
-    right: 20,
-    top: 56 + 72 + 12,
-    height: 32,
-    width: 128,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: colors.mainBlue,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  subscribeText: {
-    color: colors.mainBlue,
-    fontSize: 10,
-  },
-  title: {
-    marginTop: 12,
-    marginLeft: 24,
-    fontSize: 20,
-  },
-  description: {
-    marginTop: 4,
-    marginHorizontal: 24,
-  },
-  subInfo: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-    gap: 4,
-    paddingHorizontal: 24,
-  },
-  subCount: {
-    fontWeight: '700',
-  },
-  sinceValue: {
-    marginLeft: 4,
-  },
-  list: {
-    backgroundColor: colors.backgroundLight,
-  },
-  empty: {
-    marginTop: 32,
-    alignSelf: 'center',
-  },
-  error: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    color: colors.danger,
-  },
-  center: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  footer: {
-    paddingVertical: 16,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    toolbar: {
+      height: 56,
+      backgroundColor: theme.mainBlueDeep,
+      justifyContent: 'center',
+    },
+    backButton: {
+      padding: 8,
+      marginLeft: 16,
+    },
+    blueStrip: {
+      height: 72,
+      backgroundColor: theme.mainBlue,
+    },
+    imageSpacer: {
+      height: 76,
+    },
+    imageWrapper: {
+      position: 'absolute',
+      left: 32,
+      top: 56 + 12,
+    },
+    imageOuter: {
+      width: 76,
+      height: 76,
+      borderRadius: 38,
+      backgroundColor: theme.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    communityImage: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+    },
+    subscribeButton: {
+      position: 'absolute',
+      right: 20,
+      top: 56 + 72 + 12,
+      height: 32,
+      width: 128,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: theme.mainBlue,
+      backgroundColor: theme.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    subscribeText: {
+      color: theme.mainBlue,
+      fontSize: 10,
+    },
+    title: {
+      marginTop: 12,
+      marginLeft: 24,
+      fontSize: 20,
+      color: theme.textPrimary,
+    },
+    description: {
+      marginTop: 4,
+      marginHorizontal: 24,
+      color: theme.textSecondary,
+    },
+    subInfo: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 12,
+      marginBottom: 16,
+      gap: 4,
+      paddingHorizontal: 24,
+    },
+    subCount: {
+      fontWeight: '700',
+      color: theme.textPrimary,
+    },
+    sinceValue: {
+      marginLeft: 4,
+      color: theme.textSecondary,
+    },
+    list: {
+      backgroundColor: theme.backgroundLight,
+    },
+    empty: {
+      marginTop: 32,
+      alignSelf: 'center',
+      color: theme.textSecondary,
+    },
+    error: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      color: theme.danger,
+    },
+    center: {
+      marginTop: 24,
+      alignItems: 'center',
+    },
+    footer: {
+      paddingVertical: 16,
+    },
+  });

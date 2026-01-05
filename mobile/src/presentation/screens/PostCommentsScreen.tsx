@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Network from 'expo-network';
 import { useRoute } from '@react-navigation/native';
@@ -9,7 +9,8 @@ import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { postCommentsCopy } from '../content/postCommentsCopy';
 
 type RouteParams = {
@@ -24,6 +25,8 @@ export default function PostCommentsScreen() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     commentsRepository
@@ -110,6 +113,7 @@ export default function PostCommentsScreen() {
         <TextInput
           style={styles.input}
           placeholder={postCommentsCopy.inputPlaceholder}
+          placeholderTextColor={theme.textSecondary}
           value={content}
           onChangeText={setContent}
           testID={postCommentsCopy.testIds.input}
@@ -127,37 +131,39 @@ export default function PostCommentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  comment: {
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.slate200,
-    backgroundColor: colors.white,
-    marginBottom: 8,
-  },
-  author: {
-    fontWeight: '600',
-    color: colors.slate900,
-  },
-  body: {
-    marginTop: 4,
-    color: colors.slate700,
-  },
-  empty: {
-    textAlign: 'center',
-    marginVertical: 16,
-    color: colors.slate500,
-  },
-  inputRow: {
-    marginTop: 12,
-    gap: 8,
-  },
-  input: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.slate200,
-    padding: 10,
-    backgroundColor: colors.white,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    comment: {
+      padding: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.slate200,
+      backgroundColor: theme.surface,
+      marginBottom: 8,
+    },
+    author: {
+      fontWeight: '600',
+      color: theme.slate900,
+    },
+    body: {
+      marginTop: 4,
+      color: theme.slate700,
+    },
+    empty: {
+      textAlign: 'center',
+      marginVertical: 16,
+      color: theme.slate500,
+    },
+    inputRow: {
+      marginTop: 12,
+      gap: 8,
+    },
+    input: {
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.slate200,
+      padding: 10,
+      backgroundColor: theme.surface,
+      color: theme.slate900,
+    },
+  });

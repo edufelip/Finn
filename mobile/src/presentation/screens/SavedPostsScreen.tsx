@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -12,7 +12,8 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import TopBar from '../components/TopBar';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { savedPostsCopy } from '../content/savedPostsCopy';
 
 export default function SavedPostsScreen() {
@@ -22,6 +23,8 @@ export default function SavedPostsScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const loadSaved = useCallback(async () => {
     if (!session?.user?.id) {
@@ -163,7 +166,7 @@ export default function SavedPostsScreen() {
         ListFooterComponent={
           loading ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.mainBlueDeep} />
+              <ActivityIndicator size="small" color={theme.mainBlueDeep} />
             </View>
           ) : null
         }
@@ -173,21 +176,22 @@ export default function SavedPostsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  list: {
-    backgroundColor: colors.backgroundLight,
-  },
-  error: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    color: colors.danger,
-  },
-  footer: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    list: {
+      backgroundColor: theme.backgroundLight,
+    },
+    error: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      color: theme.danger,
+    },
+    footer: {
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+  });

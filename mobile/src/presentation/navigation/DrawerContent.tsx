@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
@@ -9,9 +9,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { usePresence } from '../../app/providers/PresenceProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { supabase } from '../../data/supabase/client';
 import type { User } from '../../domain/models/user';
-import { colors } from '../theme/colors';
+import type { ThemeColors } from '../theme/colors';
 import { drawerCopy } from '../content/drawerCopy';
 import { commonCopy } from '../content/commonCopy';
 import { links } from '../../config/links';
@@ -24,9 +25,11 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
   const { session } = useAuth();
   const { users: userRepository, posts: postRepository } = useRepositories();
   const { isOnline, isOnlineVisible } = usePresence();
+  const { toggleTheme, isDark } = useTheme();
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [user, setUser] = useState<User | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -73,7 +76,8 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
   const displayName = user?.name ?? session?.user?.email ?? commonCopy.userFallback;
   const email = session?.user?.email ?? commonCopy.emptyDash;
   const photo = user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png');
-  const statusColor = isOnline && isOnlineVisible ? colors.drawerStatusOnline : colors.drawerStatusOffline;
+  const statusColor =
+    isOnline && isOnlineVisible ? theme.drawerStatusOnline : theme.drawerStatusOffline;
   const savedBadge = savedCount && savedCount > 0 ? String(savedCount) : null;
 
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? commonCopy.emptyDash;
@@ -85,10 +89,6 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
     if (parent) {
       parent.navigate(screen as never);
     }
-  };
-
-  const showUnavailable = () => {
-    Alert.alert(drawerCopy.alerts.unavailable.title, drawerCopy.alerts.unavailable.message);
   };
 
   return (
@@ -175,13 +175,12 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             <Text style={styles.toggleText}>{drawerCopy.darkMode}</Text>
           </View>
           <Switch
-            value={darkMode}
+            value={isDark}
             onValueChange={(value) => {
-              setDarkMode(value);
-              showUnavailable();
+              toggleTheme();
             }}
-            trackColor={{ false: colors.drawerToggleTrack, true: colors.drawerToggleTrackActive }}
-            thumbColor={darkMode ? colors.drawerToggleThumbActive : colors.drawerToggleThumb}
+            trackColor={{ false: theme.drawerToggleTrack, true: theme.drawerToggleTrackActive }}
+            thumbColor={isDark ? theme.drawerToggleThumbActive : theme.drawerToggleThumb}
             testID={drawerCopy.testIds.darkMode}
             accessibilityLabel={drawerCopy.testIds.darkMode}
           />
@@ -211,155 +210,156 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.drawerBackground,
-  },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.drawerDivider,
-  },
-  avatarWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.drawerBorder,
-    marginBottom: 12,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  statusDot: {
-    position: 'absolute',
-    right: 2,
-    bottom: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.drawerBackground,
-  },
-  headerText: {
-    gap: 4,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.drawerTextMain,
-  },
-  email: {
-    fontSize: 12,
-    color: colors.drawerTextSub,
-  },
-  section: {
-    paddingHorizontal: 12,
-    paddingTop: 20,
-  },
-  sectionTitle: {
-    paddingHorizontal: 8,
-    marginBottom: 8,
-    fontSize: 10,
-    letterSpacing: 1.6,
-    textTransform: 'uppercase',
-    color: colors.drawerSectionLabel,
-    fontWeight: '700',
-  },
-  navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  navItemPressed: {
-    backgroundColor: colors.drawerItemHover,
-  },
-  navLabel: {
-    fontSize: 14,
-    color: colors.drawerTextSub,
-    fontWeight: '600',
-  },
-  badge: {
-    marginLeft: 'auto',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: colors.drawerBadgeBackground,
-    borderWidth: 1,
-    borderColor: colors.drawerBadgeBorder,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.drawerBadgeText,
-  },
-  sectionDivider: {
-    marginTop: 16,
-    height: 1,
-    backgroundColor: colors.drawerSectionDivider,
-    marginHorizontal: 20,
-  },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.drawerDivider,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: colors.drawerFooterBackground,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.drawerBorder,
-    backgroundColor: colors.drawerBackground,
-    marginBottom: 12,
-  },
-  toggleLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  toggleText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.drawerTextMain,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  logoutPressed: {
-    backgroundColor: colors.drawerLogoutHover,
-  },
-  logoutText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.drawerLogout,
-  },
-  version: {
-    marginTop: 8,
-    textAlign: 'center',
-    fontSize: 10,
-    color: colors.drawerVersion,
-    fontWeight: '600',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.drawerBackground,
+    },
+    scrollContent: {
+      paddingBottom: 24,
+    },
+    header: {
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.drawerDivider,
+    },
+    avatarWrapper: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.drawerBorder,
+      marginBottom: 12,
+    },
+    avatar: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'cover',
+    },
+    statusDot: {
+      position: 'absolute',
+      right: 2,
+      bottom: 2,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: theme.drawerBackground,
+    },
+    headerText: {
+      gap: 4,
+    },
+    name: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: theme.drawerTextMain,
+    },
+    email: {
+      fontSize: 12,
+      color: theme.drawerTextSub,
+    },
+    section: {
+      paddingHorizontal: 12,
+      paddingTop: 20,
+    },
+    sectionTitle: {
+      paddingHorizontal: 8,
+      marginBottom: 8,
+      fontSize: 10,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      color: theme.drawerSectionLabel,
+      fontWeight: '700',
+    },
+    navItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+    },
+    navItemPressed: {
+      backgroundColor: theme.drawerItemHover,
+    },
+    navLabel: {
+      fontSize: 14,
+      color: theme.drawerTextSub,
+      fontWeight: '600',
+    },
+    badge: {
+      marginLeft: 'auto',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+      backgroundColor: theme.drawerBadgeBackground,
+      borderWidth: 1,
+      borderColor: theme.drawerBadgeBorder,
+    },
+    badgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: theme.drawerBadgeText,
+    },
+    sectionDivider: {
+      marginTop: 16,
+      height: 1,
+      backgroundColor: theme.drawerSectionDivider,
+      marginHorizontal: 20,
+    },
+    footer: {
+      borderTopWidth: 1,
+      borderTopColor: theme.drawerDivider,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      backgroundColor: theme.drawerFooterBackground,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.drawerBorder,
+      backgroundColor: theme.drawerBackground,
+      marginBottom: 12,
+    },
+    toggleLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    toggleText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: theme.drawerTextMain,
+    },
+    logoutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+    logoutPressed: {
+      backgroundColor: theme.drawerLogoutHover,
+    },
+    logoutText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.drawerLogout,
+    },
+    version: {
+      marginTop: 8,
+      textAlign: 'center',
+      fontSize: 10,
+      color: theme.drawerVersion,
+      fontWeight: '600',
+    },
+  });

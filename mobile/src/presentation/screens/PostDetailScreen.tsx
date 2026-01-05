@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -14,7 +14,8 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import Divider from '../components/Divider';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { postDetailCopy } from '../content/postDetailCopy';
 
 type RouteParams = {
@@ -31,6 +32,8 @@ export default function PostDetailScreen() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     commentsRepository
@@ -197,7 +200,7 @@ export default function PostDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
+          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
         </Pressable>
         <Divider />
       </View>
@@ -241,6 +244,7 @@ export default function PostDetailScreen() {
           style={styles.commentInput}
           value={content}
           onChangeText={setContent}
+          placeholderTextColor={theme.textSecondary}
           testID={postDetailCopy.testIds.input}
           accessibilityLabel={postDetailCopy.testIds.input}
         />
@@ -251,104 +255,112 @@ export default function PostDetailScreen() {
           testID={postDetailCopy.testIds.submit}
           accessibilityLabel={postDetailCopy.testIds.submit}
         >
-          <MaterialIcons name="add" size={24} color={colors.white} />
+          <MaterialIcons name="add" size={24} color={theme.white} />
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  header: {
-    height: 60,
-    justifyContent: 'flex-end',
-    backgroundColor: colors.white,
-  },
-  backButton: {
-    marginLeft: 16,
-    marginBottom: 8,
-    padding: 8,
-    alignSelf: 'flex-start',
-  },
-  list: {
-    backgroundColor: colors.backgroundLight,
-  },
-  commentsHeader: {
-    backgroundColor: colors.backgroundLight,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  commentsHeaderText: {
-    fontWeight: '700',
-  },
-  comment: {
-    backgroundColor: colors.white,
-    paddingTop: 8,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginRight: 8,
-  },
-  commentAvatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  commentAuthor: {
-    fontWeight: '700',
-  },
-  commentDate: {
-    fontSize: 12,
-    color: colors.borderGrey,
-  },
-  commentBody: {
-    marginTop: 8,
-  },
-  empty: {
-    textAlign: 'center',
-    marginVertical: 16,
-    color: colors.darkGrey,
-  },
-  bottomBar: {
-    height: 55,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  bottomAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  bottomAvatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  commentInput: {
-    flex: 1,
-    height: '100%',
-    marginHorizontal: 8,
-  },
-  commentButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.mainBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    header: {
+      height: 60,
+      justifyContent: 'flex-end',
+      backgroundColor: theme.backgroundLight,
+    },
+    backButton: {
+      marginLeft: 16,
+      marginBottom: 8,
+      padding: 8,
+      alignSelf: 'flex-start',
+    },
+    list: {
+      backgroundColor: theme.backgroundLight,
+    },
+    commentsHeader: {
+      backgroundColor: theme.backgroundLight,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    commentsHeaderText: {
+      fontWeight: '700',
+      color: theme.textPrimary,
+    },
+    comment: {
+      backgroundColor: theme.surface,
+      paddingTop: 8,
+      paddingBottom: 12,
+      paddingHorizontal: 16,
+      marginBottom: 8,
+    },
+    commentHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    commentAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      overflow: 'hidden',
+      marginRight: 8,
+    },
+    commentAvatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    commentAuthor: {
+      fontWeight: '700',
+      color: theme.textPrimary,
+    },
+    commentDate: {
+      fontSize: 12,
+      color: theme.textSecondary,
+    },
+    commentBody: {
+      marginTop: 8,
+      color: theme.textPrimary,
+    },
+    empty: {
+      textAlign: 'center',
+      marginVertical: 16,
+      color: theme.textSecondary,
+    },
+    bottomBar: {
+      height: 55,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      backgroundColor: theme.surface,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    bottomAvatar: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      overflow: 'hidden',
+    },
+    bottomAvatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    commentInput: {
+      flex: 1,
+      height: '100%',
+      marginHorizontal: 8,
+      color: theme.textPrimary,
+    },
+    commentButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.mainBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

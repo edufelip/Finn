@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,7 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { forgotPasswordCopy } from '../content/forgotPasswordCopy';
 
 const emailRegex = /\S+@\S+\.\S+/;
@@ -16,6 +17,8 @@ export default function ForgotPasswordScreen() {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const submit = async () => {
     if (!email.trim()) {
@@ -47,16 +50,17 @@ export default function ForgotPasswordScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
+        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.title}>{forgotPasswordCopy.title}</Text>
         <Text style={styles.subtitle}>{forgotPasswordCopy.subtitle}</Text>
         <View style={styles.inputRow}>
-          <MaterialIcons name="person-outline" size={20} color={colors.darkGrey} />
+          <MaterialIcons name="person-outline" size={20} color={theme.iconMuted} />
           <TextInput
             style={styles.input}
             placeholder={forgotPasswordCopy.emailPlaceholder}
+            placeholderTextColor={theme.textSecondary}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -81,61 +85,65 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 32,
-    top: 32,
-    padding: 8,
-    zIndex: 2,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 32,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-  },
-  inputRow: {
-    marginTop: 24,
-    height: 55,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.borderGrey,
-    paddingHorizontal: 12,
-    backgroundColor: colors.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-  },
-  primaryButton: {
-    height: 65,
-    backgroundColor: colors.mainBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-    marginHorizontal: 64,
-    borderRadius: 12,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.7,
-  },
-  primaryButtonText: {
-    color: colors.white,
-    fontSize: 16,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    backButton: {
+      position: 'absolute',
+      left: 32,
+      top: 32,
+      padding: 8,
+      zIndex: 2,
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 32,
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      marginBottom: 8,
+      color: theme.textPrimary,
+    },
+    subtitle: {
+      fontSize: 18,
+      color: theme.textSecondary,
+    },
+    inputRow: {
+      marginTop: 24,
+      height: 55,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.borderGrey,
+      paddingHorizontal: 12,
+      backgroundColor: theme.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    input: {
+      flex: 1,
+      height: '100%',
+      color: theme.textPrimary,
+    },
+    primaryButton: {
+      height: 65,
+      backgroundColor: theme.mainBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 24,
+      marginHorizontal: 64,
+      borderRadius: 12,
+    },
+    primaryButtonDisabled: {
+      opacity: 0.7,
+    },
+    primaryButtonText: {
+      color: theme.white,
+      fontSize: 16,
+    },
+  });

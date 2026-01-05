@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import * as Network from 'expo-network';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -6,11 +6,12 @@ import { useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../../app/providers/AuthProvider';
 import { usePresence } from '../../app/providers/PresenceProvider';
+import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import TopBar from '../components/TopBar';
-import { colors } from '../theme/colors';
+import type { ThemeColors } from '../theme/colors';
 import { settingsCopy } from '../content/settingsCopy';
 
 export default function SettingsScreen() {
@@ -18,7 +19,9 @@ export default function SettingsScreen() {
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
@@ -89,14 +92,13 @@ export default function SettingsScreen() {
       <View style={styles.sectionBox}>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <MaterialIcons name="wb-sunny" size={18} color={colors.darkGrey} />
+            <MaterialIcons name="wb-sunny" size={18} color={theme.iconMuted} />
             <Text style={styles.rowText}>{settingsCopy.options.darkMode}</Text>
           </View>
           <Switch
-            value={darkMode}
-            onValueChange={(value) => {
-              setDarkMode(value);
-              showUnavailable();
+            value={isDark}
+            onValueChange={() => {
+              toggleTheme();
             }}
             testID={settingsCopy.testIds.darkMode}
             accessibilityLabel={settingsCopy.testIds.darkMode}
@@ -104,7 +106,7 @@ export default function SettingsScreen() {
         </View>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <MaterialIcons name="visibility" size={18} color={colors.darkGrey} />
+            <MaterialIcons name="visibility" size={18} color={theme.iconMuted} />
             <Text style={styles.rowText}>{settingsCopy.options.onlineStatus}</Text>
           </View>
           <Switch
@@ -117,7 +119,7 @@ export default function SettingsScreen() {
         </View>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <MaterialIcons name="content-copy" size={18} color={colors.darkGrey} />
+            <MaterialIcons name="content-copy" size={18} color={theme.iconMuted} />
             <Text style={styles.rowText}>{settingsCopy.options.notifications}</Text>
           </View>
           <Switch
@@ -152,63 +154,68 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginTop: 16,
-    marginLeft: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    marginTop: 16,
-    marginLeft: 36,
-  },
-  sectionBox: {
-    marginTop: 8,
-    marginHorizontal: 36,
-  },
-  row: {
-    height: 45,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 8,
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rowText: {
-    fontSize: 18,
-  },
-  deleteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  deleteLabel: {
-    fontSize: 14,
-  },
-  deleteButton: {
-    height: 42,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteButtonDisabled: {
-    opacity: 0.7,
-  },
-  deleteButtonText: {
-    fontSize: 11,
-    color: colors.danger,
-    textTransform: 'lowercase',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: '700',
+      marginTop: 16,
+      marginLeft: 32,
+      color: theme.textPrimary,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      marginTop: 16,
+      marginLeft: 36,
+      color: theme.textSecondary,
+    },
+    sectionBox: {
+      marginTop: 8,
+      marginHorizontal: 36,
+    },
+    row: {
+      height: 45,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginVertical: 8,
+    },
+    rowLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    rowText: {
+      fontSize: 18,
+      color: theme.textPrimary,
+    },
+    deleteRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    deleteLabel: {
+      fontSize: 14,
+      color: theme.textPrimary,
+    },
+    deleteButton: {
+      height: 42,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: theme.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteButtonDisabled: {
+      opacity: 0.7,
+    },
+    deleteButtonText: {
+      fontSize: 11,
+      color: theme.danger,
+      textTransform: 'lowercase',
+    },
+  });

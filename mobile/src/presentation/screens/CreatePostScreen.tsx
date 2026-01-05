@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Network from 'expo-network';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,7 +13,8 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { persistOfflineImage } from '../../data/offline/offlineImages';
 import TopBar from '../components/TopBar';
 import Divider from '../components/Divider';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { createPostCopy } from '../content/createPostCopy';
 
 export default function CreatePostScreen() {
@@ -27,6 +28,8 @@ export default function CreatePostScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const { communities: communityRepository, posts: postRepository } = useRepositories();
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     communityRepository
@@ -128,16 +131,17 @@ export default function CreatePostScreen() {
         testID={createPostCopy.testIds.communityPicker}
         accessibilityLabel={createPostCopy.testIds.communityPicker}
       >
-        <MaterialIcons name="language" size={20} color={colors.darkGrey} />
+        <MaterialIcons name="language" size={20} color={theme.iconMuted} />
         <Text style={styles.communityText}>
           {selectedCommunity?.title ?? createPostCopy.communityPlaceholder}
         </Text>
-        <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.darkGrey} />
+        <MaterialIcons name="keyboard-arrow-down" size={20} color={theme.iconMuted} />
       </Pressable>
       <Divider />
       <TextInput
         style={styles.textArea}
         placeholder={createPostCopy.contentPlaceholder}
+        placeholderTextColor={theme.textSecondary}
         value={content}
         onChangeText={setContent}
         multiline
@@ -159,9 +163,9 @@ export default function CreatePostScreen() {
           onPress={pickImage}
           testID={createPostCopy.testIds.image}
           accessibilityLabel={createPostCopy.testIds.image}
-        >
-          <MaterialIcons name="add" size={24} color={colors.black} />
-        </Pressable>
+      >
+        <MaterialIcons name="add" size={24} color={theme.textPrimary} />
+      </Pressable>
       </View>
       <Pressable
         style={[styles.createButton, loading && styles.createButtonDisabled]}
@@ -201,98 +205,103 @@ export default function CreatePostScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  communityPicker: {
-    height: 62,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  communityText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 300,
-    padding: 16,
-    textAlignVertical: 'top',
-    backgroundColor: colors.transparent,
-  },
-  imageCard: {
-    width: 150,
-    height: 150,
-    alignSelf: 'center',
-    marginTop: 24,
-    borderRadius: 4,
-    backgroundColor: colors.white,
-    shadowColor: colors.black,
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  fab: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.white,
-  },
-  createButton: {
-    alignSelf: 'center',
-    height: 58,
-    paddingHorizontal: 32,
-    marginTop: 24,
-    borderRadius: 16,
-    backgroundColor: colors.mainBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createButtonDisabled: {
-    opacity: 0.7,
-  },
-  createButtonText: {
-    fontSize: 12,
-    color: colors.white,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.overlayDark,
-  },
-  modalSheet: {
-    backgroundColor: colors.white,
-    paddingTop: 16,
-    paddingBottom: 24,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '50%',
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  modalItem: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  modalItemText: {
-    fontSize: 16,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    communityPicker: {
+      height: 62,
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    communityText: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    textArea: {
+      height: 300,
+      padding: 16,
+      textAlignVertical: 'top',
+      backgroundColor: theme.transparent,
+      color: theme.textPrimary,
+    },
+    imageCard: {
+      width: 150,
+      height: 150,
+      alignSelf: 'center',
+      marginTop: 24,
+      borderRadius: 4,
+      backgroundColor: theme.surface,
+      shadowColor: theme.black,
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 5,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    imagePreview: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'cover',
+    },
+    fab: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: theme.surface,
+    },
+    createButton: {
+      alignSelf: 'center',
+      height: 58,
+      paddingHorizontal: 32,
+      marginTop: 24,
+      borderRadius: 16,
+      backgroundColor: theme.mainBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    createButtonDisabled: {
+      opacity: 0.7,
+    },
+    createButtonText: {
+      fontSize: 12,
+      color: theme.white,
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: theme.overlayDark,
+    },
+    modalSheet: {
+      backgroundColor: theme.surface,
+      paddingTop: 16,
+      paddingBottom: 24,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '50%',
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginBottom: 12,
+      color: theme.textPrimary,
+    },
+    modalItem: {
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+    },
+    modalItemText: {
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+  });

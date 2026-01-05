@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -14,7 +14,8 @@ import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { profileCopy } from '../content/profileCopy';
 import { commonCopy } from '../content/commonCopy';
 import { formatMonthYear } from '../i18n/formatters';
@@ -27,6 +28,8 @@ export default function ProfileScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const loadProfile = useCallback(async () => {
     if (!session?.user?.id) {
@@ -188,7 +191,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable style={styles.iconButton} onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back-ios-new" size={22} color={colors.profileTextMain} />
+            <MaterialIcons name="arrow-back-ios-new" size={22} color={theme.profileTextMain} />
           </Pressable>
           <Text
             style={styles.topTitle}
@@ -201,7 +204,7 @@ export default function ProfileScreen() {
             style={styles.iconButton}
             onPress={() => navigation.navigate('Settings')}
           >
-            <MaterialIcons name="settings" size={22} color={colors.profileTextMain} />
+            <MaterialIcons name="settings" size={22} color={theme.profileTextMain} />
           </Pressable>
         </View>
       </SafeAreaView>
@@ -222,7 +225,7 @@ export default function ProfileScreen() {
                   />
                 </View>
                 <Pressable style={styles.editBadge}>
-                  <MaterialIcons name="edit" size={16} color={colors.profilePrimary} />
+                  <MaterialIcons name="edit" size={16} color={theme.profilePrimary} />
                 </Pressable>
               </View>
               <View style={styles.nameBlock}>
@@ -272,7 +275,7 @@ export default function ProfileScreen() {
                   <MaterialIcons
                     name="grid-view"
                     size={18}
-                    color={colors.profileTextMain}
+                    color={theme.profileTextMain}
                     style={styles.tabIcon}
                   />
                   <Text style={styles.tabTextActive} testID={profileCopy.testIds.tabPosts}>
@@ -289,7 +292,7 @@ export default function ProfileScreen() {
                   <MaterialIcons
                     name="bookmark-border"
                     size={18}
-                    color={colors.profileTextSub}
+                    color={theme.profileTextSub}
                     style={styles.tabIcon}
                   />
                   <Text style={styles.tabText}>{profileCopy.tabs.saved}</Text>
@@ -312,7 +315,7 @@ export default function ProfileScreen() {
             <View style={styles.emptyState}>
               <View style={styles.emptyIconWrapper}>
                 <View style={styles.emptyIconInner}>
-                  <MaterialIcons name="add" size={28} color={colors.profileMuted} />
+                  <MaterialIcons name="add" size={28} color={theme.profileMuted} />
                 </View>
               </View>
               <Text style={styles.emptyTitle} testID={profileCopy.testIds.emptyTitle}>
@@ -324,7 +327,7 @@ export default function ProfileScreen() {
                 onPress={() => navigation.navigate('CreatePost')}
                 testID={profileCopy.testIds.createPost}
               >
-                <MaterialIcons name="add-circle" size={18} color={colors.white} />
+                <MaterialIcons name="add-circle" size={18} color={theme.white} />
                 <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
               </Pressable>
             </View>
@@ -333,7 +336,7 @@ export default function ProfileScreen() {
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.profilePrimary} />
+              <ActivityIndicator size="small" color={theme.profilePrimary} />
             </View>
           ) : null
         }
@@ -342,264 +345,265 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.profileBackground,
-  },
-  safeArea: {
-    backgroundColor: colors.profileBackground,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  topTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.profileTextMain,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    paddingBottom: 32,
-  },
-  profileHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    alignItems: 'center',
-  },
-  avatarGlow: {
-    position: 'absolute',
-    top: 18,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: colors.profilePrimarySoft,
-  },
-  avatarGroup: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarOuter: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
-    backgroundColor: colors.profileSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: colors.profileSurface,
-    shadowColor: colors.profileCardShadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 18,
-    elevation: 6,
-  },
-  avatar: {
-    width: 118,
-    height: 118,
-    borderRadius: 59,
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    backgroundColor: colors.profileSurface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.profileBorder,
-    padding: 6,
-    shadowColor: colors.profileCardShadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  nameBlock: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.profileTextMain,
-  },
-  email: {
-    marginTop: 4,
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.profileTextSub,
-  },
-  memberBadge: {
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: colors.profilePrimarySoft,
-    borderWidth: 1,
-    borderColor: colors.profilePrimarySoft,
-  },
-  memberBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    color: colors.profilePrimary,
-    letterSpacing: 0.6,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: 90,
-    backgroundColor: colors.profileSurface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.profileBorder,
-    paddingVertical: 14,
-    alignItems: 'center',
-    shadowColor: colors.profileCardShadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  statCardSpacing: {
-    marginRight: 12,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.profileTextMain,
-  },
-  statLabel: {
-    marginTop: 4,
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    color: colors.profileTextSub,
-    letterSpacing: 0.8,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.profileBorder,
-    backgroundColor: colors.profileBackground,
-    paddingHorizontal: 16,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: colors.transparent,
-  },
-  tabItemActive: {
-    borderBottomColor: colors.profilePrimary,
-  },
-  tabContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tabIcon: {
-    marginRight: 6,
-  },
-  tabTextActive: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.profileTextMain,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.profileTextSub,
-  },
-  emptyState: {
-    paddingVertical: 40,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-  },
-  emptyIconWrapper: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: colors.profilePrimarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyIconInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: colors.profileSurface,
-    borderWidth: 1,
-    borderColor: colors.profileBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.profileCardShadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.profileTextMain,
-    textAlign: 'center',
-  },
-  emptyBody: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: '400',
-    color: colors.profileTextSub,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  emptyCta: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.profilePrimary,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    shadowColor: colors.profilePrimaryGlow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  emptyCtaText: {
-    marginLeft: 8,
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 0.6,
-  },
-  error: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  footer: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.profileBackground,
+    },
+    safeArea: {
+      backgroundColor: theme.profileBackground,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    topTitle: {
+      flex: 1,
+      textAlign: 'center',
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.profileTextMain,
+    },
+    iconButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    listContent: {
+      paddingBottom: 32,
+    },
+    profileHeader: {
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 24,
+      alignItems: 'center',
+    },
+    avatarGlow: {
+      position: 'absolute',
+      top: 18,
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      backgroundColor: theme.profilePrimarySoft,
+    },
+    avatarGroup: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarOuter: {
+      width: 128,
+      height: 128,
+      borderRadius: 64,
+      backgroundColor: theme.profileSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 4,
+      borderColor: theme.profileSurface,
+      shadowColor: theme.profileCardShadow,
+      shadowOpacity: 1,
+      shadowOffset: { width: 0, height: 10 },
+      shadowRadius: 18,
+      elevation: 6,
+    },
+    avatar: {
+      width: 118,
+      height: 118,
+      borderRadius: 59,
+    },
+    editBadge: {
+      position: 'absolute',
+      bottom: 4,
+      right: 4,
+      backgroundColor: theme.profileSurface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.profileBorder,
+      padding: 6,
+      shadowColor: theme.profileCardShadow,
+      shadowOpacity: 1,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    nameBlock: {
+      marginTop: 16,
+      alignItems: 'center',
+    },
+    name: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: theme.profileTextMain,
+    },
+    email: {
+      marginTop: 4,
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.profileTextSub,
+    },
+    memberBadge: {
+      marginTop: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: theme.profilePrimarySoft,
+      borderWidth: 1,
+      borderColor: theme.profilePrimarySoft,
+    },
+    memberBadgeText: {
+      fontSize: 11,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      color: theme.profilePrimary,
+      letterSpacing: 0.6,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+    },
+    statCard: {
+      flex: 1,
+      minWidth: 90,
+      backgroundColor: theme.profileSurface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: theme.profileBorder,
+      paddingVertical: 14,
+      alignItems: 'center',
+      shadowColor: theme.profileCardShadow,
+      shadowOpacity: 1,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    statCardSpacing: {
+      marginRight: 12,
+    },
+    statValue: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.profileTextMain,
+    },
+    statLabel: {
+      marginTop: 4,
+      fontSize: 11,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      color: theme.profileTextSub,
+      letterSpacing: 0.8,
+    },
+    tabsRow: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: theme.profileBorder,
+      backgroundColor: theme.profileBackground,
+      paddingHorizontal: 16,
+    },
+    tabItem: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      borderBottomWidth: 3,
+      borderBottomColor: theme.transparent,
+    },
+    tabItemActive: {
+      borderBottomColor: theme.profilePrimary,
+    },
+    tabContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    tabIcon: {
+      marginRight: 6,
+    },
+    tabTextActive: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: theme.profileTextMain,
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: theme.profileTextSub,
+    },
+    emptyState: {
+      paddingVertical: 40,
+      paddingHorizontal: 32,
+      alignItems: 'center',
+    },
+    emptyIconWrapper: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      backgroundColor: theme.profilePrimarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
+    emptyIconInner: {
+      width: 64,
+      height: 64,
+      borderRadius: 16,
+      backgroundColor: theme.profileSurface,
+      borderWidth: 1,
+      borderColor: theme.profileBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: theme.profileCardShadow,
+      shadowOpacity: 1,
+      shadowOffset: { width: 0, height: 6 },
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.profileTextMain,
+      textAlign: 'center',
+    },
+    emptyBody: {
+      marginTop: 8,
+      fontSize: 13,
+      fontWeight: '400',
+      color: theme.profileTextSub,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    emptyCta: {
+      marginTop: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.profilePrimary,
+      borderRadius: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      shadowColor: theme.profilePrimaryGlow,
+      shadowOpacity: 1,
+      shadowOffset: { width: 0, height: 8 },
+      shadowRadius: 16,
+      elevation: 4,
+    },
+    emptyCtaText: {
+      marginLeft: 8,
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.white,
+      letterSpacing: 0.6,
+    },
+    error: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      color: theme.danger,
+      textAlign: 'center',
+    },
+    footer: {
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+  });

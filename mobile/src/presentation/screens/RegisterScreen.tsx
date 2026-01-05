@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
@@ -7,7 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { registerCopy } from '../content/registerCopy';
 
 const emailRegex = /\S+@\S+\.\S+/;
@@ -21,6 +22,8 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const submit = async () => {
     if (!name.trim()) {
@@ -78,13 +81,14 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.black} />
+        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.title}>{registerCopy.title}</Text>
         <TextInput
           style={[styles.input, styles.firstInput]}
           placeholder={registerCopy.placeholders.name}
+          placeholderTextColor={theme.textSecondary}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
@@ -94,6 +98,7 @@ export default function RegisterScreen() {
         <TextInput
           style={[styles.input, styles.inputSpacing]}
           placeholder={registerCopy.placeholders.email}
+          placeholderTextColor={theme.textSecondary}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -105,6 +110,7 @@ export default function RegisterScreen() {
           <TextInput
             style={[styles.input, styles.inputSpacing, styles.passwordInput]}
             placeholder={registerCopy.placeholders.password}
+            placeholderTextColor={theme.textSecondary}
             secureTextEntry={!passwordVisible}
             value={password}
             onChangeText={setPassword}
@@ -115,7 +121,7 @@ export default function RegisterScreen() {
             <MaterialIcons
               name={passwordVisible ? 'visibility-off' : 'visibility'}
               size={18}
-              color={colors.darkGrey}
+              color={theme.iconMuted}
             />
           </Pressable>
         </View>
@@ -123,6 +129,7 @@ export default function RegisterScreen() {
           <TextInput
             style={[styles.input, styles.inputSpacing, styles.passwordInput]}
             placeholder={registerCopy.placeholders.confirm}
+            placeholderTextColor={theme.textSecondary}
             secureTextEntry={!confirmVisible}
             value={confirm}
             onChangeText={setConfirm}
@@ -133,7 +140,7 @@ export default function RegisterScreen() {
             <MaterialIcons
               name={confirmVisible ? 'visibility-off' : 'visibility'}
               size={18}
-              color={colors.darkGrey}
+              color={theme.iconMuted}
             />
           </Pressable>
         </View>
@@ -150,7 +157,7 @@ export default function RegisterScreen() {
         </Pressable>
         <Text style={styles.orText}>{registerCopy.or}</Text>
         <Pressable style={styles.googleButton}>
-          <MaterialCommunityIcons name="google" size={20} color={colors.darkGrey} />
+          <MaterialCommunityIcons name="google" size={20} color={theme.iconMuted} />
           <Text style={styles.googleText}>{registerCopy.google}</Text>
         </Pressable>
       </View>
@@ -158,88 +165,94 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 32,
-    top: 32,
-    padding: 8,
-    zIndex: 2,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 32,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 24,
-  },
-  inputWrapper: {
-    position: 'relative',
-  },
-  input: {
-    height: 55,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.borderGrey,
-    paddingHorizontal: 15,
-    backgroundColor: colors.white,
-    fontSize: 16,
-  },
-  firstInput: {
-    marginTop: 8,
-  },
-  inputSpacing: {
-    marginTop: 16,
-  },
-  passwordInput: {
-    paddingRight: 36,
-  },
-  passwordToggle: {
-    position: 'absolute',
-    right: 10,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-  },
-  primaryButton: {
-    height: 65,
-    backgroundColor: colors.mainBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    borderRadius: 4,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.7,
-  },
-  primaryButtonText: {
-    color: colors.white,
-    fontSize: 16,
-  },
-  orText: {
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  googleButton: {
-    marginTop: 8,
-    height: 65,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    borderRadius: 4,
-    marginHorizontal: 32,
-  },
-  googleText: {
-    fontSize: 16,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.backgroundLight,
+    },
+    backButton: {
+      position: 'absolute',
+      left: 32,
+      top: 32,
+      padding: 8,
+      zIndex: 2,
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 32,
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 30,
+      fontWeight: '700',
+      marginBottom: 24,
+      color: theme.textPrimary,
+    },
+    inputWrapper: {
+      position: 'relative',
+    },
+    input: {
+      height: 55,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.borderGrey,
+      paddingHorizontal: 15,
+      backgroundColor: theme.surface,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    firstInput: {
+      marginTop: 8,
+    },
+    inputSpacing: {
+      marginTop: 16,
+    },
+    passwordInput: {
+      paddingRight: 36,
+    },
+    passwordToggle: {
+      position: 'absolute',
+      right: 10,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
+    },
+    primaryButton: {
+      height: 65,
+      backgroundColor: theme.mainBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 16,
+      borderRadius: 4,
+    },
+    primaryButtonDisabled: {
+      opacity: 0.7,
+    },
+    primaryButtonText: {
+      color: theme.white,
+      fontSize: 16,
+    },
+    orText: {
+      marginTop: 16,
+      textAlign: 'center',
+      color: theme.textSecondary,
+    },
+    googleButton: {
+      marginTop: 8,
+      height: 65,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 8,
+      borderRadius: 4,
+      marginHorizontal: 32,
+      backgroundColor: theme.surface,
+    },
+    googleText: {
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+  });

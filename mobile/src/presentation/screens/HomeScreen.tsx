@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,7 +15,8 @@ import type { MainStackParamList } from '../navigation/MainStack';
 import type { MainTabParamList } from '../navigation/MainTabs';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { homeCopy } from '../content/homeCopy';
 
 type Navigation = CompositeNavigationProp<
@@ -34,6 +35,8 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { posts: repository, users: userRepository } = useRepositories();
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -183,10 +186,10 @@ export default function HomeScreen() {
         <View style={styles.planetStack}>
           <View style={styles.planet}>
             <View style={styles.planetIconWrap}>
-              <MaterialIcons name="groups" size={54} color={colors.homeIconMuted} />
-              <MaterialIcons name="chat-bubble" size={20} color={colors.homeIconSoft} style={styles.iconBubble} />
-              <MaterialIcons name="favorite" size={24} color={colors.homeAccentSoft} style={styles.iconHeart} />
-              <MaterialIcons name="bolt" size={18} color={colors.homeIconSoft} style={styles.iconBolt} />
+              <MaterialIcons name="groups" size={54} color={theme.homeIconMuted} />
+              <MaterialIcons name="chat-bubble" size={20} color={theme.homeIconSoft} style={styles.iconBubble} />
+              <MaterialIcons name="favorite" size={24} color={theme.homeAccentSoft} style={styles.iconHeart} />
+              <MaterialIcons name="bolt" size={18} color={theme.homeIconSoft} style={styles.iconBolt} />
             </View>
           </View>
           <View style={styles.planetShadow} />
@@ -194,13 +197,13 @@ export default function HomeScreen() {
         <Text style={styles.emptyTitle}>{homeCopy.emptyTitle}</Text>
         <Text style={styles.emptyBody}>{homeCopy.emptyBody}</Text>
         <View style={styles.emptyCtas}>
-          <Pressable
-            style={styles.primaryCta}
-            onPress={() => navigation.navigate('Search', { focus: true })}
-            testID={homeCopy.testIds.explore}
-            accessibilityLabel={homeCopy.testIds.explore}
-          >
-            <MaterialIcons name="explore" size={20} color={colors.white} />
+            <Pressable
+              style={styles.primaryCta}
+              onPress={() => navigation.navigate('Search', { focus: true })}
+              testID={homeCopy.testIds.explore}
+              accessibilityLabel={homeCopy.testIds.explore}
+            >
+            <MaterialIcons name="explore" size={20} color={theme.white} />
             <Text style={styles.primaryCtaText}>{homeCopy.primaryCta}</Text>
           </Pressable>
           <Pressable
@@ -209,7 +212,7 @@ export default function HomeScreen() {
             testID={homeCopy.testIds.connections}
             accessibilityLabel={homeCopy.testIds.connections}
           >
-            <MaterialIcons name="person-add" size={20} color={colors.homeTextSub} />
+            <MaterialIcons name="person-add" size={20} color={theme.homeTextSub} />
             <Text style={styles.secondaryCtaText}>{homeCopy.secondaryCta}</Text>
           </Pressable>
         </View>
@@ -240,10 +243,9 @@ export default function HomeScreen() {
             source={profilePhoto ? { uri: profilePhoto } : require('../../../assets/user_icon.png')}
             style={styles.avatar}
           />
-          <View style={styles.avatarBadge} />
         </Pressable>
         <View style={styles.searchContainer}>
-          <MaterialIcons name="search" size={20} color={colors.homeTextSub} />
+          <MaterialIcons name="search" size={20} color={theme.homeTextSub} />
           <Text style={styles.searchPlaceholder}>{homeCopy.searchPlaceholder}</Text>
           <Pressable
             style={styles.searchOverlay}
@@ -258,7 +260,7 @@ export default function HomeScreen() {
           testID={homeCopy.testIds.notifications}
           accessibilityLabel={homeCopy.testIds.notifications}
         >
-          <MaterialIcons name="notifications" size={20} color={colors.homeTextSub} />
+          <MaterialIcons name="notifications" size={20} color={theme.homeTextSub} />
           <View style={styles.notificationDot} />
         </Pressable>
       </View>
@@ -282,7 +284,7 @@ export default function HomeScreen() {
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.homePrimary} />
+              <ActivityIndicator size="large" color={theme.homePrimary} />
             </View>
           ) : (
             renderEmptyState()
@@ -291,7 +293,7 @@ export default function HomeScreen() {
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.homePrimary} />
+              <ActivityIndicator size="small" color={theme.homePrimary} />
             </View>
           ) : null
         }
@@ -302,260 +304,250 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.homeBackground,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: colors.homeBackground,
-  },
-  avatarCard: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.homeBorder,
-    backgroundColor: colors.homeSurfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.danger,
-    borderWidth: 2,
-    borderColor: colors.homeBackground,
-  },
-  searchContainer: {
-    flex: 1,
-    height: 42,
-    marginLeft: 12,
-    borderRadius: 14,
-    backgroundColor: colors.homeSurfaceAlt,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: colors.homeBorder,
-  },
-  searchPlaceholder: {
-    color: colors.homeTextSub,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  searchOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  notificationButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    marginLeft: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.homeSurfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.homeBorder,
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 8,
-    right: 9,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.danger,
-    borderWidth: 2,
-    borderColor: colors.homeSurfaceAlt,
-  },
-  list: {
-    backgroundColor: colors.homeBackground,
-  },
-  emptyContainer: {
-    flexGrow: 1,
-  },
-  center: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  footer: {
-    paddingVertical: 16,
-  },
-  error: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    color: colors.danger,
-  },
-  emptyState: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 80,
-    paddingTop: 24,
-    justifyContent: 'center',
-  },
-  emptyGlowTop: {
-    position: 'absolute',
-    top: 80,
-    left: 30,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: colors.homeGlowPrimary,
-  },
-  emptyGlowBottom: {
-    position: 'absolute',
-    bottom: 140,
-    right: 20,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: colors.homeGlowSecondary,
-  },
-  emptyContent: {
-    alignItems: 'center',
-  },
-  planetStack: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  planet: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: colors.homeSurfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.homeBorder,
-    shadowColor: colors.black,
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  planetIconWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBubble: {
-    position: 'absolute',
-    top: -18,
-    right: -18,
-  },
-  iconHeart: {
-    position: 'absolute',
-    bottom: -12,
-    left: -24,
-  },
-  iconBolt: {
-    position: 'absolute',
-    top: 16,
-    left: -28,
-  },
-  planetShadow: {
-    marginTop: 14,
-    width: 90,
-    height: 10,
-    borderRadius: 50,
-    backgroundColor: colors.homeShadow,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.homeTextMain,
-    marginBottom: 8,
-  },
-  emptyBody: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-    color: colors.homeTextSub,
-    marginBottom: 20,
-  },
-  emptyCtas: {
-    width: '100%',
-    gap: 12,
-  },
-  primaryCta: {
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: colors.homePrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    shadowColor: colors.homePrimary,
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  primaryCtaText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  secondaryCta: {
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: colors.homeSurface,
-    borderWidth: 1,
-    borderColor: colors.homeBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  secondaryCtaText: {
-    color: colors.homeTextMain,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  tagsSection: {
-    marginTop: 28,
-    alignItems: 'center',
-    gap: 10,
-  },
-  tagsTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    color: colors.homeTextSub,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  tagChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: colors.homeSurface,
-    borderWidth: 1,
-    borderColor: colors.homeBorder,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.homeTextSub,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.homeBackground,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 12,
+      backgroundColor: theme.homeBackground,
+    },
+    avatarCard: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.homeBorder,
+      backgroundColor: theme.homeSurfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatar: {
+      width: '100%',
+      height: '100%',
+    },
+    searchContainer: {
+      flex: 1,
+      height: 42,
+      marginLeft: 12,
+      borderRadius: 14,
+      backgroundColor: theme.homeSurfaceAlt,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: theme.homeBorder,
+    },
+    searchPlaceholder: {
+      color: theme.homeTextSub,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    searchOverlay: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    notificationButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      marginLeft: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.homeSurfaceAlt,
+      borderWidth: 1,
+      borderColor: theme.homeBorder,
+    },
+    notificationDot: {
+      position: 'absolute',
+      top: 8,
+      right: 9,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: theme.danger,
+      borderWidth: 2,
+      borderColor: theme.homeSurfaceAlt,
+    },
+    list: {
+      backgroundColor: theme.homeBackground,
+    },
+    emptyContainer: {
+      flexGrow: 1,
+      justifyContent: 'center',
+    },
+    center: {
+      marginTop: 24,
+      alignItems: 'center',
+    },
+    footer: {
+      paddingVertical: 16,
+    },
+    error: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      color: theme.danger,
+    },
+    emptyState: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingVertical: 24,
+      justifyContent: 'center',
+    },
+    emptyGlowTop: {
+      position: 'absolute',
+      top: 80,
+      left: 30,
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      backgroundColor: theme.homeGlowPrimary,
+    },
+    emptyGlowBottom: {
+      position: 'absolute',
+      bottom: 140,
+      right: 20,
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      backgroundColor: theme.homeGlowSecondary,
+    },
+    emptyContent: {
+      alignItems: 'center',
+    },
+    planetStack: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    planet: {
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      backgroundColor: theme.homeSurfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: theme.homeBorder,
+      shadowColor: theme.black,
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
+    },
+    planetIconWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconBubble: {
+      position: 'absolute',
+      top: -18,
+      right: -18,
+    },
+    iconHeart: {
+      position: 'absolute',
+      bottom: -12,
+      left: -24,
+    },
+    iconBolt: {
+      position: 'absolute',
+      top: 16,
+      left: -28,
+    },
+    planetShadow: {
+      marginTop: 14,
+      width: 90,
+      height: 10,
+      borderRadius: 50,
+      backgroundColor: theme.homeShadow,
+    },
+    emptyTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.homeTextMain,
+      marginBottom: 8,
+    },
+    emptyBody: {
+      fontSize: 13,
+      lineHeight: 20,
+      textAlign: 'center',
+      color: theme.homeTextSub,
+      marginBottom: 20,
+    },
+    emptyCtas: {
+      width: '100%',
+      gap: 12,
+    },
+    primaryCta: {
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: theme.homePrimary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 8,
+      shadowColor: theme.homePrimary,
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
+    },
+    primaryCtaText: {
+      color: theme.white,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    secondaryCta: {
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: theme.homeSurface,
+      borderWidth: 1,
+      borderColor: theme.homeBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    secondaryCtaText: {
+      color: theme.homeTextMain,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    tagsSection: {
+      marginTop: 28,
+      alignItems: 'center',
+      gap: 10,
+    },
+    tagsTitle: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 1.4,
+      textTransform: 'uppercase',
+      color: theme.homeTextSub,
+    },
+    tagsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    tagChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 10,
+      backgroundColor: theme.homeSurface,
+      borderWidth: 1,
+      borderColor: theme.homeBorder,
+    },
+    tagText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.homeTextSub,
+    },
+  });
