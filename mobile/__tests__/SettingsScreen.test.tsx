@@ -6,6 +6,8 @@ import SettingsScreen from '../src/presentation/screens/SettingsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { settingsCopy } from '../src/presentation/content/settingsCopy';
 
+const setOnlineVisibility = jest.fn();
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
 }));
@@ -14,6 +16,13 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
   useAuth: () => ({
     session: { user: { id: 'user-1', email: 'user@example.com' } },
     initializing: false,
+  }),
+}));
+
+jest.mock('../src/app/providers/PresenceProvider', () => ({
+  usePresence: () => ({
+    isOnlineVisible: true,
+    setOnlineVisibility,
   }),
 }));
 
@@ -42,6 +51,7 @@ describe('SettingsScreen', () => {
     network.getNetworkStateAsync.mockReset();
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
     supabase.auth.signOut.mockReset();
+    setOnlineVisibility.mockReset();
   });
 
   it('shows placeholder alert for toggles', () => {
@@ -62,6 +72,25 @@ describe('SettingsScreen', () => {
       settingsCopy.alerts.unavailable.title,
       settingsCopy.alerts.unavailable.message
     );
+  });
+
+  it('updates online visibility preference', async () => {
+    const usersRepo = {
+      deleteUser: jest.fn(),
+    };
+    setOnlineVisibility.mockResolvedValue(undefined);
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent(getByTestId(settingsCopy.testIds.onlineStatus), 'valueChange', false);
+
+    await waitFor(() => {
+      expect(setOnlineVisibility).toHaveBeenCalledWith(false);
+    });
   });
 
   it('deletes profile data when online', async () => {
@@ -136,6 +165,7 @@ describe('SettingsScreen', () => {
     expect(getByText(settingsCopy.sections.account)).toBeTruthy();
     expect(getByText(settingsCopy.options.darkMode)).toBeTruthy();
     expect(getByText(settingsCopy.options.notifications)).toBeTruthy();
+    expect(getByText(settingsCopy.options.onlineStatus)).toBeTruthy();
     expect(getByText(settingsCopy.options.deleteAccount)).toBeTruthy();
     expect(getByText(settingsCopy.deleteButton)).toBeTruthy();
   });

@@ -7,13 +7,10 @@ import { drawerCopy } from '../src/presentation/content/drawerCopy';
 
 jest.mock('@react-navigation/drawer', () => {
   const React = require('react');
-  const { Text } = require('react-native');
 
   return {
     DrawerContentScrollView: ({ children }: { children: React.ReactNode }) =>
       React.createElement(React.Fragment, null, children),
-    DrawerItem: ({ label, testID }: { label: string; testID?: string }) =>
-      React.createElement(Text, { testID }, label),
   };
 });
 
@@ -24,10 +21,21 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
   }),
 }));
 
+jest.mock('../src/app/providers/PresenceProvider', () => ({
+  usePresence: () => ({
+    isOnline: true,
+    isOnlineVisible: true,
+    setOnlineVisibility: jest.fn(),
+  }),
+}));
+
 describe('DrawerContent', () => {
   it('renders drawer labels', async () => {
     const usersRepo = {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Jane Doe' }),
+    };
+    const postsRepo = {
+      getSavedPostsCount: jest.fn().mockResolvedValue(12),
     };
 
     const navigation = {
@@ -45,15 +53,19 @@ describe('DrawerContent', () => {
     const descriptors = {} as any;
 
     const { getByText, getByTestId } = render(
-      <RepositoryProvider overrides={{ users: usersRepo }}>
+      <RepositoryProvider overrides={{ users: usersRepo, posts: postsRepo }}>
         <DrawerContent navigation={navigation} state={state} descriptors={descriptors} />
       </RepositoryProvider>
     );
 
     await waitFor(() => expect(getByText('Jane Doe')).toBeTruthy());
+    expect(getByText('12')).toBeTruthy();
     expect(getByTestId(drawerCopy.testIds.profile)).toBeTruthy();
     expect(getByTestId(drawerCopy.testIds.saved)).toBeTruthy();
+    expect(getByTestId(drawerCopy.testIds.posts)).toBeTruthy();
     expect(getByTestId(drawerCopy.testIds.settings)).toBeTruthy();
+    expect(getByTestId(drawerCopy.testIds.privacy)).toBeTruthy();
+    expect(getByTestId(drawerCopy.testIds.logout)).toBeTruthy();
     expect(getByText(drawerCopy.profile)).toBeTruthy();
     expect(getByText(drawerCopy.saved)).toBeTruthy();
     expect(getByText(drawerCopy.posts)).toBeTruthy();
