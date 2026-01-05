@@ -3,12 +3,14 @@ import { t } from '../i18n';
 export const tabCopy = {
   home: t('tabs.home'),
   add: t('tabs.add'),
-  search: t('tabs.search'),
+  explore: t('tabs.explore'),
+  inbox: t('tabs.inbox'),
   profile: t('tabs.profile'),
   testIds: {
     home: 'tab-home',
     add: 'tab-add',
-    search: 'tab-search',
+    explore: 'tab-explore',
+    inbox: 'tab-inbox',
     profile: 'tab-profile',
   },
 };

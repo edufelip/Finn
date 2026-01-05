@@ -20,13 +20,13 @@ import type { ThemeColors } from '../theme/colors';
 import { searchCopy } from '../content/searchCopy';
 
 type Navigation = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'Search'>,
+  BottomTabNavigationProp<MainTabParamList, 'Explore'>,
   NativeStackNavigationProp<MainStackParamList>
 >;
 
 export default function SearchScreen() {
   const navigation = useNavigation<Navigation>();
-  const route = useRoute<RouteProp<MainTabParamList, 'Search'>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Explore'>>();
   const { session } = useAuth();
   const { communities: communityRepository, users: userRepository } = useRepositories();
   const [search, setSearch] = useState('');

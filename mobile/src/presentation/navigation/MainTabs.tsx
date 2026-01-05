@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import CreateBottomSheet from '../components/CreateBottomSheet';
 import type { MainStackParamList } from './MainStack';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
@@ -16,7 +17,8 @@ import { tabCopy } from '../content/tabCopy';
 export type MainTabParamList = {
   Home: undefined;
   Add: undefined;
-  Search: { focus?: boolean } | undefined;
+  Explore: { focus?: boolean } | undefined;
+  Inbox: undefined;
   Profile: undefined;
 };
 
@@ -70,34 +72,7 @@ export default function MainTabs() {
           }}
         />
         <Tab.Screen
-          name="Add"
-          component={EmptyScreen}
-          options={{
-            tabBarLabel: tabCopy.add,
-            tabBarIcon: ({ color }) => <MaterialIcons name="add" size={24} color={color} />,
-            tabBarButton: (props) => (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={openCreate}
-                  style={[styles.tabButton, props.style]}
-                  testID={tabCopy.testIds.add}
-                  accessibilityLabel={tabCopy.testIds.add}
-                >
-                  <View style={styles.fab}>
-                    <MaterialIcons name="add" size={26} color={theme.white} />
-                  </View>
-                  <Text style={styles.tabLabel}>{tabCopy.add}</Text>
-                </Pressable>
-              ),
-          }}
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-            },
-          }}
-        />
-        <Tab.Screen
-          name="Search"
+          name="Explore"
           component={SearchScreen}
           options={{
             tabBarButton: (props) => {
@@ -109,11 +84,61 @@ export default function MainTabs() {
                   onPress={props.onPress}
                   onLongPress={props.onLongPress}
                   style={[styles.tabButton, props.style]}
-                  testID={tabCopy.testIds.search}
-                  accessibilityLabel={tabCopy.testIds.search}
+                  testID={tabCopy.testIds.explore}
+                  accessibilityLabel={tabCopy.testIds.explore}
                 >
-                  <MaterialIcons name="search" size={24} color={tabColor(focused)} />
-                  <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{tabCopy.search}</Text>
+                  <MaterialIcons name="explore" size={24} color={tabColor(focused)} />
+                  <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{tabCopy.explore}</Text>
+                </Pressable>
+              );
+            },
+          }}
+        />
+        <Tab.Screen
+          name="Add"
+          component={EmptyScreen}
+          options={{
+            tabBarLabel: tabCopy.add,
+            tabBarIcon: ({ color }) => <MaterialIcons name="add" size={24} color={color} />,
+            tabBarButton: (props) => (
+              <Pressable
+                accessibilityRole="button"
+                onPress={openCreate}
+                style={[styles.tabButton, props.style]}
+                testID={tabCopy.testIds.add}
+                accessibilityLabel={tabCopy.testIds.add}
+              >
+                <View style={styles.fab}>
+                  <MaterialIcons name="add" size={26} color={theme.white} />
+                </View>
+                <Text style={styles.tabLabel}>{tabCopy.add}</Text>
+              </Pressable>
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+            },
+          }}
+        />
+        <Tab.Screen
+          name="Inbox"
+          component={NotificationsScreen}
+          options={{
+            tabBarButton: (props) => {
+              const focused = props.accessibilityState?.selected;
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={props.accessibilityState}
+                  onPress={props.onPress}
+                  onLongPress={props.onLongPress}
+                  style={[styles.tabButton, props.style]}
+                  testID={tabCopy.testIds.inbox}
+                  accessibilityLabel={tabCopy.testIds.inbox}
+                >
+                  <MaterialIcons name="inbox" size={24} color={tabColor(focused)} />
+                  <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{tabCopy.inbox}</Text>
                 </Pressable>
               );
             },

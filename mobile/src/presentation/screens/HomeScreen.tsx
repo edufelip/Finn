@@ -199,7 +199,7 @@ export default function HomeScreen() {
         <View style={styles.emptyCtas}>
             <Pressable
               style={styles.primaryCta}
-              onPress={() => navigation.navigate('Search', { focus: true })}
+              onPress={() => navigation.navigate('Explore', { focus: true })}
               testID={homeCopy.testIds.explore}
               accessibilityLabel={homeCopy.testIds.explore}
             >
@@ -208,7 +208,7 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={styles.secondaryCta}
-            onPress={() => navigation.navigate('Search', { focus: true })}
+            onPress={() => navigation.navigate('Explore', { focus: true })}
             testID={homeCopy.testIds.connections}
             accessibilityLabel={homeCopy.testIds.connections}
           >
@@ -249,7 +249,7 @@ export default function HomeScreen() {
           <Text style={styles.searchPlaceholder}>{homeCopy.searchPlaceholder}</Text>
           <Pressable
             style={styles.searchOverlay}
-            onPress={() => navigation.navigate('Search', { focus: true })}
+            onPress={() => navigation.navigate('Explore', { focus: true })}
             testID={homeCopy.testIds.search}
             accessibilityLabel={homeCopy.testIds.search}
           />

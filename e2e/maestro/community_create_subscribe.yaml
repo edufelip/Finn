@@ -20,7 +20,7 @@ appId: com.edufelip.finn
     id: "create-community-submit"
 - tapOn: "OK"
 - tapOn:
-    id: "tab-search"
+    id: "tab-explore"
 - assertVisible: "Search"
 - assertVisible: "Maestro Community"
 - tapOn:

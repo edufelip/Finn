@@ -6,11 +6,13 @@ describe('MainTabs', () => {
     expect(typeof MainTabs).toBe('function');
     expect(tabCopy.home).toBeTruthy();
     expect(tabCopy.add).toBeTruthy();
-    expect(tabCopy.search).toBeTruthy();
+    expect(tabCopy.explore).toBeTruthy();
+    expect(tabCopy.inbox).toBeTruthy();
     expect(tabCopy.profile).toBeTruthy();
     expect(tabCopy.testIds.home).toBeTruthy();
     expect(tabCopy.testIds.add).toBeTruthy();
-    expect(tabCopy.testIds.search).toBeTruthy();
+    expect(tabCopy.testIds.explore).toBeTruthy();
+    expect(tabCopy.testIds.inbox).toBeTruthy();
     expect(tabCopy.testIds.profile).toBeTruthy();
   });
 });

@@ -42,6 +42,8 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'tabs.home': 'Home',
     'tabs.add': 'Add',
     'tabs.search': 'Search',
+    'tabs.explore': 'Explore',
+    'tabs.inbox': 'Inbox',
     'tabs.profile': 'Profile',
 
     // Home
