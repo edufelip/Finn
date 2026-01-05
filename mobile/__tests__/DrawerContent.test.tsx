@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, waitFor } from '@testing-library/react-native';
 
 import DrawerContent from '../src/presentation/navigation/DrawerContent';
@@ -30,6 +31,10 @@ jest.mock('../src/app/providers/PresenceProvider', () => ({
 }));
 
 describe('DrawerContent', () => {
+  beforeEach(() => {
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  });
+
   it('renders drawer labels', async () => {
     const usersRepo = {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Jane Doe' }),
@@ -72,5 +77,42 @@ describe('DrawerContent', () => {
     expect(getByText(drawerCopy.settings)).toBeTruthy();
     expect(getByText(drawerCopy.privacyPolicy)).toBeTruthy();
     expect(getByText(drawerCopy.logout)).toBeTruthy();
+  });
+
+  it('confirms before logout', async () => {
+    const usersRepo = {
+      getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Jane Doe' }),
+    };
+    const postsRepo = {
+      getSavedPostsCount: jest.fn().mockResolvedValue(0),
+    };
+
+    const navigation = {
+      closeDrawer: jest.fn(),
+      getParent: () => ({ navigate: jest.fn() }),
+    } as any;
+
+    const state = {
+      index: 0,
+      key: 'drawer',
+      routeNames: ['Tabs'],
+      routes: [{ key: 'tabs', name: 'Tabs' }],
+    } as any;
+
+    const descriptors = {} as any;
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo, posts: postsRepo }}>
+        <DrawerContent navigation={navigation} state={state} descriptors={descriptors} />
+      </RepositoryProvider>
+    );
+
+    await waitFor(() => expect(usersRepo.getUser).toHaveBeenCalled());
+    getByTestId(drawerCopy.testIds.logout).props.onPress();
+    expect(Alert.alert).toHaveBeenCalledWith(
+      drawerCopy.alerts.logout.title,
+      drawerCopy.alerts.logout.message,
+      expect.any(Array)
+    );
   });
 });

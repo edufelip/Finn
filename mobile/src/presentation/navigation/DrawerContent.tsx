@@ -189,7 +189,16 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutPressed]}
           onPress={() => {
-            supabase.auth.signOut();
+            Alert.alert(drawerCopy.alerts.logout.title, drawerCopy.alerts.logout.message, [
+              { text: drawerCopy.alerts.logout.cancel, style: 'cancel' },
+              {
+                text: drawerCopy.alerts.logout.confirm,
+                style: 'destructive',
+                onPress: () => {
+                  supabase.auth.signOut();
+                },
+              },
+            ]);
           }}
           testID={drawerCopy.testIds.logout}
         >

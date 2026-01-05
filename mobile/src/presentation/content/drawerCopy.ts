@@ -18,6 +18,12 @@ export const drawerCopy = {
       title: t('drawer.alert.unavailable.title'),
       message: t('drawer.alert.unavailable.message'),
     },
+    logout: {
+      title: t('drawer.alert.logout.title'),
+      message: t('drawer.alert.logout.message'),
+      confirm: t('drawer.alert.logout.confirm'),
+      cancel: t('drawer.alert.logout.cancel'),
+    },
   },
   testIds: {
     profile: 'drawer-profile',

@@ -134,6 +134,10 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'drawer.version': 'Version {version}',
     'drawer.alert.unavailable.title': 'Not available',
     'drawer.alert.unavailable.message': 'This setting is not available yet.',
+    'drawer.alert.logout.title': 'Log out',
+    'drawer.alert.logout.message': 'Are you sure you want to log out?',
+    'drawer.alert.logout.confirm': 'Log out',
+    'drawer.alert.logout.cancel': 'Cancel',
 
     // Create community
     'createCommunity.titleLabel': 'Your community name',
