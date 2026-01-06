@@ -1,11 +1,15 @@
 import { t } from '../i18n';
 
 export const createCommunityCopy = {
+  headerTitle: t('createCommunity.headerTitle'),
   titleLabel: t('createCommunity.titleLabel'),
   titlePlaceholder: t('createCommunity.titlePlaceholder'),
   descriptionLabel: t('createCommunity.descriptionLabel'),
   descriptionPlaceholder: t('createCommunity.descriptionPlaceholder'),
+  descriptionCount: (count: number, max: number) =>
+    t('createCommunity.descriptionCount', { count, max }),
   iconLabel: t('createCommunity.iconLabel'),
+  iconHelper: t('createCommunity.iconHelper'),
   submit: t('createCommunity.submit'),
   submitLoading: t('createCommunity.submitLoading'),
   alerts: {
