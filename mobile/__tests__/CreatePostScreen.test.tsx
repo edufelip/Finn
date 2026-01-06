@@ -238,6 +238,7 @@ describe('CreatePostScreen', () => {
 
     await waitFor(() => expect(getByText(createPostCopy.title)).toBeTruthy());
     expect(getByPlaceholderText(createPostCopy.contentPlaceholder)).toBeTruthy();
+    expect(getByText(createPostCopy.contentCount(0, 500))).toBeTruthy();
     expect(getByText(createPostCopy.submit)).toBeTruthy();
     fireEvent.press(getByTestId(createPostCopy.testIds.communityPicker));
     await waitFor(() => expect(getByText(createPostCopy.modalTitle)).toBeTruthy());

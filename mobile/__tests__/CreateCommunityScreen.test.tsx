@@ -195,7 +195,7 @@ describe('CreateCommunityScreen', () => {
   });
 
   it('renders community form copy', () => {
-    const { getByText, getByPlaceholderText } = render(
+    const { getByText, getByPlaceholderText, getByTestId } = render(
       <RepositoryProvider overrides={{ communities: { saveCommunity: jest.fn() } }}>
         <CreateCommunityScreen />
       </RepositoryProvider>
@@ -206,6 +206,6 @@ describe('CreateCommunityScreen', () => {
     expect(getByText(createCommunityCopy.descriptionLabel)).toBeTruthy();
     expect(getByPlaceholderText(createCommunityCopy.descriptionPlaceholder)).toBeTruthy();
     expect(getByText(createCommunityCopy.iconLabel)).toBeTruthy();
-    expect(getByText(createCommunityCopy.submit)).toBeTruthy();
+    expect(getByTestId(createCommunityCopy.testIds.submit)).toBeTruthy();
   });
 });
