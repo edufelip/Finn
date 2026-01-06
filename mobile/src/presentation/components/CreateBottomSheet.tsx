@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { createBottomSheetCopy } from '../content/createBottomSheetCopy';
 
@@ -20,18 +20,13 @@ export default function CreateBottomSheet({
   onCreateCommunity,
   onCreatePost,
 }: CreateBottomSheetProps) {
-  const { isDark } = useTheme();
   const theme = useThemeColors();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const overlayStyle = [
-    styles.backdrop,
-    { backgroundColor: theme.scrim, opacity: isDark ? 0.55 : 0.4 },
-  ];
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={overlayStyle} onPress={onClose} />
+      <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.handle} />
         <View style={styles.headerRow}>
