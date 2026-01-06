@@ -114,14 +114,14 @@ export default function CreateCommunityScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
+        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onBackground} />
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.title}>{createCommunityCopy.titleLabel}</Text>
         <TextInput
           style={styles.input}
           placeholder={createCommunityCopy.titlePlaceholder}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.onSurfaceVariant}
           value={title}
           onChangeText={setTitle}
           maxLength={25}
@@ -132,7 +132,7 @@ export default function CreateCommunityScreen() {
         <TextInput
           style={styles.input}
           placeholder={createCommunityCopy.descriptionPlaceholder}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.onSurfaceVariant}
           value={description}
           onChangeText={setDescription}
           maxLength={100}
@@ -155,7 +155,7 @@ export default function CreateCommunityScreen() {
             />
           </View>
           <View style={styles.iconBadge}>
-            <MaterialIcons name="date-range" size={18} color={theme.white} />
+            <MaterialIcons name="date-range" size={18} color={theme.onTertiary} />
           </View>
         </Pressable>
         <Pressable
@@ -178,7 +178,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     backButton: {
       position: 'absolute',
@@ -196,13 +196,13 @@ const createStyles = (theme: ThemeColors) =>
     title: {
       fontSize: 24,
       fontWeight: '700',
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     input: {
       borderBottomWidth: 1,
-      borderColor: theme.borderGrey,
+      borderColor: theme.outline,
       paddingVertical: 8,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     iconSelect: {
       alignSelf: 'center',
@@ -227,7 +227,7 @@ const createStyles = (theme: ThemeColors) =>
       width: 35,
       height: 35,
       borderRadius: 17.5,
-      backgroundColor: theme.accentOrange,
+      backgroundColor: theme.tertiary,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -236,7 +236,7 @@ const createStyles = (theme: ThemeColors) =>
       height: 60,
       borderRadius: 20,
       borderWidth: 2,
-      borderColor: theme.mainBlue,
+      borderColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
       alignSelf: 'center',
@@ -246,6 +246,6 @@ const createStyles = (theme: ThemeColors) =>
     },
     createButtonText: {
       fontSize: 16,
-      color: theme.mainBlue,
+      color: theme.primary,
     },
   });

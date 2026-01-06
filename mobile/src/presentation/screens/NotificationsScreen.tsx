@@ -18,7 +18,7 @@ export default function NotificationsScreen() {
         <Divider />
       </View>
       <View style={styles.body}>
-        <MaterialIcons name="settings" size={40} color={theme.iconMuted} />
+        <MaterialIcons name="settings" size={40} color={theme.onSurfaceVariant} />
         <Text style={styles.bodyText}>{notificationsCopy.body}</Text>
       </View>
     </View>
@@ -29,28 +29,28 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     header: {
       height: 60,
       justifyContent: 'flex-end',
       paddingLeft: 16,
       paddingBottom: 8,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     headerText: {
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     body: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
     },
     bodyText: {
       fontSize: 16,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
   });

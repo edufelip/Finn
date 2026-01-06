@@ -26,14 +26,14 @@ export default function MainDrawer() {
         drawerType: 'front',
         drawerStyle: {
           width: drawerWidth,
-          backgroundColor: theme.drawerBackground,
+          backgroundColor: theme.surface,
           borderTopRightRadius: 24,
           borderBottomRightRadius: 24,
           overflow: 'hidden',
         },
-        overlayColor: theme.overlayDark,
-        drawerActiveTintColor: theme.drawerTextMain,
-        drawerInactiveTintColor: theme.drawerTextSub,
+        overlayColor: theme.scrim,
+        drawerActiveTintColor: theme.onSurface,
+        drawerInactiveTintColor: theme.onSurfaceVariant,
       }}
       drawerContent={(props) => <DrawerContent {...props} />}
     >

@@ -113,7 +113,7 @@ export default function PostCommentsScreen() {
         <TextInput
           style={styles.input}
           placeholder={postCommentsCopy.inputPlaceholder}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.onSurfaceVariant}
           value={content}
           onChangeText={setContent}
           testID={postCommentsCopy.testIds.input}
@@ -137,22 +137,22 @@ const createStyles = (theme: ThemeColors) =>
       padding: 12,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: theme.slate200,
+      borderColor: theme.outline,
       backgroundColor: theme.surface,
       marginBottom: 8,
     },
     author: {
       fontWeight: '600',
-      color: theme.slate900,
+      color: theme.onSurface,
     },
     body: {
       marginTop: 4,
-      color: theme.slate700,
+      color: theme.onSurfaceVariant,
     },
     empty: {
       textAlign: 'center',
       marginVertical: 16,
-      color: theme.slate500,
+      color: theme.onSurfaceVariant,
     },
     inputRow: {
       marginTop: 12,
@@ -161,9 +161,9 @@ const createStyles = (theme: ThemeColors) =>
     input: {
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: theme.slate200,
+      borderColor: theme.outline,
       padding: 10,
       backgroundColor: theme.surface,
-      color: theme.slate900,
+      color: theme.onSurface,
     },
   });

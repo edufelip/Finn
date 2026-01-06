@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
+import ExploreScreen from '../screens/ExploreScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import CreateBottomSheet from '../components/CreateBottomSheet';
 import type { MainStackParamList } from './MainStack';
@@ -17,7 +17,7 @@ import { tabCopy } from '../content/tabCopy';
 export type MainTabParamList = {
   Home: undefined;
   Add: undefined;
-  Explore: { focus?: boolean } | undefined;
+  Explore: undefined;
   Inbox: undefined;
   Profile: undefined;
 };
@@ -42,8 +42,8 @@ export default function MainTabs() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: [styles.tabBar, { paddingBottom: 24 + insets.bottom, height: 72 + insets.bottom }],
-          tabBarActiveTintColor: theme.tabActive,
-          tabBarInactiveTintColor: theme.tabInactive,
+          tabBarActiveTintColor: theme.primary,
+          tabBarInactiveTintColor: theme.onSurfaceVariant,
           tabBarLabelStyle: styles.tabLabel,
         }}
       >
@@ -59,7 +59,7 @@ export default function MainTabs() {
         />
         <Tab.Screen
           name="Explore"
-          component={SearchScreen}
+          component={ExploreScreen}
           options={{
             tabBarLabel: tabCopy.explore,
             tabBarIcon: ({ color }) => <MaterialIcons name="explore" size={24} color={color} />,
@@ -82,7 +82,7 @@ export default function MainTabs() {
                 accessibilityLabel={tabCopy.testIds.add}
               >
                 <View style={styles.fab}>
-                  <MaterialIcons name="add" size={26} color={theme.white} />
+                  <MaterialIcons name="add" size={26} color={theme.onPrimary} />
                 </View>
                 <Text style={[styles.tabLabel, styles.tabLabelInactive]}>{tabCopy.add}</Text>
               </Pressable>
@@ -118,7 +118,7 @@ export default function MainTabs() {
                   testID={tabCopy.testIds.profile}
                   accessibilityLabel={tabCopy.testIds.profile}
                 >
-                  <MaterialIcons name="person" size={24} color={theme.tabInactive} />
+                  <MaterialIcons name="person" size={24} color={theme.onSurfaceVariant} />
                   <Text style={[styles.tabLabel, styles.tabLabelInactive]}>{tabCopy.profile}</Text>
                 </Pressable>
               ),
@@ -147,8 +147,8 @@ const createStyles = (theme: ThemeColors) =>
       height: 72,
       paddingBottom: 24,
       paddingTop: 8,
-      backgroundColor: theme.tabBarBackground,
-      borderTopColor: theme.border,
+      backgroundColor: theme.surface,
+      borderTopColor: theme.outlineVariant,
     },
     tabButton: {
       flex: 1,
@@ -161,7 +161,7 @@ const createStyles = (theme: ThemeColors) =>
       marginTop: 2,
     },
     tabLabelInactive: {
-      color: theme.tabInactive,
+      color: theme.onSurfaceVariant,
     },
     fab: {
       width: 56,
@@ -169,9 +169,9 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 28,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.homePrimary,
+      backgroundColor: theme.primary,
       marginTop: -20,
-      shadowColor: theme.homePrimary,
+      shadowColor: theme.surfaceTint,
       shadowOpacity: 0.25,
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 6 },

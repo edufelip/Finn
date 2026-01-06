@@ -15,6 +15,7 @@ import TopBar from '../components/TopBar';
 import Divider from '../components/Divider';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
+import { palette } from '../theme/palette';
 import { createPostCopy } from '../content/createPostCopy';
 
 export default function CreatePostScreen() {
@@ -131,17 +132,17 @@ export default function CreatePostScreen() {
         testID={createPostCopy.testIds.communityPicker}
         accessibilityLabel={createPostCopy.testIds.communityPicker}
       >
-        <MaterialIcons name="language" size={20} color={theme.iconMuted} />
+        <MaterialIcons name="language" size={20} color={theme.onSurfaceVariant} />
         <Text style={styles.communityText}>
           {selectedCommunity?.title ?? createPostCopy.communityPlaceholder}
         </Text>
-        <MaterialIcons name="keyboard-arrow-down" size={20} color={theme.iconMuted} />
+        <MaterialIcons name="keyboard-arrow-down" size={20} color={theme.onSurfaceVariant} />
       </Pressable>
       <Divider />
       <TextInput
         style={styles.textArea}
         placeholder={createPostCopy.contentPlaceholder}
-        placeholderTextColor={theme.textSecondary}
+        placeholderTextColor={theme.onSurfaceVariant}
         value={content}
         onChangeText={setContent}
         multiline
@@ -164,7 +165,7 @@ export default function CreatePostScreen() {
           testID={createPostCopy.testIds.image}
           accessibilityLabel={createPostCopy.testIds.image}
       >
-        <MaterialIcons name="add" size={24} color={theme.textPrimary} />
+        <MaterialIcons name="add" size={24} color={theme.onSurface} />
       </Pressable>
       </View>
       <Pressable
@@ -209,7 +210,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     communityPicker: {
       height: 62,
@@ -221,14 +222,14 @@ const createStyles = (theme: ThemeColors) =>
     communityText: {
       flex: 1,
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     textArea: {
       height: 300,
       padding: 16,
       textAlignVertical: 'top',
-      backgroundColor: theme.transparent,
-      color: theme.textPrimary,
+      backgroundColor: palette.transparent,
+      color: theme.onSurface,
     },
     imageCard: {
       width: 150,
@@ -237,7 +238,7 @@ const createStyles = (theme: ThemeColors) =>
       marginTop: 24,
       borderRadius: 4,
       backgroundColor: theme.surface,
-      shadowColor: theme.black,
+      shadowColor: theme.shadow,
       shadowOpacity: 0.2,
       shadowRadius: 5,
       shadowOffset: { width: 0, height: 2 },
@@ -266,7 +267,7 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 32,
       marginTop: 24,
       borderRadius: 16,
-      backgroundColor: theme.mainBlue,
+      backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -275,11 +276,11 @@ const createStyles = (theme: ThemeColors) =>
     },
     createButtonText: {
       fontSize: 12,
-      color: theme.white,
+      color: theme.onPrimary,
     },
     modalBackdrop: {
       flex: 1,
-      backgroundColor: theme.overlayDark,
+      backgroundColor: theme.scrim,
     },
     modalSheet: {
       backgroundColor: theme.surface,
@@ -294,7 +295,7 @@ const createStyles = (theme: ThemeColors) =>
       fontWeight: '600',
       textAlign: 'center',
       marginBottom: 12,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     modalItem: {
       paddingHorizontal: 24,
@@ -302,6 +303,6 @@ const createStyles = (theme: ThemeColors) =>
     },
     modalItemText: {
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
   });

@@ -16,6 +16,10 @@ export const profileCopy = {
     body: t('profile.empty.body'),
     cta: t('profile.empty.cta'),
   },
+  savedEmpty: {
+    title: t('profile.savedEmpty.title'),
+    body: t('profile.savedEmpty.body'),
+  },
   errorSignInRequired: t('profile.error.signInRequired'),
   memberSince: (date: string) => t('profile.memberSince', { date }),
   alerts: {
@@ -41,6 +45,7 @@ export const profileCopy = {
     tabPosts: 'profile-tab-posts',
     tabSaved: 'profile-tab-saved',
     emptyTitle: 'profile-empty-title',
+    savedEmptyTitle: 'profile-saved-empty-title',
     createPost: 'profile-create-post',
     list: 'profile-post-list',
   },

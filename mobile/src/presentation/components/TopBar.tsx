@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import Divider from './Divider';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
 
 type TopBarProps = {
   title?: string;
@@ -21,21 +21,26 @@ export default function TopBar({
   onBack,
   showDivider = true,
   titleAlign = 'left',
-  backgroundColor = colors.white,
-  textColor = colors.black,
+  backgroundColor,
+  textColor,
   titleSize = 16,
   rightSlot,
 }: TopBarProps) {
+  const theme = useThemeColors();
+  const resolvedBackground = backgroundColor ?? theme.surface;
+  const resolvedText = textColor ?? theme.onSurface;
+  const rippleColor = theme.outlineVariant;
+
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor: resolvedBackground }]}>
       <View style={styles.row}>
         {onBack ? (
           <Pressable
             onPress={onBack}
             style={styles.backButton}
-            android_ripple={{ color: colors.rippleGrey, borderless: true }}
+            android_ripple={{ color: rippleColor, borderless: true }}
           >
-            <MaterialIcons name="keyboard-arrow-left" size={24} color={textColor} />
+            <MaterialIcons name="keyboard-arrow-left" size={24} color={resolvedText} />
           </Pressable>
         ) : (
           <View style={styles.backSpacer} />
@@ -44,7 +49,7 @@ export default function TopBar({
           style={[
             styles.title,
             {
-              color: textColor,
+              color: resolvedText,
               textAlign: titleAlign === 'center' ? 'center' : 'left',
               fontSize: titleSize,
             },

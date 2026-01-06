@@ -50,17 +50,17 @@ export default function ForgotPasswordScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
+        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onBackground} />
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.title}>{forgotPasswordCopy.title}</Text>
         <Text style={styles.subtitle}>{forgotPasswordCopy.subtitle}</Text>
         <View style={styles.inputRow}>
-          <MaterialIcons name="person-outline" size={20} color={theme.iconMuted} />
+          <MaterialIcons name="person-outline" size={20} color={theme.onSurfaceVariant} />
           <TextInput
             style={styles.input}
             placeholder={forgotPasswordCopy.emailPlaceholder}
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.onSurfaceVariant}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -89,7 +89,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     backButton: {
       position: 'absolute',
@@ -107,18 +107,18 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 24,
       fontWeight: '700',
       marginBottom: 8,
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     subtitle: {
       fontSize: 18,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     inputRow: {
       marginTop: 24,
       height: 55,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: theme.borderGrey,
+      borderColor: theme.outline,
       paddingHorizontal: 12,
       backgroundColor: theme.surface,
       flexDirection: 'row',
@@ -128,11 +128,11 @@ const createStyles = (theme: ThemeColors) =>
     input: {
       flex: 1,
       height: '100%',
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     primaryButton: {
       height: 65,
-      backgroundColor: theme.mainBlue,
+      backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 24,
@@ -143,7 +143,7 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.7,
     },
     primaryButtonText: {
-      color: theme.white,
+      color: theme.onPrimary,
       fontSize: 16,
     },
   });

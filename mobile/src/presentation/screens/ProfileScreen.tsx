@@ -1,10 +1,23 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Network from 'expo-network';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  SlideInLeft,
+  SlideInRight,
+  SlideOutLeft,
+  SlideOutRight,
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import PostCard from '../components/PostCard';
 import type { Post } from '../../domain/models/post';
@@ -19,6 +32,7 @@ import type { ThemeColors } from '../theme/colors';
 import { profileCopy } from '../content/profileCopy';
 import { commonCopy } from '../content/commonCopy';
 import { formatMonthYear } from '../i18n/formatters';
+import { palette } from '../theme/palette';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -26,10 +40,26 @@ export default function ProfileScreen() {
   const { users: userRepository, posts: postRepository } = useRepositories();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [postsError, setPostsError] = useState<string | null>(null);
+  const [savedError, setSavedError] = useState<string | null>(null);
+  const [savedLoaded, setSavedLoaded] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const [tabLayouts, setTabLayouts] = useState<{
+    posts?: { x: number; width: number };
+    saved?: { x: number; width: number };
+  }>({});
+  const activeTabRef = useRef(activeTab);
+  const reduceMotion = useReducedMotion();
+  const tabProgress = useSharedValue(activeTab === 'posts' ? 0 : 1);
+  const indicatorX = useSharedValue(0);
+  const indicatorWidth = useSharedValue(0);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const indicatorDuration = reduceMotion ? 0 : 220;
 
   const loadProfile = useCallback(async () => {
     if (!session?.user?.id) {
@@ -37,8 +67,8 @@ export default function ProfileScreen() {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    setLoadingPosts(true);
+    setPostsError(null);
     try {
       const [profile, postData] = await Promise.all([
         userRepository.getUser(session.user.id),
@@ -58,10 +88,10 @@ export default function ProfileScreen() {
       setPosts(nextPosts);
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        setPostsError(err.message);
       }
     } finally {
-      setLoading(false);
+      setLoadingPosts(false);
     }
   }, [postRepository, session?.user?.id, userRepository]);
 
@@ -71,6 +101,36 @@ export default function ProfileScreen() {
     }, [loadProfile])
   );
 
+  const loadSavedPosts = useCallback(async () => {
+    if (!session?.user?.id) {
+      setSavedError(profileCopy.errorSignInRequired);
+      return;
+    }
+
+    setLoadingSaved(true);
+    setSavedError(null);
+    try {
+      const saved = await postRepository.getSavedPosts(session.user.id, 0);
+      setSavedPosts(saved ?? []);
+      setSavedLoaded(true);
+    } catch (err) {
+      if (err instanceof Error) {
+        setSavedError(err.message);
+      }
+      setSavedLoaded(true);
+    } finally {
+      setLoadingSaved(false);
+    }
+  }, [postRepository, session?.user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (activeTab === 'saved' && !savedLoaded) {
+        loadSavedPosts();
+      }
+    }, [activeTab, loadSavedPosts, savedLoaded])
+  );
+
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
       Alert.alert(profileCopy.alerts.signInRequired.title, profileCopy.alerts.signInRequired.message);
@@ -78,17 +138,16 @@ export default function ProfileScreen() {
     }
 
     const nextLiked = !post.isLiked;
-    setPosts((prev) =>
-      prev.map((item) =>
-        item.id === post.id
-          ? {
-              ...item,
-              isLiked: nextLiked,
-              likesCount: Math.max(0, (item.likesCount ?? 0) + (nextLiked ? 1 : -1)),
-            }
-          : item
-      )
-    );
+    const updateLike = (item: Post) =>
+      item.id === post.id
+        ? {
+            ...item,
+            isLiked: nextLiked,
+            likesCount: Math.max(0, (item.likesCount ?? 0) + (nextLiked ? 1 : -1)),
+          }
+        : item;
+    setPosts((prev) => prev.map(updateLike));
+    setSavedPosts((prev) => prev.map(updateLike));
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -108,17 +167,16 @@ export default function ProfileScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
-      setPosts((prev) =>
-        prev.map((item) =>
-          item.id === post.id
-            ? {
-                ...item,
-                isLiked: post.isLiked,
-                likesCount: post.likesCount,
-              }
-            : item
-        )
-      );
+      const restoreLike = (item: Post) =>
+        item.id === post.id
+          ? {
+              ...item,
+              isLiked: post.isLiked,
+              likesCount: post.likesCount,
+            }
+          : item;
+      setPosts((prev) => prev.map(restoreLike));
+      setSavedPosts((prev) => prev.map(restoreLike));
       if (err instanceof Error) {
         Alert.alert(profileCopy.alerts.likeFailed.title, err.message);
       }
@@ -133,6 +191,16 @@ export default function ProfileScreen() {
 
     const nextSaved = !post.isSaved;
     setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: nextSaved } : item)));
+    setSavedPosts((prev) => {
+      const exists = prev.some((item) => item.id === post.id);
+      if (nextSaved) {
+        if (exists) {
+          return prev.map((item) => (item.id === post.id ? { ...item, isSaved: true } : item));
+        }
+        return [{ ...post, isSaved: true }, ...prev];
+      }
+      return prev.filter((item) => item.id !== post.id);
+    });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -153,6 +221,13 @@ export default function ProfileScreen() {
       }
     } catch (err) {
       setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: post.isSaved } : item)));
+      setSavedPosts((prev) => {
+        const exists = prev.some((item) => item.id === post.id);
+        if (post.isSaved) {
+          return exists ? prev : [{ ...post, isSaved: true }, ...prev];
+        }
+        return prev.filter((item) => item.id !== post.id);
+      });
       if (err instanceof Error) {
         Alert.alert(profileCopy.alerts.savedFailed.title, err.message);
       }
@@ -167,6 +242,11 @@ export default function ProfileScreen() {
   const postsCount = posts.length;
   const followersCount = user?.followersCount ?? 0;
   const followingCount = user?.followingCount ?? 0;
+
+  const currentPosts = activeTab === 'posts' ? posts : savedPosts;
+  const currentLoading = activeTab === 'posts' ? loadingPosts : loadingSaved;
+  const currentError = activeTab === 'posts' ? postsError : savedError;
+  const emptyCopy = activeTab === 'posts' ? profileCopy.empty : profileCopy.savedEmpty;
 
   const stats = [
     {
@@ -186,12 +266,70 @@ export default function ProfileScreen() {
     },
   ];
 
+  useEffect(() => {
+    tabProgress.value = withTiming(activeTab === 'posts' ? 0 : 1, {
+      duration: indicatorDuration,
+      easing: Easing.out(Easing.cubic),
+    });
+    activeTabRef.current = activeTab;
+  }, [activeTab, indicatorDuration, tabProgress]);
+
+  useEffect(() => {
+    const layout = tabLayouts[activeTab];
+    if (!layout) return;
+    indicatorX.value = withTiming(layout.x, {
+      duration: indicatorDuration,
+      easing: Easing.out(Easing.cubic),
+    });
+    indicatorWidth.value = withTiming(layout.width, {
+      duration: indicatorDuration,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [activeTab, indicatorDuration, indicatorWidth, indicatorX, tabLayouts]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorWidth.value,
+  }));
+
+  const postsLabelStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(tabProgress.value, [0, 1], [theme.onBackground, theme.onSurfaceVariant]),
+    opacity: interpolate(tabProgress.value, [0, 1], [1, 0.72]),
+    transform: [{ scale: interpolate(tabProgress.value, [0, 1], [1, 0.96]) }],
+  }));
+
+  const savedLabelStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(tabProgress.value, [0, 1], [theme.onSurfaceVariant, theme.onBackground]),
+    opacity: interpolate(tabProgress.value, [0, 1], [0.72, 1]),
+    transform: [{ scale: interpolate(tabProgress.value, [0, 1], [0.96, 1]) }],
+  }));
+
+  const handleTabChange = (nextTab: 'posts' | 'saved') => {
+    if (nextTab === activeTabRef.current) {
+      return;
+    }
+    setSlideDirection(nextTab === 'saved' ? 'right' : 'left');
+    setActiveTab(nextTab);
+  };
+
+  const enteringAnimation = reduceMotion
+    ? undefined
+    : slideDirection === 'right'
+      ? SlideInRight.duration(220).easing(Easing.out(Easing.cubic))
+      : SlideInLeft.duration(220).easing(Easing.out(Easing.cubic));
+
+  const exitingAnimation = reduceMotion
+    ? undefined
+    : slideDirection === 'right'
+      ? SlideOutLeft.duration(200).easing(Easing.out(Easing.cubic))
+      : SlideOutRight.duration(200).easing(Easing.out(Easing.cubic));
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable style={styles.iconButton} onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back-ios-new" size={22} color={theme.profileTextMain} />
+            <MaterialIcons name="arrow-back-ios-new" size={22} color={theme.onBackground} />
           </Pressable>
           <Text
             style={styles.topTitle}
@@ -204,14 +342,14 @@ export default function ProfileScreen() {
             style={styles.iconButton}
             onPress={() => navigation.navigate('Settings')}
           >
-            <MaterialIcons name="settings" size={22} color={theme.profileTextMain} />
+            <MaterialIcons name="settings" size={22} color={theme.onBackground} />
           </Pressable>
         </View>
       </SafeAreaView>
       <FlatList
         testID={profileCopy.testIds.list}
-        data={posts}
-        keyExtractor={(item) => `${item.id}`}
+        data={currentPosts}
+        keyExtractor={(item) => `${activeTab}-${item.id}`}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View>
@@ -225,7 +363,7 @@ export default function ProfileScreen() {
                   />
                 </View>
                 <Pressable style={styles.editBadge}>
-                  <MaterialIcons name="edit" size={16} color={theme.profilePrimary} />
+                  <MaterialIcons name="edit" size={16} color={theme.primary} />
                 </Pressable>
               </View>
               <View style={styles.nameBlock}>
@@ -270,74 +408,106 @@ export default function ProfileScreen() {
               ))}
             </View>
             <View style={styles.tabsRow}>
-              <Pressable style={[styles.tabItem, styles.tabItemActive]}>
+              <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
+              <Pressable
+                style={styles.tabItem}
+                onPress={() => handleTabChange('posts')}
+                onLayout={(event) => {
+                  const { x, width } = event.nativeEvent.layout;
+                  setTabLayouts((prev) => ({
+                    ...prev,
+                    posts: { x, width },
+                  }));
+                }}
+                testID={profileCopy.testIds.tabPosts}
+              >
                 <View style={styles.tabContent}>
                   <MaterialIcons
                     name="grid-view"
                     size={18}
-                    color={theme.profileTextMain}
+                    color={activeTab === 'posts' ? theme.onBackground : theme.onSurfaceVariant}
                     style={styles.tabIcon}
                   />
-                  <Text style={styles.tabTextActive} testID={profileCopy.testIds.tabPosts}>
+                  <Animated.Text style={[styles.tabText, postsLabelStyle]}>
                     {profileCopy.tabs.posts}
-                  </Text>
+                  </Animated.Text>
                 </View>
               </Pressable>
               <Pressable
                 style={styles.tabItem}
-                onPress={() => navigation.navigate('SavedPosts')}
+                onPress={() => handleTabChange('saved')}
+                onLayout={(event) => {
+                  const { x, width } = event.nativeEvent.layout;
+                  setTabLayouts((prev) => ({
+                    ...prev,
+                    saved: { x, width },
+                  }));
+                }}
                 testID={profileCopy.testIds.tabSaved}
               >
                 <View style={styles.tabContent}>
                   <MaterialIcons
                     name="bookmark-border"
                     size={18}
-                    color={theme.profileTextSub}
+                    color={activeTab === 'saved' ? theme.onBackground : theme.onSurfaceVariant}
                     style={styles.tabIcon}
                   />
-                  <Text style={styles.tabText}>{profileCopy.tabs.saved}</Text>
+                  <Animated.Text style={[styles.tabText, savedLabelStyle]}>
+                    {profileCopy.tabs.saved}
+                  </Animated.Text>
                 </View>
               </Pressable>
             </View>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {currentError ? <Text style={styles.error}>{currentError}</Text> : null}
           </View>
         }
         renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onToggleLike={() => handleToggleLike(item)}
-            onToggleSave={() => handleToggleSave(item)}
-            onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
-          />
+          <Animated.View entering={enteringAnimation} exiting={exitingAnimation}>
+            <PostCard
+              post={item}
+              onToggleLike={() => handleToggleLike(item)}
+              onToggleSave={() => handleToggleSave(item)}
+              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+            />
+          </Animated.View>
         )}
         ListEmptyComponent={
-          !loading ? (
-            <View style={styles.emptyState}>
+          !currentLoading ? (
+            <Animated.View entering={enteringAnimation} exiting={exitingAnimation} style={styles.emptyState}>
               <View style={styles.emptyIconWrapper}>
                 <View style={styles.emptyIconInner}>
-                  <MaterialIcons name="add" size={28} color={theme.profileMuted} />
+                  <MaterialIcons name="add" size={28} color={theme.onSurfaceVariant} />
                 </View>
               </View>
-              <Text style={styles.emptyTitle} testID={profileCopy.testIds.emptyTitle}>
-                {profileCopy.empty.title}
-              </Text>
-              <Text style={styles.emptyBody}>{profileCopy.empty.body}</Text>
-              <Pressable
-                style={styles.emptyCta}
-                onPress={() => navigation.navigate('CreatePost')}
-                testID={profileCopy.testIds.createPost}
+              <Text
+                style={styles.emptyTitle}
+                testID={
+                  activeTab === 'posts'
+                    ? profileCopy.testIds.emptyTitle
+                    : profileCopy.testIds.savedEmptyTitle
+                }
               >
-                <MaterialIcons name="add-circle" size={18} color={theme.white} />
-                <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
-              </Pressable>
-            </View>
+                {emptyCopy.title}
+              </Text>
+              <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
+              {activeTab === 'posts' ? (
+                <Pressable
+                  style={styles.emptyCta}
+                  onPress={() => navigation.navigate('CreatePost')}
+                  testID={profileCopy.testIds.createPost}
+                >
+                  <MaterialIcons name="add-circle" size={18} color={theme.onPrimary} />
+                  <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
+                </Pressable>
+              ) : null}
+            </Animated.View>
           ) : null
         }
         ListFooterComponent={
-          loading && posts.length > 0 ? (
-            <View style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.profilePrimary} />
-            </View>
+          currentLoading && currentPosts.length > 0 ? (
+            <Animated.View entering={enteringAnimation} exiting={exitingAnimation} style={styles.footer}>
+              <ActivityIndicator size="small" color={theme.primary} />
+            </Animated.View>
           ) : null
         }
       />
@@ -349,10 +519,10 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.profileBackground,
+      backgroundColor: theme.background,
     },
     safeArea: {
-      backgroundColor: theme.profileBackground,
+      backgroundColor: theme.background,
     },
     topBar: {
       flexDirection: 'row',
@@ -365,7 +535,7 @@ const createStyles = (theme: ThemeColors) =>
       textAlign: 'center',
       fontSize: 18,
       fontWeight: '700',
-      color: theme.profileTextMain,
+      color: theme.onBackground,
     },
     iconButton: {
       width: 40,
@@ -389,7 +559,7 @@ const createStyles = (theme: ThemeColors) =>
       width: 140,
       height: 140,
       borderRadius: 70,
-      backgroundColor: theme.profilePrimarySoft,
+      backgroundColor: theme.primaryContainer,
     },
     avatarGroup: {
       alignItems: 'center',
@@ -399,12 +569,12 @@ const createStyles = (theme: ThemeColors) =>
       width: 128,
       height: 128,
       borderRadius: 64,
-      backgroundColor: theme.profileSurface,
+      backgroundColor: theme.surface,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 4,
-      borderColor: theme.profileSurface,
-      shadowColor: theme.profileCardShadow,
+      borderColor: theme.surface,
+      shadowColor: theme.shadow,
       shadowOpacity: 1,
       shadowOffset: { width: 0, height: 10 },
       shadowRadius: 18,
@@ -419,12 +589,12 @@ const createStyles = (theme: ThemeColors) =>
       position: 'absolute',
       bottom: 4,
       right: 4,
-      backgroundColor: theme.profileSurface,
+      backgroundColor: theme.surface,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: theme.profileBorder,
+      borderColor: theme.outline,
       padding: 6,
-      shadowColor: theme.profileCardShadow,
+      shadowColor: theme.shadow,
       shadowOpacity: 1,
       shadowOffset: { width: 0, height: 4 },
       shadowRadius: 6,
@@ -437,28 +607,28 @@ const createStyles = (theme: ThemeColors) =>
     name: {
       fontSize: 24,
       fontWeight: '800',
-      color: theme.profileTextMain,
+      color: theme.onBackground,
     },
     email: {
       marginTop: 4,
       fontSize: 14,
       fontWeight: '500',
-      color: theme.profileTextSub,
+      color: theme.onSurfaceVariant,
     },
     memberBadge: {
       marginTop: 12,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 999,
-      backgroundColor: theme.profilePrimarySoft,
+      backgroundColor: theme.primaryContainer,
       borderWidth: 1,
-      borderColor: theme.profilePrimarySoft,
+      borderColor: theme.primaryContainer,
     },
     memberBadgeText: {
       fontSize: 11,
       fontWeight: '600',
       textTransform: 'uppercase',
-      color: theme.profilePrimary,
+      color: theme.primary,
       letterSpacing: 0.6,
     },
     statsRow: {
@@ -469,13 +639,13 @@ const createStyles = (theme: ThemeColors) =>
     statCard: {
       flex: 1,
       minWidth: 90,
-      backgroundColor: theme.profileSurface,
+      backgroundColor: theme.surface,
       borderRadius: 18,
       borderWidth: 1,
-      borderColor: theme.profileBorder,
+      borderColor: theme.outline,
       paddingVertical: 14,
       alignItems: 'center',
-      shadowColor: theme.profileCardShadow,
+      shadowColor: theme.shadow,
       shadowOpacity: 1,
       shadowOffset: { width: 0, height: 4 },
       shadowRadius: 10,
@@ -487,32 +657,37 @@ const createStyles = (theme: ThemeColors) =>
     statValue: {
       fontSize: 22,
       fontWeight: '700',
-      color: theme.profileTextMain,
+      color: theme.onBackground,
     },
     statLabel: {
       marginTop: 4,
       fontSize: 11,
       fontWeight: '600',
       textTransform: 'uppercase',
-      color: theme.profileTextSub,
+      color: theme.onSurfaceVariant,
       letterSpacing: 0.8,
     },
     tabsRow: {
       flexDirection: 'row',
       borderBottomWidth: 1,
-      borderBottomColor: theme.profileBorder,
-      backgroundColor: theme.profileBackground,
+      borderBottomColor: theme.outline,
+      backgroundColor: theme.background,
       paddingHorizontal: 16,
+      position: 'relative',
     },
     tabItem: {
       flex: 1,
       paddingVertical: 12,
       alignItems: 'center',
       borderBottomWidth: 3,
-      borderBottomColor: theme.transparent,
+      borderBottomColor: palette.transparent,
     },
-    tabItemActive: {
-      borderBottomColor: theme.profilePrimary,
+    tabIndicator: {
+      position: 'absolute',
+      bottom: -1,
+      height: 3,
+      borderRadius: 999,
+      backgroundColor: theme.primary,
     },
     tabContent: {
       flexDirection: 'row',
@@ -521,15 +696,10 @@ const createStyles = (theme: ThemeColors) =>
     tabIcon: {
       marginRight: 6,
     },
-    tabTextActive: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: theme.profileTextMain,
-    },
     tabText: {
       fontSize: 14,
       fontWeight: '700',
-      color: theme.profileTextSub,
+      color: theme.onSurfaceVariant,
     },
     emptyState: {
       paddingVertical: 40,
@@ -540,7 +710,7 @@ const createStyles = (theme: ThemeColors) =>
       width: 140,
       height: 140,
       borderRadius: 70,
-      backgroundColor: theme.profilePrimarySoft,
+      backgroundColor: theme.primaryContainer,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 20,
@@ -549,12 +719,12 @@ const createStyles = (theme: ThemeColors) =>
       width: 64,
       height: 64,
       borderRadius: 16,
-      backgroundColor: theme.profileSurface,
+      backgroundColor: theme.surface,
       borderWidth: 1,
-      borderColor: theme.profileBorder,
+      borderColor: theme.outline,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: theme.profileCardShadow,
+      shadowColor: theme.shadow,
       shadowOpacity: 1,
       shadowOffset: { width: 0, height: 6 },
       shadowRadius: 10,
@@ -563,14 +733,14 @@ const createStyles = (theme: ThemeColors) =>
     emptyTitle: {
       fontSize: 18,
       fontWeight: '700',
-      color: theme.profileTextMain,
+      color: theme.onBackground,
       textAlign: 'center',
     },
     emptyBody: {
       marginTop: 8,
       fontSize: 13,
       fontWeight: '400',
-      color: theme.profileTextSub,
+      color: theme.onSurfaceVariant,
       textAlign: 'center',
       lineHeight: 20,
     },
@@ -579,11 +749,11 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.profilePrimary,
+      backgroundColor: theme.primary,
       borderRadius: 16,
       paddingVertical: 12,
       paddingHorizontal: 18,
-      shadowColor: theme.profilePrimaryGlow,
+      shadowColor: theme.surfaceTint,
       shadowOpacity: 1,
       shadowOffset: { width: 0, height: 8 },
       shadowRadius: 16,
@@ -593,13 +763,13 @@ const createStyles = (theme: ThemeColors) =>
       marginLeft: 8,
       fontSize: 12,
       fontWeight: '700',
-      color: theme.white,
+      color: theme.onPrimary,
       letterSpacing: 0.6,
     },
     error: {
       paddingHorizontal: 16,
       paddingVertical: 12,
-      color: theme.danger,
+      color: theme.error,
       textAlign: 'center',
     },
     footer: {

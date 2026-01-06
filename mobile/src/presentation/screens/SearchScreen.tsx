@@ -2,31 +2,26 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { CompositeNavigationProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 
 import type { Community } from '../../domain/models/community';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useAuth } from '../../app/providers/AuthProvider';
 import type { MainStackParamList } from '../navigation/MainStack';
-import type { MainTabParamList } from '../navigation/MainTabs';
 import type { MainDrawerParamList } from '../navigation/MainDrawer';
 import Divider from '../components/Divider';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { searchCopy } from '../content/searchCopy';
 
-type Navigation = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'Explore'>,
-  NativeStackNavigationProp<MainStackParamList>
->;
+type Navigation = NativeStackNavigationProp<MainStackParamList, 'SearchResults'>;
 
 export default function SearchScreen() {
   const navigation = useNavigation<Navigation>();
-  const route = useRoute<RouteProp<MainTabParamList, 'Explore'>>();
+  const route = useRoute<RouteProp<MainStackParamList, 'SearchResults'>>();
   const { session } = useAuth();
   const { communities: communityRepository, users: userRepository } = useRepositories();
   const [search, setSearch] = useState('');
@@ -77,12 +72,21 @@ export default function SearchScreen() {
       .catch(() => setProfilePhoto(null));
   }, [session?.user?.id, userRepository]);
 
+  const handleAvatarPress = () => {
+    const drawer = navigation.getParent<DrawerNavigationProp<MainDrawerParamList>>();
+    if (drawer && 'openDrawer' in drawer) {
+      drawer.openDrawer();
+    } else {
+      navigation.goBack();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
         <Pressable
           style={styles.avatarCard}
-          onPress={() => navigation.getParent<DrawerNavigationProp<MainDrawerParamList>>()?.openDrawer()}
+          onPress={handleAvatarPress}
           testID={searchCopy.testIds.avatar}
           accessibilityLabel={searchCopy.testIds.avatar}
         >
@@ -92,12 +96,12 @@ export default function SearchScreen() {
           />
         </Pressable>
         <View style={styles.searchContainer}>
-          <MaterialIcons name="search" size={18} color={theme.iconMuted} />
+          <MaterialIcons name="search" size={18} color={theme.onSurfaceVariant} />
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
             placeholder={searchCopy.placeholder}
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.onSurfaceVariant}
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={() => loadCommunities(search)}
@@ -149,7 +153,7 @@ export default function SearchScreen() {
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={theme.mainBlueDeep} />
+              <ActivityIndicator size="large" color={theme.primary} />
             </View>
           ) : (
             <Text style={styles.empty}>{searchCopy.empty}</Text>
@@ -158,7 +162,7 @@ export default function SearchScreen() {
         ListFooterComponent={
           loading && communities.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.mainBlueDeep} />
+              <ActivityIndicator size="small" color={theme.primary} />
             </View>
           ) : null
         }
@@ -172,7 +176,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     headerRow: {
       flexDirection: 'row',
@@ -198,18 +202,18 @@ const createStyles = (theme: ThemeColors) =>
       marginBottom: 8,
       marginRight: 10,
       borderRadius: 8,
-      backgroundColor: theme.searchBackground,
+      backgroundColor: theme.surfaceVariant,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
       paddingHorizontal: 12,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: theme.outline,
     },
     searchInput: {
       flex: 1,
       height: '100%',
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     trendingHeader: {
       paddingTop: 16,
@@ -217,10 +221,10 @@ const createStyles = (theme: ThemeColors) =>
     },
     trendingText: {
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     list: {
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     cardWrapper: {
       paddingHorizontal: 24,
@@ -230,7 +234,7 @@ const createStyles = (theme: ThemeColors) =>
     card: {
       borderRadius: 8,
       backgroundColor: theme.surface,
-      shadowColor: theme.black,
+      shadowColor: theme.shadow,
       shadowOpacity: 0.2,
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 4 },
@@ -252,22 +256,22 @@ const createStyles = (theme: ThemeColors) =>
     },
     communityTitle: {
       marginTop: 8,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     communityDescription: {
       marginTop: 4,
       marginHorizontal: 16,
       textAlign: 'center',
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     communityFollowers: {
       marginTop: 4,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     empty: {
       textAlign: 'center',
       marginTop: 24,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     center: {
       marginTop: 24,
@@ -279,6 +283,6 @@ const createStyles = (theme: ThemeColors) =>
     error: {
       paddingHorizontal: 16,
       paddingVertical: 8,
-      color: theme.danger,
+      color: theme.error,
     },
   });

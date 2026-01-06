@@ -259,7 +259,7 @@ export default function CommunityDetailScreen() {
     <View>
       <View style={styles.toolbar}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.white} />
+          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onPrimary} />
         </Pressable>
       </View>
       <View style={styles.blueStrip} />
@@ -306,7 +306,7 @@ export default function CommunityDetailScreen() {
     <View style={styles.container}>
       {loading && !community ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.mainBlueDeep} />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -327,7 +327,7 @@ export default function CommunityDetailScreen() {
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.mainBlueDeep} />
+              <ActivityIndicator size="small" color={theme.primary} />
             </View>
           ) : null
         }
@@ -341,11 +341,11 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     toolbar: {
       height: 56,
-      backgroundColor: theme.mainBlueDeep,
+      backgroundColor: theme.primary,
       justifyContent: 'center',
     },
     backButton: {
@@ -354,7 +354,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     blueStrip: {
       height: 72,
-      backgroundColor: theme.mainBlue,
+      backgroundColor: theme.primary,
     },
     imageSpacer: {
       height: 76,
@@ -372,7 +372,7 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: theme.outline,
     },
     communityImage: {
       width: 68,
@@ -387,25 +387,25 @@ const createStyles = (theme: ThemeColors) =>
       width: 128,
       borderRadius: 20,
       borderWidth: 2,
-      borderColor: theme.mainBlue,
+      borderColor: theme.primary,
       backgroundColor: theme.surface,
       alignItems: 'center',
       justifyContent: 'center',
     },
     subscribeText: {
-      color: theme.mainBlue,
+      color: theme.primary,
       fontSize: 10,
     },
     title: {
       marginTop: 12,
       marginLeft: 24,
       fontSize: 20,
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     description: {
       marginTop: 4,
       marginHorizontal: 24,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     subInfo: {
       flexDirection: 'row',
@@ -417,24 +417,24 @@ const createStyles = (theme: ThemeColors) =>
     },
     subCount: {
       fontWeight: '700',
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     sinceValue: {
       marginLeft: 4,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     list: {
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     empty: {
       marginTop: 32,
       alignSelf: 'center',
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     error: {
       paddingHorizontal: 16,
       paddingVertical: 8,
-      color: theme.danger,
+      color: theme.error,
     },
     center: {
       marginTop: 24,

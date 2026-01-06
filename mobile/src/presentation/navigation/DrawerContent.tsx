@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -76,8 +76,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
   const displayName = user?.name ?? session?.user?.email ?? commonCopy.userFallback;
   const email = session?.user?.email ?? commonCopy.emptyDash;
   const photo = user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png');
-  const statusColor =
-    isOnline && isOnlineVisible ? theme.drawerStatusOnline : theme.drawerStatusOffline;
+  const statusColor = isOnline && isOnlineVisible ? theme.secondary : theme.outlineVariant;
   const savedBadge = savedCount && savedCount > 0 ? String(savedCount) : null;
 
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? commonCopy.emptyDash;
@@ -88,6 +87,18 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
     const parent = navigation.getParent();
     if (parent) {
       parent.navigate(screen as never);
+    }
+  };
+
+  const openWebView = (title: string, url?: string) => {
+    if (!url) {
+      Alert.alert(drawerCopy.alerts.unavailable.title, drawerCopy.alerts.unavailable.message);
+      return;
+    }
+    navigation.closeDrawer();
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('WebView' as never, { title, url } as never);
     }
   };
 
@@ -119,7 +130,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('Profile')}
             testID={drawerCopy.testIds.profile}
           >
-            <MaterialIcons name="person" size={iconSize} color={theme.drawerIcon} />
+            <MaterialIcons name="person" size={iconSize} color={theme.onSurfaceVariant} />
             <Text style={styles.navLabel}>{drawerCopy.profile}</Text>
           </Pressable>
           <Pressable
@@ -127,7 +138,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('SavedPosts')}
             testID={drawerCopy.testIds.saved}
           >
-            <MaterialIcons name="bookmark-border" size={iconSize} color={theme.drawerIcon} />
+            <MaterialIcons name="bookmark-border" size={iconSize} color={theme.onSurfaceVariant} />
             <Text style={styles.navLabel}>{drawerCopy.saved}</Text>
             {savedBadge ? (
               <View style={styles.badge}>
@@ -140,7 +151,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('Profile')}
             testID={drawerCopy.testIds.posts}
           >
-            <MaterialIcons name="article" size={iconSize} color={theme.drawerIcon} />
+            <MaterialIcons name="article" size={iconSize} color={theme.onSurfaceVariant} />
             <Text style={styles.navLabel}>{drawerCopy.posts}</Text>
           </Pressable>
         </View>
@@ -154,15 +165,15 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onPress={() => navigateTo('Settings')}
             testID={drawerCopy.testIds.settings}
           >
-            <MaterialIcons name="settings" size={iconSize} color={theme.drawerIcon} />
+            <MaterialIcons name="settings" size={iconSize} color={theme.onSurfaceVariant} />
             <Text style={styles.navLabel}>{drawerCopy.settings}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.navItem, pressed && styles.navItemPressed]}
-            onPress={() => Linking.openURL(links.privacyPolicy)}
+            onPress={() => openWebView(drawerCopy.privacyPolicy, links.privacyPolicy)}
             testID={drawerCopy.testIds.privacy}
           >
-            <MaterialIcons name="security" size={iconSize} color={theme.drawerIcon} />
+            <MaterialIcons name="security" size={iconSize} color={theme.onSurfaceVariant} />
             <Text style={styles.navLabel}>{drawerCopy.privacyPolicy}</Text>
           </Pressable>
         </View>
@@ -171,7 +182,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
       >
         <View style={styles.toggleRow}>
           <View style={styles.toggleLeft}>
-            <MaterialIcons name="dark-mode" size={18} color={theme.drawerIcon} />
+            <MaterialIcons name="dark-mode" size={18} color={theme.onSurfaceVariant} />
             <Text style={styles.toggleText}>{drawerCopy.darkMode}</Text>
           </View>
           <Switch
@@ -179,8 +190,8 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             onValueChange={(value) => {
               toggleTheme();
             }}
-            trackColor={{ false: theme.drawerToggleTrack, true: theme.drawerToggleTrackActive }}
-            thumbColor={isDark ? theme.drawerToggleThumbActive : theme.drawerToggleThumb}
+            trackColor={{ false: theme.outline, true: theme.primary }}
+            thumbColor={isDark ? theme.onPrimary : theme.onSurface}
             testID={drawerCopy.testIds.darkMode}
             accessibilityLabel={drawerCopy.testIds.darkMode}
           />
@@ -201,7 +212,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
           }}
           testID={drawerCopy.testIds.logout}
         >
-          <MaterialIcons name="logout" size={18} color={theme.drawerLogout} />
+          <MaterialIcons name="logout" size={18} color={theme.error} />
           <Text style={styles.logoutText}>{drawerCopy.logout}</Text>
         </Pressable>
         <Text style={styles.version}>{versionLabel}</Text>
@@ -214,7 +225,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.drawerBackground,
+      backgroundColor: theme.surface,
     },
     scrollContent: {
       paddingBottom: 24,
@@ -223,7 +234,7 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 20,
       paddingBottom: 20,
       borderBottomWidth: 1,
-      borderBottomColor: theme.drawerDivider,
+      borderBottomColor: theme.outlineVariant,
     },
     avatarWrapper: {
       width: 56,
@@ -231,7 +242,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 28,
       overflow: 'hidden',
       borderWidth: 1,
-      borderColor: theme.drawerBorder,
+      borderColor: theme.outline,
       marginBottom: 12,
     },
     avatar: {
@@ -247,7 +258,7 @@ const createStyles = (theme: ThemeColors) =>
       height: 12,
       borderRadius: 6,
       borderWidth: 2,
-      borderColor: theme.drawerBackground,
+      borderColor: theme.surface,
     },
     headerText: {
       gap: 4,
@@ -255,11 +266,11 @@ const createStyles = (theme: ThemeColors) =>
     name: {
       fontSize: 16,
       fontWeight: '700',
-      color: theme.drawerTextMain,
+      color: theme.onSurface,
     },
     email: {
       fontSize: 12,
-      color: theme.drawerTextSub,
+      color: theme.onSurfaceVariant,
     },
     section: {
       paddingHorizontal: 12,
@@ -271,7 +282,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 10,
       letterSpacing: 1.6,
       textTransform: 'uppercase',
-      color: theme.drawerSectionLabel,
+      color: theme.onSurfaceVariant,
       fontWeight: '700',
     },
     navItem: {
@@ -283,11 +294,11 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 12,
     },
     navItemPressed: {
-      backgroundColor: theme.drawerItemHover,
+      backgroundColor: theme.surfaceVariant,
     },
     navLabel: {
       fontSize: 14,
-      color: theme.drawerTextSub,
+      color: theme.onSurfaceVariant,
       fontWeight: '600',
     },
     badge: {
@@ -295,27 +306,27 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: 8,
-      backgroundColor: theme.drawerBadgeBackground,
+      backgroundColor: theme.surfaceVariant,
       borderWidth: 1,
-      borderColor: theme.drawerBadgeBorder,
+      borderColor: theme.outline,
     },
     badgeText: {
       fontSize: 10,
       fontWeight: '700',
-      color: theme.drawerBadgeText,
+      color: theme.onSurfaceVariant,
     },
     sectionDivider: {
       marginTop: 16,
       height: 1,
-      backgroundColor: theme.drawerSectionDivider,
+      backgroundColor: theme.outlineVariant,
       marginHorizontal: 20,
     },
     footer: {
       borderTopWidth: 1,
-      borderTopColor: theme.drawerDivider,
+      borderTopColor: theme.outlineVariant,
       paddingHorizontal: 16,
       paddingTop: 12,
-      backgroundColor: theme.drawerFooterBackground,
+      backgroundColor: theme.surfaceVariant,
     },
     toggleRow: {
       flexDirection: 'row',
@@ -325,8 +336,8 @@ const createStyles = (theme: ThemeColors) =>
       paddingVertical: 10,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.drawerBorder,
-      backgroundColor: theme.drawerBackground,
+      borderColor: theme.outline,
+      backgroundColor: theme.surface,
       marginBottom: 12,
     },
     toggleLeft: {
@@ -337,7 +348,7 @@ const createStyles = (theme: ThemeColors) =>
     toggleText: {
       fontSize: 13,
       fontWeight: '600',
-      color: theme.drawerTextMain,
+      color: theme.onSurface,
     },
     logoutButton: {
       flexDirection: 'row',
@@ -348,18 +359,18 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 12,
     },
     logoutPressed: {
-      backgroundColor: theme.drawerLogoutHover,
+      backgroundColor: theme.errorContainer,
     },
     logoutText: {
       fontSize: 14,
       fontWeight: '600',
-      color: theme.drawerLogout,
+      color: theme.error,
     },
     version: {
       marginTop: 8,
       textAlign: 'center',
       fontSize: 10,
-      color: theme.drawerVersion,
+      color: theme.onSurfaceVariant,
       fontWeight: '600',
     },
   });

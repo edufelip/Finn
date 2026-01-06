@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import type { Post } from '../../domain/models/post';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 import { postCardCopy } from '../content/postCardCopy';
 
 type PostCardProps = {
@@ -21,6 +22,9 @@ export default function PostCard({
   onToggleSave,
   onShare,
 }: PostCardProps) {
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const handleOptions = () => {
     if (!onToggleSave) return;
     Alert.alert(postCardCopy.optionsTitle, undefined, [
@@ -61,7 +65,7 @@ export default function PostCard({
           testID={`post-options-${post.id}`}
           accessibilityLabel={`post-options-${post.id}`}
         >
-          <MaterialIcons name="more-vert" size={20} color={colors.darkGrey} />
+          <MaterialIcons name="more-vert" size={20} color={theme.onSurfaceVariant} />
         </Pressable>
         <Text style={styles.content}>{post.content}</Text>
         {post.imageUrl ? (
@@ -77,7 +81,7 @@ export default function PostCard({
             <MaterialIcons
               name="keyboard-arrow-up"
               size={24}
-              color={post.isLiked ? colors.mainBlue : colors.darkGrey}
+              color={post.isLiked ? theme.primary : theme.onSurfaceVariant}
             />
             <Text style={styles.actionText}>{post.likesCount ?? 0}</Text>
           </Pressable>
@@ -87,7 +91,7 @@ export default function PostCard({
             testID={`post-comment-${post.id}`}
             accessibilityLabel={`post-comment-${post.id}`}
           >
-            <MaterialIcons name="chat" size={16} color={colors.darkGrey} />
+            <MaterialIcons name="chat" size={16} color={theme.onSurfaceVariant} />
             <Text style={styles.actionText}>{post.commentsCount ?? 0}</Text>
           </Pressable>
           <Pressable
@@ -96,7 +100,7 @@ export default function PostCard({
             testID={`post-share-${post.id}`}
             accessibilityLabel={`post-share-${post.id}`}
           >
-            <MaterialIcons name="share" size={16} color={colors.darkGrey} />
+            <MaterialIcons name="share" size={16} color={theme.onSurfaceVariant} />
             <Text style={styles.actionText}>{postCardCopy.share}</Text>
           </Pressable>
         </View>
@@ -105,71 +109,75 @@ export default function PostCard({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: colors.white,
-    paddingBottom: 8,
-    position: 'relative',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    marginHorizontal: 16,
-  },
-  communityImageWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginRight: 8,
-  },
-  communityImage: {
-    width: '100%',
-    height: '100%',
-  },
-  headerText: {
-    flex: 1,
-  },
-  community: {
-    fontSize: 16,
-  },
-  author: {
-    marginTop: 2,
-    color: colors.darkGrey,
-  },
-  optionsButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-  },
-  content: {
-    marginTop: 16,
-    marginHorizontal: 16,
-  },
-  postImage: {
-    marginTop: 8,
-    width: '100%',
-    height: 200,
-    resizeMode: 'cover',
-  },
-  actionsRow: {
-    marginTop: 5,
-    marginHorizontal: 16,
-    flexDirection: 'row',
-    height: 35,
-  },
-  actionGroup: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  actionText: {
-    fontSize: 12,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      marginBottom: 16,
+    },
+    card: {
+      backgroundColor: theme.surface,
+      paddingBottom: 8,
+      position: 'relative',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 20,
+      marginHorizontal: 16,
+    },
+    communityImageWrapper: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      overflow: 'hidden',
+      marginRight: 8,
+    },
+    communityImage: {
+      width: '100%',
+      height: '100%',
+    },
+    headerText: {
+      flex: 1,
+    },
+    community: {
+      fontSize: 16,
+      color: theme.onSurface,
+    },
+    author: {
+      marginTop: 2,
+      color: theme.onSurfaceVariant,
+    },
+    optionsButton: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+    },
+    content: {
+      marginTop: 16,
+      marginHorizontal: 16,
+      color: theme.onSurface,
+    },
+    postImage: {
+      marginTop: 8,
+      width: '100%',
+      height: 200,
+      resizeMode: 'cover',
+    },
+    actionsRow: {
+      marginTop: 5,
+      marginHorizontal: 16,
+      flexDirection: 'row',
+      height: 35,
+    },
+    actionGroup: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    actionText: {
+      fontSize: 12,
+      color: theme.onSurfaceVariant,
+    },
+  });

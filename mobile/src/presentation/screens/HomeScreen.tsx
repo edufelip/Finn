@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Network from 'expo-network';
 
 import PostCard from '../components/PostCard';
+import HomeExploreHeader from '../components/HomeExploreHeader';
 import type { Post } from '../../domain/models/post';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -192,10 +193,10 @@ export default function HomeScreen() {
         <View style={styles.planetStack}>
           <View style={styles.planet}>
             <View style={styles.planetIconWrap}>
-              <MaterialIcons name="groups" size={54} color={theme.homeIconMuted} />
-              <MaterialIcons name="chat-bubble" size={20} color={theme.homeIconSoft} style={styles.iconBubble} />
-              <MaterialIcons name="favorite" size={24} color={theme.homeAccentSoft} style={styles.iconHeart} />
-              <MaterialIcons name="bolt" size={18} color={theme.homeIconSoft} style={styles.iconBolt} />
+              <MaterialIcons name="groups" size={54} color={theme.onSurfaceVariant} />
+              <MaterialIcons name="chat-bubble" size={20} color={theme.onSurfaceVariant} style={styles.iconBubble} />
+              <MaterialIcons name="favorite" size={24} color={theme.primaryContainer} style={styles.iconHeart} />
+              <MaterialIcons name="bolt" size={18} color={theme.onSurfaceVariant} style={styles.iconBolt} />
             </View>
           </View>
           <View style={styles.planetShadow} />
@@ -205,20 +206,20 @@ export default function HomeScreen() {
         <View style={styles.emptyCtas}>
             <Pressable
               style={styles.primaryCta}
-              onPress={() => navigation.navigate('Explore', { focus: true })}
+              onPress={() => navigation.navigate('Explore')}
               testID={homeCopy.testIds.explore}
               accessibilityLabel={homeCopy.testIds.explore}
             >
-            <MaterialIcons name="explore" size={20} color={theme.white} />
+            <MaterialIcons name="explore" size={20} color={theme.onPrimary} />
             <Text style={styles.primaryCtaText}>{homeCopy.primaryCta}</Text>
           </Pressable>
           <Pressable
             style={styles.secondaryCta}
-            onPress={() => navigation.navigate('Explore', { focus: true })}
+            onPress={() => navigation.navigate('Explore')}
             testID={homeCopy.testIds.connections}
             accessibilityLabel={homeCopy.testIds.connections}
           >
-            <MaterialIcons name="person-add" size={20} color={theme.homeTextSub} />
+            <MaterialIcons name="person-add" size={20} color={theme.onSurfaceVariant} />
             <Text style={styles.secondaryCtaText}>{homeCopy.secondaryCta}</Text>
           </Pressable>
         </View>
@@ -238,38 +239,18 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerRow}>
-        <Pressable
-          style={styles.avatarCard}
-          onPress={openDrawer}
-          testID={homeCopy.testIds.avatar}
-          accessibilityLabel={homeCopy.testIds.avatar}
-        >
-          <Image
-            source={profilePhoto ? { uri: profilePhoto } : require('../../../assets/user_icon.png')}
-            style={styles.avatar}
-          />
-        </Pressable>
-        <View style={styles.searchContainer}>
-          <MaterialIcons name="search" size={20} color={theme.homeTextSub} />
-          <Text style={styles.searchPlaceholder}>{homeCopy.searchPlaceholder}</Text>
-          <Pressable
-            style={styles.searchOverlay}
-            onPress={() => navigation.navigate('Explore', { focus: true })}
-            testID={homeCopy.testIds.search}
-            accessibilityLabel={homeCopy.testIds.search}
-          />
-        </View>
-        <Pressable
-          style={styles.notificationButton}
-          onPress={() => navigation.navigate('Notifications')}
-          testID={homeCopy.testIds.notifications}
-          accessibilityLabel={homeCopy.testIds.notifications}
-        >
-          <MaterialIcons name="notifications" size={20} color={theme.homeTextSub} />
-          <View style={styles.notificationDot} />
-        </Pressable>
-      </View>
+      <HomeExploreHeader
+        profilePhoto={profilePhoto}
+        placeholder={homeCopy.searchPlaceholder}
+        onPressAvatar={openDrawer}
+        onPressSearch={() => navigation.navigate('SearchResults', { focus: true })}
+        onPressNotifications={() => navigation.navigate('Notifications')}
+        testIds={{
+          avatar: homeCopy.testIds.avatar,
+          search: homeCopy.testIds.search,
+          notifications: homeCopy.testIds.notifications,
+        }}
+      />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
         testID={homeCopy.testIds.feedList}
@@ -290,7 +271,7 @@ export default function HomeScreen() {
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={theme.homePrimary} />
+              <ActivityIndicator size="large" color={theme.primary} />
             </View>
           ) : (
             renderEmptyState()
@@ -299,7 +280,7 @@ export default function HomeScreen() {
         ListFooterComponent={
           loading && posts.length > 0 ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.homePrimary} />
+              <ActivityIndicator size="small" color={theme.primary} />
             </View>
           ) : null
         }
@@ -314,76 +295,10 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.homeBackground,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 12,
-      backgroundColor: theme.homeBackground,
-    },
-    avatarCard: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderColor: theme.homeBorder,
-      backgroundColor: theme.homeSurfaceAlt,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    avatar: {
-      width: '100%',
-      height: '100%',
-    },
-    searchContainer: {
-      flex: 1,
-      height: 42,
-      marginLeft: 12,
-      borderRadius: 14,
-      backgroundColor: theme.homeSurfaceAlt,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      paddingHorizontal: 12,
-      borderWidth: 1,
-      borderColor: theme.homeBorder,
-    },
-    searchPlaceholder: {
-      color: theme.homeTextSub,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    searchOverlay: {
-      ...StyleSheet.absoluteFillObject,
-    },
-    notificationButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      marginLeft: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.homeSurfaceAlt,
-      borderWidth: 1,
-      borderColor: theme.homeBorder,
-    },
-    notificationDot: {
-      position: 'absolute',
-      top: 8,
-      right: 9,
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: theme.danger,
-      borderWidth: 2,
-      borderColor: theme.homeSurfaceAlt,
+      backgroundColor: theme.background,
     },
     list: {
-      backgroundColor: theme.homeBackground,
+      backgroundColor: theme.background,
     },
     emptyContainer: {
       flexGrow: 1,
@@ -399,7 +314,7 @@ const createStyles = (theme: ThemeColors) =>
     error: {
       paddingHorizontal: 16,
       paddingVertical: 8,
-      color: theme.danger,
+      color: theme.error,
     },
     emptyState: {
       flex: 1,
@@ -414,7 +329,8 @@ const createStyles = (theme: ThemeColors) =>
       width: 140,
       height: 140,
       borderRadius: 70,
-      backgroundColor: theme.homeGlowPrimary,
+      backgroundColor: theme.surfaceTint,
+      opacity: 0.18,
     },
     emptyGlowBottom: {
       position: 'absolute',
@@ -423,7 +339,8 @@ const createStyles = (theme: ThemeColors) =>
       width: 160,
       height: 160,
       borderRadius: 80,
-      backgroundColor: theme.homeGlowSecondary,
+      backgroundColor: theme.surfaceTint,
+      opacity: 0.1,
     },
     emptyContent: {
       alignItems: 'center',
@@ -436,12 +353,12 @@ const createStyles = (theme: ThemeColors) =>
       width: 180,
       height: 180,
       borderRadius: 90,
-      backgroundColor: theme.homeSurfaceAlt,
+      backgroundColor: theme.surfaceVariant,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1,
-      borderColor: theme.homeBorder,
-      shadowColor: theme.black,
+      borderColor: theme.outline,
+      shadowColor: theme.shadow,
       shadowOpacity: 0.06,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 6 },
@@ -471,19 +388,20 @@ const createStyles = (theme: ThemeColors) =>
       width: 90,
       height: 10,
       borderRadius: 50,
-      backgroundColor: theme.homeShadow,
+      backgroundColor: theme.shadow,
+      opacity: 0.2,
     },
     emptyTitle: {
       fontSize: 22,
       fontWeight: '700',
-      color: theme.homeTextMain,
+      color: theme.onBackground,
       marginBottom: 8,
     },
     emptyBody: {
       fontSize: 13,
       lineHeight: 20,
       textAlign: 'center',
-      color: theme.homeTextSub,
+      color: theme.onSurfaceVariant,
       marginBottom: 20,
     },
     emptyCtas: {
@@ -493,35 +411,35 @@ const createStyles = (theme: ThemeColors) =>
     primaryCta: {
       height: 48,
       borderRadius: 14,
-      backgroundColor: theme.homePrimary,
+      backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
       gap: 8,
-      shadowColor: theme.homePrimary,
+      shadowColor: theme.surfaceTint,
       shadowOpacity: 0.2,
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 6 },
       elevation: 4,
     },
     primaryCtaText: {
-      color: theme.white,
+      color: theme.onPrimary,
       fontSize: 15,
       fontWeight: '600',
     },
     secondaryCta: {
       height: 48,
       borderRadius: 14,
-      backgroundColor: theme.homeSurface,
+      backgroundColor: theme.surface,
       borderWidth: 1,
-      borderColor: theme.homeBorder,
+      borderColor: theme.outline,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
       gap: 8,
     },
     secondaryCtaText: {
-      color: theme.homeTextMain,
+      color: theme.onSurface,
       fontSize: 15,
       fontWeight: '600',
     },
@@ -535,7 +453,7 @@ const createStyles = (theme: ThemeColors) =>
       fontWeight: '700',
       letterSpacing: 1.4,
       textTransform: 'uppercase',
-      color: theme.homeTextSub,
+      color: theme.onSurfaceVariant,
     },
     tagsRow: {
       flexDirection: 'row',
@@ -547,13 +465,13 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 10,
-      backgroundColor: theme.homeSurface,
+      backgroundColor: theme.surface,
       borderWidth: 1,
-      borderColor: theme.homeBorder,
+      borderColor: theme.outline,
     },
     tagText: {
       fontSize: 12,
       fontWeight: '600',
-      color: theme.homeTextSub,
+      color: theme.onSurfaceVariant,
     },
   });

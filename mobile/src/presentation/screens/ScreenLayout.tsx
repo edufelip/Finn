@@ -27,7 +27,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     header: {
       paddingHorizontal: 20,
@@ -37,7 +37,7 @@ const createStyles = (theme: ThemeColors) =>
     title: {
       fontSize: 24,
       fontWeight: '600',
-      color: theme.slate900,
+      color: theme.onBackground,
     },
     content: {
       flex: 1,

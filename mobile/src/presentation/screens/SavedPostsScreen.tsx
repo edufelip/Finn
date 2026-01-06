@@ -166,7 +166,7 @@ export default function SavedPostsScreen() {
         ListFooterComponent={
           loading ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.mainBlueDeep} />
+              <ActivityIndicator size="small" color={theme.primary} />
             </View>
           ) : null
         }
@@ -180,15 +180,15 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     list: {
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     error: {
       paddingHorizontal: 16,
       paddingVertical: 8,
-      color: theme.danger,
+      color: theme.error,
     },
     footer: {
       paddingVertical: 16,

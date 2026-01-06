@@ -60,10 +60,34 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'home.alert.likeFailed.title': 'Failed to update like',
     'home.alert.savedFailed.title': 'Failed to update saved posts',
 
+    // Explore
+    'explore.searchPlaceholder': 'Search communities...',
+    'explore.trending.title': 'Trending Now',
+    'explore.trending.seeAll': 'See all',
+    'explore.trending.tag.tech': '#TECH',
+    'explore.trending.tag.travel': '#TRAVEL',
+    'explore.trending.tag.design': '#DESIGN',
+    'explore.trending.members': '{count} members',
+    'explore.feed.title': 'Your Feed',
+    'explore.empty.title': "It's quiet here... for now!",
+    'explore.empty.body':
+      "You haven't joined any communities yet. Discover topics you love and start the conversation.",
+    'explore.cta.primary': 'Explore Communities',
+    'explore.cta.secondary': 'Create a Community',
+    'explore.topics.title': 'Popular Topics',
+    'explore.topics.gaming': 'Gaming',
+    'explore.topics.music': 'Music',
+    'explore.topics.movies': 'Movies',
+    'explore.topics.science': 'Science',
+    'explore.community.fallback': 'Community',
+
     // Create bottom sheet
-    'createSheet.title': 'Create a new',
+    'createSheet.title': 'Create New',
     'createSheet.community': 'Community',
+    'createSheet.communityDescription': 'Start a new group for people with shared interests',
     'createSheet.post': 'Post',
+    'createSheet.postDescription': 'Share updates, images or links with everyone',
+    'createSheet.close': 'Close create sheet',
 
     // Post card
     'post.optionsTitle': 'Options',
@@ -266,6 +290,8 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'profile.empty.title': 'No posts yet',
     'profile.empty.body': "Share your first moment with the world. It's quiet in here, let's change that!",
     'profile.empty.cta': 'Create New Post',
+    'profile.savedEmpty.title': 'No saved posts yet',
+    'profile.savedEmpty.body': 'Save posts to see them collected here.',
     'profile.error.signInRequired': 'Sign in required.',
     'profile.memberSince': 'Member since {date}',
     'profile.alert.signInRequired.title': 'Sign in required',

@@ -24,6 +24,7 @@ import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
+import { palette } from '../theme/palette';
 import { authCopy } from '../content/authCopy';
 import type { AuthStackParamList } from '../navigation/AuthStack';
 
@@ -32,23 +33,22 @@ WebBrowser.maybeCompleteAuthSession();
 const emailRegex = /\S+@\S+\.\S+/;
 
 const GoogleLogo = ({ size = 20 }: { size?: number }) => {
-  const theme = useThemeColors();
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48">
       <Path
-        fill={theme.googleRed}
+        fill={palette.googleRed}
         d="M24 9.5c3.54 0 6.71 1.22 9.22 3.6l6.9-6.9C35.9 2.4 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l8.34 6.48C12.5 13.04 17.76 9.5 24 9.5z"
       />
       <Path
-        fill={theme.googleBlue}
+        fill={palette.googleBlue}
         d="M46.1 24.5c0-1.54-.14-3.02-.4-4.5H24v9h12.5c-.54 2.9-2.1 5.36-4.44 7.04l6.8 5.3C43.98 37.36 46.1 31.47 46.1 24.5z"
       />
       <Path
-        fill={theme.googleYellow}
+        fill={palette.googleYellow}
         d="M10.9 28.7c-.48-1.44-.76-2.97-.76-4.7s.27-3.26.76-4.7L2.56 12.82C.92 16.06 0 19.79 0 24c0 4.21.92 7.94 2.56 11.18l8.34-6.48z"
       />
       <Path
-        fill={theme.googleGreen}
+        fill={palette.googleGreen}
         d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-6.8-5.3c-1.9 1.28-4.34 2.04-9.1 2.04-6.24 0-11.5-3.54-13.1-8.74l-8.34 6.48C6.51 42.62 14.62 48 24 48z"
       />
     </Svg>
@@ -228,13 +228,13 @@ export default function AuthScreen() {
             <MaterialCommunityIcons
               name="email-outline"
               size={20}
-              color={theme.authTextSecondary}
+              color={theme.onSurfaceVariant}
               style={styles.inputIcon}
             />
             <TextInput
               style={styles.input}
               placeholder={authCopy.emailPlaceholder}
-              placeholderTextColor={theme.authTextSecondary}
+              placeholderTextColor={theme.onSurfaceVariant}
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
@@ -249,13 +249,13 @@ export default function AuthScreen() {
             <MaterialCommunityIcons
               name="lock-outline"
               size={20}
-              color={theme.authTextSecondary}
+              color={theme.onSurfaceVariant}
               style={styles.inputIcon}
             />
             <TextInput
               style={styles.input}
               placeholder={authCopy.passwordPlaceholder}
-              placeholderTextColor={theme.authTextSecondary}
+              placeholderTextColor={theme.onSurfaceVariant}
               secureTextEntry={!passwordVisible}
               value={password}
               onChangeText={setPassword}
@@ -272,7 +272,7 @@ export default function AuthScreen() {
               <MaterialIcons
                 name={passwordVisible ? 'visibility-off' : 'visibility'}
                 size={18}
-                color={theme.authTextSecondary}
+                color={theme.onSurfaceVariant}
               />
             </Pressable>
           </View>
@@ -320,7 +320,7 @@ export default function AuthScreen() {
               onPress={handleAppleSignIn}
               disabled={loading}
             >
-              <MaterialCommunityIcons name="apple" size={20} color={theme.white} />
+              <MaterialCommunityIcons name="apple" size={20} color={palette.white} />
               <Text style={styles.appleText}>{authCopy.apple}</Text>
             </Pressable>
           ) : null}
@@ -338,7 +338,7 @@ export default function AuthScreen() {
       </View>
       {loading ? (
         <View style={styles.loadingOverlay} pointerEvents="auto">
-          <ActivityIndicator size="large" color={theme.authPrimary} />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : null}
     </SafeAreaView>
@@ -349,7 +349,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.authBackground,
+      backgroundColor: theme.background,
     },
     container: {
       flex: 1,
@@ -363,12 +363,12 @@ const createStyles = (theme: ThemeColors) =>
     title: {
       fontSize: 34,
       fontWeight: '800',
-      color: theme.authTextPrimary,
+      color: theme.onBackground,
       letterSpacing: -0.5,
     },
     subtitle: {
       fontSize: 18,
-      color: theme.authTextSecondary,
+      color: theme.onSurfaceVariant,
       fontWeight: '500',
       marginTop: 6,
     },
@@ -378,15 +378,15 @@ const createStyles = (theme: ThemeColors) =>
     inputGroup: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.authSurface,
+      backgroundColor: theme.surfaceVariant,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: theme.transparent,
+      borderColor: theme.outlineVariant,
       paddingHorizontal: 16,
       marginBottom: 12,
     },
     inputGroupFocused: {
-      borderColor: theme.authPrimary,
+      borderColor: theme.primary,
     },
     inputIcon: {
       marginRight: 10,
@@ -395,7 +395,7 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
       paddingVertical: 14,
       fontSize: 16,
-      color: theme.authTextPrimary,
+      color: theme.onSurface,
     },
     passwordToggle: {
       paddingVertical: 6,
@@ -403,11 +403,11 @@ const createStyles = (theme: ThemeColors) =>
     },
     primaryButton: {
       height: 56,
-      backgroundColor: theme.authPrimary,
+      backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: 16,
-      shadowColor: theme.authPrimary,
+      shadowColor: theme.surfaceTint,
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.35,
       shadowRadius: 12,
@@ -417,7 +417,7 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.7,
     },
     primaryButtonText: {
-      color: theme.white,
+      color: theme.onPrimary,
       fontSize: 17,
       fontWeight: '700',
     },
@@ -429,11 +429,11 @@ const createStyles = (theme: ThemeColors) =>
     },
     forgotText: {
       fontSize: 14,
-      color: theme.authTextSecondary,
+      color: theme.onSurfaceVariant,
     },
     forgotLink: {
       fontSize: 14,
-      color: theme.authPrimary,
+      color: theme.primary,
       fontWeight: '600',
       marginLeft: 6,
     },
@@ -445,11 +445,11 @@ const createStyles = (theme: ThemeColors) =>
     dividerLine: {
       flex: 1,
       height: 1,
-      backgroundColor: theme.authInputBorder,
+      backgroundColor: theme.outline,
     },
     dividerText: {
       fontSize: 13,
-      color: theme.authTextSecondary,
+      color: theme.onSurfaceVariant,
       fontWeight: '600',
       paddingHorizontal: 12,
     },
@@ -469,20 +469,20 @@ const createStyles = (theme: ThemeColors) =>
     googleButton: {
       backgroundColor: theme.surface,
       borderWidth: 1,
-      borderColor: theme.authInputBorder,
+      borderColor: theme.outline,
     },
     googleText: {
       marginLeft: 10,
       fontSize: 15,
       fontWeight: '600',
-      color: theme.authTextPrimary,
+      color: theme.onSurface,
     },
     appleButton: {
-      backgroundColor: theme.authApple,
+      backgroundColor: palette.appleBlack,
     },
     appleText: {
       marginLeft: 10,
-      color: theme.white,
+      color: palette.white,
       fontSize: 15,
       fontWeight: '600',
     },
@@ -494,17 +494,17 @@ const createStyles = (theme: ThemeColors) =>
     },
     signupPrompt: {
       fontSize: 14,
-      color: theme.authTextSecondary,
+      color: theme.onSurfaceVariant,
     },
     signupLink: {
       marginLeft: 6,
       fontSize: 14,
       fontWeight: '700',
-      color: theme.authPrimary,
+      color: theme.primary,
     },
     loadingOverlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.authOverlay,
+      backgroundColor: theme.scrim,
       alignItems: 'center',
       justifyContent: 'center',
     },

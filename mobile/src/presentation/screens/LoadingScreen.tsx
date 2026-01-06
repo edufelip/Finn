@@ -9,7 +9,7 @@ export default function LoadingScreen() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={theme.slate900} />
+      <ActivityIndicator size="large" color={theme.primary} />
     </View>
   );
 }
@@ -20,6 +20,6 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
   });

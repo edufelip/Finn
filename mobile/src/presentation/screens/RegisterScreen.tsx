@@ -81,14 +81,14 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
+        <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onBackground} />
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.title}>{registerCopy.title}</Text>
         <TextInput
           style={[styles.input, styles.firstInput]}
           placeholder={registerCopy.placeholders.name}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.onSurfaceVariant}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
@@ -98,7 +98,7 @@ export default function RegisterScreen() {
         <TextInput
           style={[styles.input, styles.inputSpacing]}
           placeholder={registerCopy.placeholders.email}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.onSurfaceVariant}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -110,7 +110,7 @@ export default function RegisterScreen() {
           <TextInput
             style={[styles.input, styles.inputSpacing, styles.passwordInput]}
             placeholder={registerCopy.placeholders.password}
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.onSurfaceVariant}
             secureTextEntry={!passwordVisible}
             value={password}
             onChangeText={setPassword}
@@ -121,7 +121,7 @@ export default function RegisterScreen() {
             <MaterialIcons
               name={passwordVisible ? 'visibility-off' : 'visibility'}
               size={18}
-              color={theme.iconMuted}
+              color={theme.onSurfaceVariant}
             />
           </Pressable>
         </View>
@@ -129,7 +129,7 @@ export default function RegisterScreen() {
           <TextInput
             style={[styles.input, styles.inputSpacing, styles.passwordInput]}
             placeholder={registerCopy.placeholders.confirm}
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.onSurfaceVariant}
             secureTextEntry={!confirmVisible}
             value={confirm}
             onChangeText={setConfirm}
@@ -140,7 +140,7 @@ export default function RegisterScreen() {
             <MaterialIcons
               name={confirmVisible ? 'visibility-off' : 'visibility'}
               size={18}
-              color={theme.iconMuted}
+              color={theme.onSurfaceVariant}
             />
           </Pressable>
         </View>
@@ -157,7 +157,7 @@ export default function RegisterScreen() {
         </Pressable>
         <Text style={styles.orText}>{registerCopy.or}</Text>
         <Pressable style={styles.googleButton}>
-          <MaterialCommunityIcons name="google" size={20} color={theme.iconMuted} />
+          <MaterialCommunityIcons name="google" size={20} color={theme.onSurfaceVariant} />
           <Text style={styles.googleText}>{registerCopy.google}</Text>
         </Pressable>
       </View>
@@ -169,7 +169,7 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     backButton: {
       position: 'absolute',
@@ -187,7 +187,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 30,
       fontWeight: '700',
       marginBottom: 24,
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     inputWrapper: {
       position: 'relative',
@@ -196,11 +196,11 @@ const createStyles = (theme: ThemeColors) =>
       height: 55,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: theme.borderGrey,
+      borderColor: theme.outline,
       paddingHorizontal: 15,
       backgroundColor: theme.surface,
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     firstInput: {
       marginTop: 8,
@@ -220,7 +220,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     primaryButton: {
       height: 65,
-      backgroundColor: theme.mainBlue,
+      backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 16,
@@ -230,19 +230,19 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.7,
     },
     primaryButtonText: {
-      color: theme.white,
+      color: theme.onPrimary,
       fontSize: 16,
     },
     orText: {
       marginTop: 16,
       textAlign: 'center',
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     googleButton: {
       marginTop: 8,
       height: 65,
       borderWidth: 1,
-      borderColor: theme.borderLight,
+      borderColor: theme.outlineVariant,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
@@ -253,6 +253,6 @@ const createStyles = (theme: ThemeColors) =>
     },
     googleText: {
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
   });

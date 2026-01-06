@@ -200,7 +200,7 @@ export default function PostDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.textPrimary} />
+          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onBackground} />
         </Pressable>
         <Divider />
       </View>
@@ -244,7 +244,7 @@ export default function PostDetailScreen() {
           style={styles.commentInput}
           value={content}
           onChangeText={setContent}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.onSurfaceVariant}
           testID={postDetailCopy.testIds.input}
           accessibilityLabel={postDetailCopy.testIds.input}
         />
@@ -255,7 +255,7 @@ export default function PostDetailScreen() {
           testID={postDetailCopy.testIds.submit}
           accessibilityLabel={postDetailCopy.testIds.submit}
         >
-          <MaterialIcons name="add" size={24} color={theme.white} />
+          <MaterialIcons name="add" size={24} color={theme.onPrimary} />
         </Pressable>
       </View>
     </View>
@@ -266,12 +266,12 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     header: {
       height: 60,
       justifyContent: 'flex-end',
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     backButton: {
       marginLeft: 16,
@@ -280,16 +280,16 @@ const createStyles = (theme: ThemeColors) =>
       alignSelf: 'flex-start',
     },
     list: {
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
     },
     commentsHeader: {
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
       paddingHorizontal: 16,
       paddingVertical: 8,
     },
     commentsHeaderText: {
       fontWeight: '700',
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
     comment: {
       backgroundColor: theme.surface,
@@ -315,20 +315,20 @@ const createStyles = (theme: ThemeColors) =>
     },
     commentAuthor: {
       fontWeight: '700',
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     commentDate: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     commentBody: {
       marginTop: 8,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     empty: {
       textAlign: 'center',
       marginVertical: 16,
-      color: theme.textSecondary,
+      color: theme.onSurfaceVariant,
     },
     bottomBar: {
       height: 55,
@@ -337,7 +337,7 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 16,
       backgroundColor: theme.surface,
       borderTopWidth: 1,
-      borderTopColor: theme.border,
+      borderTopColor: theme.outline,
     },
     bottomAvatar: {
       width: 36,
@@ -353,13 +353,13 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
       height: '100%',
       marginHorizontal: 8,
-      color: theme.textPrimary,
+      color: theme.onSurface,
     },
     commentButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.mainBlue,
+      backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },

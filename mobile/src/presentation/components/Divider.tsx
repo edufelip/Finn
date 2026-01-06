@@ -1,17 +1,21 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../../app/providers/ThemeProvider';
+import type { ThemeColors } from '../theme/colors';
 
 type DividerProps = {
   height?: number;
 };
 
 export default function Divider({ height = 2 }: DividerProps) {
+  const theme = useThemeColors();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <LinearGradient
-      colors={[colors.dividerStart, colors.white]}
+      colors={[theme.outlineVariant, theme.surface]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={[styles.divider, { height }]}
@@ -19,8 +23,9 @@ export default function Divider({ height = 2 }: DividerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  divider: {
-    width: '100%',
-  },
-});
+const createStyles = (_theme: ThemeColors) =>
+  StyleSheet.create({
+    divider: {
+      width: '100%',
+    },
+  });
