@@ -44,7 +44,7 @@ export default function CreateCommunityScreen() {
   const titleMaxLength = 25;
   const descriptionMaxLength = 300;
   const descriptionCount = createCommunityCopy.descriptionCount(description.length, descriptionMaxLength);
-  const gradientColors = useMemo(
+  const gradientColors = useMemo<readonly [string, string]>(
     () => [`${theme.background}00`, theme.background],
     [theme.background]
   );

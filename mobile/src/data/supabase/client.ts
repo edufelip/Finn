@@ -35,7 +35,7 @@ const readRequestBody = async (input: RequestInfo | URL, init?: RequestInit) => 
   if (init?.body !== undefined) {
     return describeBody(init.body);
   }
-  if (typeof input !== 'string' && 'clone' in input) {
+  if (typeof input !== 'string' && !(input instanceof URL) && 'clone' in input) {
     try {
       return await input.clone().text();
     } catch {
@@ -81,7 +81,8 @@ const readStorageResponseBody = async (response: Response) => {
 };
 
 const loggedFetch: typeof fetch = async (input, init) => {
-  const url = typeof input === 'string' ? input : input.url;
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   const isSupabaseRequest = url.startsWith(supabaseBaseUrl);
   const isStorageRequest = url.startsWith(`${supabaseBaseUrl}/storage/v1/`);
   const isDatabaseRequest =
@@ -91,7 +92,9 @@ const loggedFetch: typeof fetch = async (input, init) => {
   }
 
   const requestId = ++requestCounter;
-  const method = init?.method ?? (typeof input === 'string' ? 'GET' : input.method);
+  const method =
+    init?.method ??
+    (typeof input === 'string' || input instanceof URL ? 'GET' : input.method);
   const startedAt = Date.now();
   const requestBody = isDatabaseRequest ? await readRequestBody(input, init) : null;
 

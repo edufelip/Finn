@@ -52,7 +52,7 @@ export default function CreatePostScreen() {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const contentCount = createPostCopy.contentCount(content.length, contentMaxLength);
-  const gradientColors = useMemo(
+  const gradientColors = useMemo<readonly [string, string]>(
     () => [`${theme.background}00`, theme.background],
     [theme.background]
   );
