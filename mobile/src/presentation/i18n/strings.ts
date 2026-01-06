@@ -252,6 +252,18 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'createPost.alert.posted.message': 'Your post is live.',
     'createPost.alert.failed.title': 'Failed to post',
 
+    // Image picker
+    'imagePicker.title': 'Add a photo',
+    'imagePicker.camera': 'Take a photo',
+    'imagePicker.gallery': 'Choose from gallery',
+    'imagePicker.cancel': 'Cancel',
+    'imagePicker.alert.camera.title': 'Camera access needed',
+    'imagePicker.alert.camera.message': 'Allow camera access to take a photo.',
+    'imagePicker.alert.gallery.title': 'Photo access needed',
+    'imagePicker.alert.gallery.message': 'Allow photo library access to choose an image.',
+    'imagePicker.alert.cameraUnavailable.title': 'Camera unavailable',
+    'imagePicker.alert.cameraUnavailable.message': 'Camera is not available on this device.',
+
     // Search
     'search.placeholder': 'Search',
     'search.trending': 'Trending',

@@ -26,6 +26,8 @@ import { persistOfflineImage } from '../../data/offline/offlineImages';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { createCommunityCopy } from '../content/createCommunityCopy';
+import { imagePickerCopy } from '../content/imagePickerCopy';
+import ImageSourceSheet from '../components/ImageSourceSheet';
 
 export default function CreateCommunityScreen() {
   const navigation = useNavigation();
@@ -35,6 +37,7 @@ export default function CreateCommunityScreen() {
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [imageSourceOpen, setImageSourceOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -46,12 +49,13 @@ export default function CreateCommunityScreen() {
     [theme.background]
   );
 
-  const pickImage = async () => {
+  const handlePickFromGallery = async () => {
+    setImageSourceOpen(false);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
-        createCommunityCopy.alerts.permission.title,
-        createCommunityCopy.alerts.permission.message
+        imagePickerCopy.alerts.galleryPermission.title,
+        imagePickerCopy.alerts.galleryPermission.message
       );
       return;
     }
@@ -59,10 +63,40 @@ export default function CreateCommunityScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
+      allowsMultipleSelection: false,
+      selectionLimit: 1,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
       setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handlePickFromCamera = async () => {
+    setImageSourceOpen(false);
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        imagePickerCopy.alerts.cameraPermission.title,
+        imagePickerCopy.alerts.cameraPermission.message
+      );
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert(
+        imagePickerCopy.alerts.cameraUnavailable.title,
+        imagePickerCopy.alerts.cameraUnavailable.message
+      );
     }
   };
 
@@ -190,7 +224,7 @@ export default function CreateCommunityScreen() {
             <View style={styles.iconSection}>
               <Pressable
                 style={styles.iconSelect}
-                onPress={pickImage}
+                onPress={() => setImageSourceOpen(true)}
                 testID={createCommunityCopy.testIds.image}
                 accessibilityLabel={createCommunityCopy.testIds.image}
               >
@@ -214,6 +248,12 @@ export default function CreateCommunityScreen() {
             </View>
           </View>
         </ScrollView>
+        <ImageSourceSheet
+          visible={imageSourceOpen}
+          onClose={() => setImageSourceOpen(false)}
+          onSelectCamera={handlePickFromCamera}
+          onSelectGallery={handlePickFromGallery}
+        />
         <View style={styles.ctaContainer} pointerEvents="box-none">
           <LinearGradient colors={gradientColors} style={[styles.ctaGradient, { paddingBottom: insets.bottom + 16 }]}>
             <Pressable

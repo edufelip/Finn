@@ -104,9 +104,14 @@ async function toDomainWithImages(row: PostRow, extras?: Partial<Post>): Promise
   return toDomain(row, { communityImageUrl, imageUrl: postImageUrl, ...extras });
 }
 
-async function uploadPostImage(imageUri: string, userId: string): Promise<string> {
+type UploadResult = {
+  path: string;
+  wasUploaded: boolean;
+};
+
+async function uploadPostImage(imageUri: string, userId: string): Promise<UploadResult> {
   if (!isLocalFile(imageUri)) {
-    return imageUri;
+    return { path: imageUri, wasUploaded: false };
   }
 
   const response = await fetch(imageUri);
@@ -125,7 +130,7 @@ async function uploadPostImage(imageUri: string, userId: string): Promise<string
     throw error;
   }
 
-  return data.path;
+  return { path: data.path, wasUploaded: true };
 }
 
 export class SupabasePostRepository implements PostRepository {
@@ -446,27 +451,42 @@ export class SupabasePostRepository implements PostRepository {
   }
 
   async savePost(post: Post, imageUri?: string | null): Promise<Post> {
-    const resolvedImageUrl = imageUri
-      ? await uploadPostImage(imageUri, post.userId)
-      : post.imageUrl ?? null;
+    let resolvedImageUrl = post.imageUrl ?? null;
+    let uploadedPath: string | null = null;
+    if (imageUri) {
+      const upload = await uploadPostImage(imageUri, post.userId);
+      resolvedImageUrl = upload.path;
+      uploadedPath = upload.wasUploaded ? upload.path : null;
+    }
 
-    const { data, error } = await supabase
-      .from(TABLES.posts)
-      .insert({
-        content: post.content,
-        community_id: post.communityId,
-        user_id: post.userId,
-        image_url: resolvedImageUrl,
-      })
-      .select('*, communities(title, image_url), profiles(name), likes(count), comments(count)')
-      .single<PostRow>();
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.posts)
+        .insert({
+          content: post.content,
+          community_id: post.communityId,
+          user_id: post.userId,
+          image_url: resolvedImageUrl,
+        })
+        .select('*, communities(title, image_url), profiles(name), likes(count), comments(count)')
+        .single<PostRow>();
 
-    if (error) {
+      if (error) {
+        throw error;
+      }
+      const created = await toDomainWithImages(data);
+      await clearCache(CacheKey.feedByUser(post.userId, 0));
+      return created;
+    } catch (error) {
+      if (uploadedPath) {
+        try {
+          await supabase.storage.from(POST_IMAGE_BUCKET).remove([uploadedPath]);
+        } catch {
+          // Ignore cleanup failures to preserve the original error context.
+        }
+      }
       throw error;
     }
-    const created = await toDomainWithImages(data);
-    await clearCache(CacheKey.feedByUser(post.userId, 0));
-    return created;
   }
 
   async deletePost(postId: number): Promise<void> {

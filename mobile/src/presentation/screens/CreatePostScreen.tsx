@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -26,10 +27,12 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { isMockMode } from '../../config/appConfig';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { persistOfflineImage } from '../../data/offline/offlineImages';
-import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { palette } from '../theme/palette';
 import { createPostCopy } from '../content/createPostCopy';
+import { imagePickerCopy } from '../content/imagePickerCopy';
+import ImageSourceSheet from '../components/ImageSourceSheet';
 
 export default function CreatePostScreen() {
   const navigation = useNavigation();
@@ -40,10 +43,12 @@ export default function CreatePostScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [imageSourceOpen, setImageSourceOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const contentMaxLength = 500;
 
   const { communities: communityRepository, posts: postRepository } = useRepositories();
+  const { isDark } = useTheme();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const contentCount = createPostCopy.contentCount(content.length, contentMaxLength);
@@ -68,20 +73,54 @@ export default function CreatePostScreen() {
       });
   }, [communityRepository, selectedCommunityId]);
 
-  const pickImage = async () => {
+  const handlePickFromGallery = async () => {
+    setImageSourceOpen(false);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(createPostCopy.alerts.permission.title, createPostCopy.alerts.permission.message);
+      Alert.alert(
+        imagePickerCopy.alerts.galleryPermission.title,
+        imagePickerCopy.alerts.galleryPermission.message
+      );
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
+      allowsMultipleSelection: false,
+      selectionLimit: 1,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
       setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handlePickFromCamera = async () => {
+    setImageSourceOpen(false);
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        imagePickerCopy.alerts.cameraPermission.title,
+        imagePickerCopy.alerts.cameraPermission.message
+      );
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert(
+        imagePickerCopy.alerts.cameraUnavailable.title,
+        imagePickerCopy.alerts.cameraUnavailable.message
+      );
     }
   };
 
@@ -144,9 +183,10 @@ export default function CreatePostScreen() {
   const selectedCommunity = communities.find((item) => item.id === selectedCommunityId);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar backgroundColor={theme.surface} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <KeyboardAvoidingView
-        style={styles.safeArea}
+        style={styles.body}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
@@ -160,7 +200,7 @@ export default function CreatePostScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 220 },
+            { paddingBottom: insets.bottom + 120 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -205,7 +245,7 @@ export default function CreatePostScreen() {
             >
               <Pressable
                 style={styles.mediaTile}
-                onPress={pickImage}
+                onPress={() => setImageSourceOpen(true)}
                 testID={createPostCopy.testIds.image}
                 accessibilityLabel={createPostCopy.testIds.image}
               >
@@ -232,7 +272,7 @@ export default function CreatePostScreen() {
         <View style={styles.ctaContainer} pointerEvents="box-none">
           <LinearGradient
             colors={gradientColors}
-            style={[styles.ctaGradient, { paddingBottom: insets.bottom + 16 }]}
+            style={[styles.ctaGradient, { paddingBottom: insets.bottom + 12 }]}
           >
             <View style={styles.actionRow}>
               <View style={styles.actionButtons}>
@@ -266,6 +306,12 @@ export default function CreatePostScreen() {
             </Pressable>
           </LinearGradient>
         </View>
+        <ImageSourceSheet
+          visible={imageSourceOpen}
+          onClose={() => setImageSourceOpen(false)}
+          onSelectCamera={handlePickFromCamera}
+          onSelectGallery={handlePickFromGallery}
+        />
         <Modal visible={pickerOpen} transparent animationType="slide">
           <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)} />
           <View style={styles.modalSheet}>
@@ -297,6 +343,10 @@ export default function CreatePostScreen() {
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
+      flex: 1,
+      backgroundColor: theme.surface,
+    },
+    body: {
       flex: 1,
       backgroundColor: theme.background,
     },
@@ -387,10 +437,10 @@ const createStyles = (theme: ThemeColors) =>
     mediaSection: {
       paddingHorizontal: 16,
       paddingTop: 12,
+      gap: 8,
     },
     mediaRow: {
       gap: 16,
-      paddingVertical: 8,
     },
     mediaTile: {
       width: 96,
@@ -430,7 +480,6 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'center',
       gap: 6,
       paddingHorizontal: 4,
-      marginTop: 4,
     },
     mediaHelper: {
       fontSize: 12,
@@ -444,14 +493,14 @@ const createStyles = (theme: ThemeColors) =>
     },
     ctaGradient: {
       paddingHorizontal: 16,
-      paddingTop: 24,
+      paddingTop: 16,
     },
     actionRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 4,
-      marginBottom: 16,
+      marginBottom: 12,
     },
     actionButtons: {
       flexDirection: 'row',

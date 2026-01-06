@@ -72,9 +72,14 @@ async function resolveCommunityImageUrl(imageUrl?: string | null): Promise<strin
   return data.signedUrl;
 }
 
-async function uploadCommunityImage(imageUri: string, ownerId: string): Promise<string> {
+type UploadResult = {
+  path: string;
+  wasUploaded: boolean;
+};
+
+async function uploadCommunityImage(imageUri: string, ownerId: string): Promise<UploadResult> {
   if (!isLocalFile(imageUri)) {
-    return imageUri;
+    return { path: imageUri, wasUploaded: false };
   }
 
   const response = await fetch(imageUri);
@@ -93,7 +98,7 @@ async function uploadCommunityImage(imageUri: string, ownerId: string): Promise<
     throw error;
   }
 
-  return data.path;
+  return { path: data.path, wasUploaded: true };
 }
 
 async function toDomainWithImage(row: CommunityRow, subscribersCount?: number): Promise<Community> {
@@ -174,9 +179,13 @@ export class SupabaseCommunityRepository implements CommunityRepository {
   }
 
   async saveCommunity(community: Community, imageUri?: string | null): Promise<Community> {
-    const resolvedImageUrl = imageUri
-      ? await uploadCommunityImage(imageUri, community.ownerId)
-      : community.imageUrl ?? null;
+    let resolvedImageUrl = community.imageUrl ?? null;
+    let uploadedPath: string | null = null;
+    if (imageUri) {
+      const upload = await uploadCommunityImage(imageUri, community.ownerId);
+      resolvedImageUrl = upload.path;
+      uploadedPath = upload.wasUploaded ? upload.path : null;
+    }
 
     const payload = {
       title: community.title,
@@ -184,19 +193,29 @@ export class SupabaseCommunityRepository implements CommunityRepository {
       image_url: resolvedImageUrl,
       owner_id: community.ownerId,
     };
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.communities)
+        .insert(payload)
+        .select('*')
+        .single<CommunityRow>();
 
-    const { data, error } = await supabase
-      .from(TABLES.communities)
-      .insert(payload)
-      .select('*')
-      .single<CommunityRow>();
-
-    if (error) {
+      if (error) {
+        throw error;
+      }
+      const created = await toDomainWithImage(data);
+      await setCache(CacheKey.community(created.id), created, CACHE_TTL_MS.communities);
+      return created;
+    } catch (error) {
+      if (uploadedPath) {
+        try {
+          await supabase.storage.from(COMMUNITY_IMAGE_BUCKET).remove([uploadedPath]);
+        } catch {
+          // Ignore cleanup failures to preserve the original error context.
+        }
+      }
       throw error;
     }
-    const created = await toDomainWithImage(data);
-    await setCache(CacheKey.community(created.id), created, CACHE_TTL_MS.communities);
-    return created;
   }
 
   async subscribe(subscription: Subscription): Promise<Subscription> {
