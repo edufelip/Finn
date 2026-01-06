@@ -5,6 +5,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import CreatePostScreen from '../src/presentation/screens/CreatePostScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { createPostCopy } from '../src/presentation/content/createPostCopy';
+import { imagePickerCopy } from '../src/presentation/content/imagePickerCopy';
 
 const mockGoBack = jest.fn();
 
@@ -25,7 +26,9 @@ jest.mock('expo-network', () => ({
 
 jest.mock('expo-image-picker', () => ({
   requestMediaLibraryPermissionsAsync: jest.fn(),
+  requestCameraPermissionsAsync: jest.fn(),
   launchImageLibraryAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
   MediaTypeOptions: { Images: 'Images' },
 }));
 
@@ -53,14 +56,16 @@ describe('CreatePostScreen', () => {
     enqueueWrite.mockReset();
     network.getNetworkStateAsync.mockReset();
     imagePicker.requestMediaLibraryPermissionsAsync.mockReset();
+    imagePicker.requestCameraPermissionsAsync.mockReset();
     imagePicker.launchImageLibraryAsync.mockReset();
+    imagePicker.launchCameraAsync.mockReset();
     persistOfflineImage.mockReset();
   });
 
   it('creates a post when online', async () => {
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
     const communitiesRepo = {
-      getCommunities: jest.fn().mockResolvedValue([
+      getSubscribedCommunities: jest.fn().mockResolvedValue([
         { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
       ]),
     };
@@ -107,7 +112,7 @@ describe('CreatePostScreen', () => {
       assets: [{ uri: 'file://offline-post.jpg' }],
     });
     const communitiesRepo = {
-      getCommunities: jest.fn().mockResolvedValue([
+      getSubscribedCommunities: jest.fn().mockResolvedValue([
         { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
       ]),
     };
@@ -125,6 +130,7 @@ describe('CreatePostScreen', () => {
     expect(getByTestId(createPostCopy.testIds.content)).toBeTruthy();
     expect(getByTestId(createPostCopy.testIds.submit)).toBeTruthy();
     fireEvent.press(getByTestId(createPostCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
     await waitFor(() => expect(getByTestId(createPostCopy.testIds.imagePreview)).toBeTruthy());
     fireEvent.changeText(getByPlaceholderText(createPostCopy.contentPlaceholder), 'Offline post');
     fireEvent.press(getByTestId(createPostCopy.testIds.submit));
@@ -160,7 +166,7 @@ describe('CreatePostScreen', () => {
     });
 
     const communitiesRepo = {
-      getCommunities: jest.fn().mockResolvedValue([
+      getSubscribedCommunities: jest.fn().mockResolvedValue([
         { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
       ]),
     };
@@ -173,6 +179,7 @@ describe('CreatePostScreen', () => {
 
     expect(queryByTestId(createPostCopy.testIds.imagePreview)).toBeNull();
     fireEvent.press(getByTestId(createPostCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
 
     await waitFor(() => {
       expect(imagePicker.launchImageLibraryAsync).toHaveBeenCalled();
@@ -189,7 +196,7 @@ describe('CreatePostScreen', () => {
     });
 
     const communitiesRepo = {
-      getCommunities: jest.fn().mockResolvedValue([
+      getSubscribedCommunities: jest.fn().mockResolvedValue([
         { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
       ]),
     };
@@ -205,6 +212,7 @@ describe('CreatePostScreen', () => {
 
     await waitFor(() => expect(getByText('General')).toBeTruthy());
     fireEvent.press(getByTestId(createPostCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
     await waitFor(() => expect(getByTestId(createPostCopy.testIds.imagePreview)).toBeTruthy());
     fireEvent.changeText(getByPlaceholderText(createPostCopy.contentPlaceholder), 'My post with image');
     fireEvent.press(getByTestId(createPostCopy.testIds.submit));
@@ -225,7 +233,7 @@ describe('CreatePostScreen', () => {
 
   it('renders create post copy', async () => {
     const communitiesRepo = {
-      getCommunities: jest.fn().mockResolvedValue([
+      getSubscribedCommunities: jest.fn().mockResolvedValue([
         { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
       ]),
     };

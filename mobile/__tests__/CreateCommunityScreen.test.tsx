@@ -5,6 +5,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import CreateCommunityScreen from '../src/presentation/screens/CreateCommunityScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { createCommunityCopy } from '../src/presentation/content/createCommunityCopy';
+import { imagePickerCopy } from '../src/presentation/content/imagePickerCopy';
 
 const mockGoBack = jest.fn();
 
@@ -25,7 +26,9 @@ jest.mock('expo-network', () => ({
 
 jest.mock('expo-image-picker', () => ({
   requestMediaLibraryPermissionsAsync: jest.fn(),
+  requestCameraPermissionsAsync: jest.fn(),
   launchImageLibraryAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
   MediaTypeOptions: { Images: 'Images' },
 }));
 
@@ -53,7 +56,9 @@ describe('CreateCommunityScreen', () => {
     enqueueWrite.mockReset();
     network.getNetworkStateAsync.mockReset();
     imagePicker.requestMediaLibraryPermissionsAsync.mockReset();
+    imagePicker.requestCameraPermissionsAsync.mockReset();
     imagePicker.launchImageLibraryAsync.mockReset();
+    imagePicker.launchCameraAsync.mockReset();
     persistOfflineImage.mockReset();
   });
 
@@ -150,6 +155,7 @@ describe('CreateCommunityScreen', () => {
     fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'Offline Community');
     fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Offline details');
     fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
 
     await waitFor(() => expect(getByTestId(createCommunityCopy.testIds.imagePreview)).toBeTruthy());
 
@@ -187,6 +193,7 @@ describe('CreateCommunityScreen', () => {
 
     expect(queryByTestId(createCommunityCopy.testIds.imagePreview)).toBeNull();
     fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
 
     await waitFor(() => {
       expect(imagePicker.launchImageLibraryAsync).toHaveBeenCalled();
