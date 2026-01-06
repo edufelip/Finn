@@ -166,6 +166,38 @@ export class SupabaseCommunityRepository implements CommunityRepository {
     return cached ?? [];
   }
 
+  async getSubscribedCommunities(userId: string): Promise<Community[]> {
+    const cacheKey = CacheKey.communitiesBySubscriber(userId);
+    const cached = await cacheFirst<Community[]>(cacheKey, CACHE_TTL_MS.communities, async () => {
+      const { data: subscriptions, error: subscriptionsError } = await supabase
+        .from(TABLES.subscriptions)
+        .select('community_id')
+        .eq('user_id', userId);
+
+      if (subscriptionsError) {
+        throw subscriptionsError;
+      }
+
+      const communityIds = (subscriptions ?? []).map((row) => row.community_id);
+      if (!communityIds.length) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from(TABLES.communities)
+        .select('*')
+        .in('id', communityIds);
+
+      if (error) {
+        throw error;
+      }
+
+      return Promise.all((data ?? []).map((row) => toDomainWithImage(row as CommunityRow)));
+    });
+
+    return cached ?? [];
+  }
+
   async getCommunitySubscribersCount(communityId: number): Promise<number> {
     const { count, error } = await supabase
       .from(TABLES.subscriptions)

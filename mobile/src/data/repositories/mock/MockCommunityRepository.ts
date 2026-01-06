@@ -18,6 +18,15 @@ export class MockCommunityRepository implements CommunityRepository {
     return mockCommunities.filter((community) => community.ownerId === userId);
   }
 
+  async getSubscribedCommunities(userId: string): Promise<Community[]> {
+    const communityIds = new Set(
+      mockSubscriptions
+        .filter((subscription) => subscription.userId === userId)
+        .map((subscription) => subscription.communityId)
+    );
+    return mockCommunities.filter((community) => communityIds.has(community.id));
+  }
+
   async getCommunitySubscribersCount(_communityId: number): Promise<number> {
     return mockSubscriptions.filter((subscription) => subscription.communityId === _communityId).length;
   }

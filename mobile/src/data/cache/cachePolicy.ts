@@ -13,6 +13,7 @@ export const CacheKey = {
     search ? `communities:search:${search.toLowerCase()}` : 'communities:all',
   community: (id: number) => `community:${id}`,
   communitiesByUser: (userId: string) => `communities:user:${userId}`,
+  communitiesBySubscriber: (userId: string) => `communities:subscriber:${userId}`,
   feedByUser: (userId: string, page: number) => `feed:user:${userId}:page:${page}`,
   postsByCommunity: (communityId: number, page: number) => `posts:community:${communityId}:page:${page}`,
   postsByUser: (userId: string, page: number) => `posts:user:${userId}:page:${page}`,

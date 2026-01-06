@@ -58,20 +58,37 @@ export default function CreatePostScreen() {
   );
 
   useEffect(() => {
-    communityRepository
-      .getCommunities()
-      .then((data) => {
+    let cancelled = false;
+    const loadCommunities = async () => {
+      if (!session?.user?.id) {
+        setCommunities([]);
+        setSelectedCommunityId(null);
+        return;
+      }
+
+      try {
+        const data = await communityRepository.getSubscribedCommunities(session.user.id);
+        if (cancelled) return;
         setCommunities(data);
-        if (data.length && selectedCommunityId === null) {
-          setSelectedCommunityId(data[0].id);
-        }
-      })
-      .catch((error) => {
+        setSelectedCommunityId((current) => {
+          if (current && data.some((community) => community.id === current)) {
+            return current;
+          }
+          return data[0]?.id ?? null;
+        });
+      } catch (error) {
         if (error instanceof Error) {
           Alert.alert(createPostCopy.alerts.loadCommunitiesFailed.title, error.message);
         }
-      });
-  }, [communityRepository, selectedCommunityId]);
+      }
+    };
+
+    loadCommunities();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [communityRepository, session?.user?.id]);
 
   const handlePickFromGallery = async () => {
     setImageSourceOpen(false);

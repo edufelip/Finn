@@ -5,6 +5,7 @@ export interface CommunityRepository {
   getCommunities(search?: string | null): Promise<Community[]>;
   getCommunity(id: number): Promise<Community | null>;
   getCommunitiesFromUser(userId: string): Promise<Community[]>;
+  getSubscribedCommunities(userId: string): Promise<Community[]>;
   getCommunitySubscribersCount(communityId: number): Promise<number>;
   saveCommunity(community: Community, imageUri?: string | null): Promise<Community>;
   subscribe(subscription: Subscription): Promise<Subscription>;
