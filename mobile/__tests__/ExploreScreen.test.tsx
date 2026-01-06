@@ -76,7 +76,16 @@ describe('ExploreScreen', () => {
 
   it('navigates to search results from see all', async () => {
     const communitiesRepo = {
-      getCommunities: jest.fn().mockResolvedValue([]),
+      getCommunities: jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          title: 'Sample',
+          description: 'Sample',
+          ownerId: 'user-1',
+          imageUrl: null,
+          subscribersCount: 1,
+        },
+      ]),
     };
 
     const usersRepo = {
@@ -89,6 +98,7 @@ describe('ExploreScreen', () => {
       </RepositoryProvider>
     );
 
+    await waitFor(() => expect(communitiesRepo.getCommunities).toHaveBeenCalled());
     fireEvent.press(getByTestId(exploreCopy.testIds.seeAll));
     expect(mockNavigate).toHaveBeenCalledWith('SearchResults', { focus: true });
   });
