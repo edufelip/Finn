@@ -32,7 +32,14 @@
     "plugins": [
       "expo-secure-store",
       "expo-sqlite",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow access to your photo library to select images.",
+          "cameraPermission": "Allow access to your camera to take photos."
+        }
+      ]
     ]
   }
 }
