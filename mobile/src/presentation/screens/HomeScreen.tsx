@@ -9,6 +9,7 @@ import * as Network from 'expo-network';
 
 import PostCard from '../components/PostCard';
 import HomeExploreHeader from '../components/HomeExploreHeader';
+import ScreenFade from '../components/ScreenFade';
 import type { Post } from '../../domain/models/post';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -251,42 +252,44 @@ export default function HomeScreen() {
           notifications: homeCopy.testIds.notifications,
         }}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <FlatList
-        testID={homeCopy.testIds.feedList}
-        data={posts}
-        keyExtractor={(item) => `${item.id}`}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onToggleLike={() => handleToggleLike(item)}
-            onToggleSave={() => handleToggleSave(item)}
-            onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
-          />
-        )}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        onEndReachedThreshold={0.3}
-        onEndReached={hasMore && posts.length > 0 ? handleLoadMore : undefined}
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={theme.primary} />
-            </View>
-          ) : (
-            renderEmptyState()
-          )
-        }
-        ListFooterComponent={
-          loading && posts.length > 0 ? (
-            <View style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.primary} />
-            </View>
-          ) : null
-        }
-        style={styles.list}
-        contentContainerStyle={posts.length === 0 ? styles.emptyContainer : undefined}
-      />
+      <ScreenFade>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <FlatList
+          testID={homeCopy.testIds.feedList}
+          data={posts}
+          keyExtractor={(item) => `${item.id}`}
+          renderItem={({ item }) => (
+            <PostCard
+              post={item}
+              onToggleLike={() => handleToggleLike(item)}
+              onToggleSave={() => handleToggleSave(item)}
+              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+            />
+          )}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          onEndReachedThreshold={0.3}
+          onEndReached={hasMore && posts.length > 0 ? handleLoadMore : undefined}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="large" color={theme.primary} />
+              </View>
+            ) : (
+              renderEmptyState()
+            )
+          }
+          ListFooterComponent={
+            loading && posts.length > 0 ? (
+              <View style={styles.footer}>
+                <ActivityIndicator size="small" color={theme.primary} />
+              </View>
+            ) : null
+          }
+          style={styles.list}
+          contentContainerStyle={posts.length === 0 ? styles.emptyContainer : undefined}
+        />
+      </ScreenFade>
     </SafeAreaView>
   );
 }

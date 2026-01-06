@@ -17,6 +17,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import HomeExploreHeader from '../components/HomeExploreHeader';
+import ScreenFade from '../components/ScreenFade';
 import type { Community } from '../../domain/models/community';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useAuth } from '../../app/providers/AuthProvider';
@@ -197,89 +198,91 @@ export default function ExploreScreen() {
           notifications: exploreCopy.testIds.notifications,
         }}
       />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{exploreCopy.trendingTitle}</Text>
-            <Pressable
-              onPress={handleSeeAll}
-              testID={exploreCopy.testIds.seeAll}
-              accessibilityLabel={exploreCopy.testIds.seeAll}
-            >
-              <Text style={styles.seeAll}>{exploreCopy.trendingSeeAll}</Text>
-            </Pressable>
-          </View>
-          {loading && trending.length === 0 ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator size="small" color={theme.primary} />
-            </View>
-          ) : (
-            <FlatList
-              testID={exploreCopy.testIds.trendingList}
-              horizontal
-              data={trending}
-              keyExtractor={(item) => `${item.id}`}
-              renderItem={renderTrendingItem}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.trendingList}
-              ItemSeparatorComponent={() => <View style={styles.trendingSeparator} />}
-            />
-          )}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
-          <View style={styles.feedCard} testID={exploreCopy.testIds.feedCard}>
-            <View style={styles.feedIllustration}>
-              <View style={styles.feedGlowOuter} />
-              <View style={styles.feedGlowInner} />
-              <MaterialIcons name="explore" size={54} color={theme.primary} style={styles.feedIcon} />
-              <MaterialIcons name="star" size={20} color={theme.tertiary} style={styles.feedStar} />
-              <MaterialIcons name="favorite" size={20} color={theme.error} style={styles.feedHeart} />
-              <MaterialIcons name="chat-bubble" size={18} color={theme.secondary} style={styles.feedChat} />
-            </View>
-            <Text style={styles.feedTitle}>{exploreCopy.emptyTitle}</Text>
-            <Text style={styles.feedBody}>{exploreCopy.emptyBody}</Text>
-            <View style={styles.feedActions}>
-              <Pressable style={styles.primaryButton} onPress={handleSeeAll}>
-                <MaterialIcons name="explore" size={16} color={theme.onPrimary} />
-                <Text style={styles.primaryButtonText}>{exploreCopy.primaryCta}</Text>
-              </Pressable>
+      <ScreenFade>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{exploreCopy.trendingTitle}</Text>
               <Pressable
-                style={styles.secondaryButton}
-                onPress={() => navigation.navigate('CreateCommunity')}
+                onPress={handleSeeAll}
+                testID={exploreCopy.testIds.seeAll}
+                accessibilityLabel={exploreCopy.testIds.seeAll}
               >
-                <MaterialIcons name="add-circle" size={16} color={theme.onSurface} />
-                <Text style={styles.secondaryButtonText}>{exploreCopy.secondaryCta}</Text>
+                <Text style={styles.seeAll}>{exploreCopy.trendingSeeAll}</Text>
               </Pressable>
             </View>
+            {loading && trending.length === 0 ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator size="small" color={theme.primary} />
+              </View>
+            ) : (
+              <FlatList
+                testID={exploreCopy.testIds.trendingList}
+                horizontal
+                data={trending}
+                keyExtractor={(item) => `${item.id}`}
+                renderItem={renderTrendingItem}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.trendingList}
+                ItemSeparatorComponent={() => <View style={styles.trendingSeparator} />}
+              />
+            )}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
-          <View style={styles.topicsGrid}>
-            {exploreCopy.topics.map((topic) => {
-              const tonePalette = topicPalette[topic.tone as TopicTone];
-              return (
-                <Pressable
-                  key={topic.id}
-                  style={[
-                    styles.topicCard,
-                    { backgroundColor: tonePalette.background, borderColor: tonePalette.border },
-                  ]}
-                >
-                  <View style={[styles.topicIconWrap, { backgroundColor: tonePalette.border }]}>
-                    <MaterialIcons name={topic.icon} size={18} color={tonePalette.icon} />
-                  </View>
-                  <Text style={styles.topicLabel}>{topic.label}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
+            <View style={styles.feedCard} testID={exploreCopy.testIds.feedCard}>
+              <View style={styles.feedIllustration}>
+                <View style={styles.feedGlowOuter} />
+                <View style={styles.feedGlowInner} />
+                <MaterialIcons name="explore" size={54} color={theme.primary} style={styles.feedIcon} />
+                <MaterialIcons name="star" size={20} color={theme.tertiary} style={styles.feedStar} />
+                <MaterialIcons name="favorite" size={20} color={theme.error} style={styles.feedHeart} />
+                <MaterialIcons name="chat-bubble" size={18} color={theme.secondary} style={styles.feedChat} />
+              </View>
+              <Text style={styles.feedTitle}>{exploreCopy.emptyTitle}</Text>
+              <Text style={styles.feedBody}>{exploreCopy.emptyBody}</Text>
+              <View style={styles.feedActions}>
+                <Pressable style={styles.primaryButton} onPress={handleSeeAll}>
+                  <MaterialIcons name="explore" size={16} color={theme.onPrimary} />
+                  <Text style={styles.primaryButtonText}>{exploreCopy.primaryCta}</Text>
                 </Pressable>
-              );
-            })}
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() => navigation.navigate('CreateCommunity')}
+                >
+                  <MaterialIcons name="add-circle" size={16} color={theme.onSurface} />
+                  <Text style={styles.secondaryButtonText}>{exploreCopy.secondaryCta}</Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.section}>
+            <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
+            <View style={styles.topicsGrid}>
+              {exploreCopy.topics.map((topic) => {
+                const tonePalette = topicPalette[topic.tone as TopicTone];
+                return (
+                  <Pressable
+                    key={topic.id}
+                    style={[
+                      styles.topicCard,
+                      { backgroundColor: tonePalette.background, borderColor: tonePalette.border },
+                    ]}
+                  >
+                    <View style={[styles.topicIconWrap, { backgroundColor: tonePalette.border }]}>
+                      <MaterialIcons name={topic.icon} size={18} color={tonePalette.icon} />
+                    </View>
+                    <Text style={styles.topicLabel}>{topic.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
+      </ScreenFade>
     </SafeAreaView>
   );
 }

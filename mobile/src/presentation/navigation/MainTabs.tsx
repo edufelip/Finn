@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
-import NotificationsScreen from '../screens/NotificationsScreen';
+import InboxScreen from '../screens/InboxScreen';
 import CreateBottomSheet from '../components/CreateBottomSheet';
 import type { MainStackParamList } from './MainStack';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
@@ -96,7 +96,7 @@ export default function MainTabs() {
         />
         <Tab.Screen
           name="Inbox"
-          component={NotificationsScreen}
+          component={InboxScreen}
           options={{
             tabBarLabel: tabCopy.inbox,
             tabBarIcon: ({ color }) => <MaterialIcons name="inbox" size={24} color={color} />,

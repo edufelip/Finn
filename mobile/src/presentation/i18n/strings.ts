@@ -46,6 +46,18 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'tabs.inbox': 'Inbox',
     'tabs.profile': 'Profile',
 
+    // Inbox
+    'inbox.title': 'Messages',
+    'inbox.searchPlaceholder': 'Search messages or people...',
+    'inbox.tabs.primary': 'Primary',
+    'inbox.tabs.requests': 'Requests',
+    'inbox.tabs.archived': 'Archived',
+    'inbox.section.unread': 'Unread',
+    'inbox.section.earlier': 'Earlier',
+    'inbox.empty.title': 'No messages yet',
+    'inbox.empty.body': 'When you start new conversations, they will show up here.',
+    'inbox.action.compose': 'Compose message',
+
     // Home
     'home.searchPlaceholder': 'Search communities...',
     'home.emptyTitle': "It's quiet in here...",
