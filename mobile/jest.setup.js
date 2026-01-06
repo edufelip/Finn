@@ -7,6 +7,24 @@ process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-key';
 process.env.EXPO_PUBLIC_APP_MODE = 'mock';
 
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(async () => ({
+    status: 'granted',
+    granted: true,
+    canAskAgain: true,
+  })),
+  requestPermissionsAsync: jest.fn(async () => ({
+    status: 'granted',
+    granted: true,
+    canAskAgain: true,
+  })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[TEST]' })),
+  setNotificationChannelAsync: jest.fn(async () => undefined),
+  dismissAllNotificationsAsync: jest.fn(async () => undefined),
+  AndroidImportance: { DEFAULT: 3 },
+}));
+
 jest.mock('react-native-reanimated', () => {
   const ReactNative = require('react-native');
   const transition = {
