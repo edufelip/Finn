@@ -7,10 +7,6 @@ import * as Network from 'expo-network';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
-  SlideInLeft,
-  SlideInRight,
-  SlideOutLeft,
-  SlideOutRight,
   interpolate,
   interpolateColor,
   useAnimatedStyle,
@@ -20,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import PostCard from '../components/PostCard';
+import ScreenFade from '../components/ScreenFade';
 import type { Post } from '../../domain/models/post';
 import type { User } from '../../domain/models/user';
 import type { MainStackParamList } from '../navigation/MainStack';
@@ -47,7 +44,6 @@ export default function ProfileScreen() {
   const [postsError, setPostsError] = useState<string | null>(null);
   const [savedError, setSavedError] = useState<string | null>(null);
   const [savedLoaded, setSavedLoaded] = useState(false);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   const [tabLayouts, setTabLayouts] = useState<{
     posts?: { x: number; width: number };
     saved?: { x: number; width: number };
@@ -308,29 +304,14 @@ export default function ProfileScreen() {
     if (nextTab === activeTabRef.current) {
       return;
     }
-    setSlideDirection(nextTab === 'saved' ? 'right' : 'left');
     setActiveTab(nextTab);
   };
-
-  const enteringAnimation = reduceMotion
-    ? undefined
-    : slideDirection === 'right'
-      ? SlideInRight.duration(220).easing(Easing.out(Easing.cubic))
-      : SlideInLeft.duration(220).easing(Easing.out(Easing.cubic));
-
-  const exitingAnimation = reduceMotion
-    ? undefined
-    : slideDirection === 'right'
-      ? SlideOutLeft.duration(200).easing(Easing.out(Easing.cubic))
-      : SlideOutRight.duration(200).easing(Easing.out(Easing.cubic));
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.topBar}>
-          <Pressable style={styles.iconButton} onPress={() => navigation.goBack()}>
-            <MaterialIcons name="arrow-back-ios-new" size={22} color={theme.onBackground} />
-          </Pressable>
+          <View style={styles.iconSpacer} />
           <Text
             style={styles.topTitle}
             testID={profileCopy.testIds.title}
@@ -346,171 +327,179 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
-      <FlatList
-        testID={profileCopy.testIds.list}
-        data={currentPosts}
-        keyExtractor={(item) => `${activeTab}-${item.id}`}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View>
-            <View style={styles.profileHeader}>
-              <View style={styles.avatarGlow} />
-              <View style={styles.avatarGroup}>
-                <View style={styles.avatarOuter}>
-                  <Image
-                    source={user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png')}
-                    style={styles.avatar}
-                  />
+      <ScreenFade>
+        <FlatList
+          testID={profileCopy.testIds.list}
+          data={currentPosts}
+          keyExtractor={(item) => `${activeTab}-${item.id}`}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View>
+              <View style={styles.profileHeader}>
+                <View style={styles.avatarGlow} />
+                <View style={styles.avatarGroup}>
+                  <View style={styles.avatarOuter}>
+                    <Image
+                      source={user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png')}
+                      style={styles.avatar}
+                    />
+                  </View>
+                  <Pressable style={styles.editBadge}>
+                    <MaterialIcons name="edit" size={16} color={theme.primary} />
+                  </Pressable>
                 </View>
-                <Pressable style={styles.editBadge}>
-                  <MaterialIcons name="edit" size={16} color={theme.primary} />
+                <View style={styles.nameBlock}>
+                  <Text
+                    style={styles.name}
+                    testID={profileCopy.testIds.name}
+                    accessibilityLabel={profileCopy.testIds.name}
+                  >
+                    {displayName}
+                  </Text>
+                  <Text
+                    style={styles.email}
+                    testID={profileCopy.testIds.email}
+                    accessibilityLabel={profileCopy.testIds.email}
+                  >
+                    {displayEmail}
+                  </Text>
+                  {joinedLabel ? (
+                    <View style={styles.memberBadge}>
+                      <Text
+                        style={styles.memberBadgeText}
+                        testID={profileCopy.testIds.memberSince}
+                        accessibilityLabel={profileCopy.testIds.memberSince}
+                      >
+                        {joinedLabel}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+              <View style={styles.statsRow}>
+                {stats.map((stat, index) => (
+                  <View
+                    key={stat.key}
+                    style={[styles.statCard, index !== stats.length - 1 && styles.statCardSpacing]}
+                  >
+                    <Text style={styles.statValue} testID={stat.key}>
+                      {stat.value}
+                    </Text>
+                    <Text style={styles.statLabel}>{stat.label}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.tabsRow}>
+                <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
+                <Pressable
+                  style={styles.tabItem}
+                  onPress={() => handleTabChange('posts')}
+                  onLayout={(event) => {
+                    const { x, width } = event.nativeEvent.layout;
+                    setTabLayouts((prev) => ({
+                      ...prev,
+                      posts: { x, width },
+                    }));
+                  }}
+                  testID={profileCopy.testIds.tabPosts}
+                >
+                  <View style={styles.tabContent}>
+                    <MaterialIcons
+                      name="grid-view"
+                      size={18}
+                      color={activeTab === 'posts' ? theme.onBackground : theme.onSurfaceVariant}
+                      style={styles.tabIcon}
+                    />
+                    <Animated.Text style={[styles.tabText, postsLabelStyle]}>
+                      {profileCopy.tabs.posts}
+                    </Animated.Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  style={styles.tabItem}
+                  onPress={() => handleTabChange('saved')}
+                  onLayout={(event) => {
+                    const { x, width } = event.nativeEvent.layout;
+                    setTabLayouts((prev) => ({
+                      ...prev,
+                      saved: { x, width },
+                    }));
+                  }}
+                  testID={profileCopy.testIds.tabSaved}
+                >
+                  <View style={styles.tabContent}>
+                    <MaterialIcons
+                      name="bookmark-border"
+                      size={18}
+                      color={activeTab === 'saved' ? theme.onBackground : theme.onSurfaceVariant}
+                      style={styles.tabIcon}
+                    />
+                    <Animated.Text style={[styles.tabText, savedLabelStyle]}>
+                      {profileCopy.tabs.saved}
+                    </Animated.Text>
+                  </View>
                 </Pressable>
               </View>
-              <View style={styles.nameBlock}>
-                <Text
-                  style={styles.name}
-                  testID={profileCopy.testIds.name}
-                  accessibilityLabel={profileCopy.testIds.name}
-                >
-                  {displayName}
-                </Text>
-                <Text
-                  style={styles.email}
-                  testID={profileCopy.testIds.email}
-                  accessibilityLabel={profileCopy.testIds.email}
-                >
-                  {displayEmail}
-                </Text>
-                {joinedLabel ? (
-                  <View style={styles.memberBadge}>
-                    <Text
-                      style={styles.memberBadgeText}
-                      testID={profileCopy.testIds.memberSince}
-                      accessibilityLabel={profileCopy.testIds.memberSince}
-                    >
-                      {joinedLabel}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
+              {currentError ? <Text style={styles.error}>{currentError}</Text> : null}
             </View>
-            <View style={styles.statsRow}>
-              {stats.map((stat, index) => (
-                <View
-                  key={stat.key}
-                  style={[styles.statCard, index !== stats.length - 1 && styles.statCardSpacing]}
-                >
-                  <Text style={styles.statValue} testID={stat.key}>
-                    {stat.value}
-                  </Text>
-                  <Text style={styles.statLabel}>{stat.label}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={styles.tabsRow}>
-              <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
-              <Pressable
-                style={styles.tabItem}
-                onPress={() => handleTabChange('posts')}
-                onLayout={(event) => {
-                  const { x, width } = event.nativeEvent.layout;
-                  setTabLayouts((prev) => ({
-                    ...prev,
-                    posts: { x, width },
-                  }));
-                }}
-                testID={profileCopy.testIds.tabPosts}
-              >
-                <View style={styles.tabContent}>
-                  <MaterialIcons
-                    name="grid-view"
-                    size={18}
-                    color={activeTab === 'posts' ? theme.onBackground : theme.onSurfaceVariant}
-                    style={styles.tabIcon}
-                  />
-                  <Animated.Text style={[styles.tabText, postsLabelStyle]}>
-                    {profileCopy.tabs.posts}
-                  </Animated.Text>
-                </View>
-              </Pressable>
-              <Pressable
-                style={styles.tabItem}
-                onPress={() => handleTabChange('saved')}
-                onLayout={(event) => {
-                  const { x, width } = event.nativeEvent.layout;
-                  setTabLayouts((prev) => ({
-                    ...prev,
-                    saved: { x, width },
-                  }));
-                }}
-                testID={profileCopy.testIds.tabSaved}
-              >
-                <View style={styles.tabContent}>
-                  <MaterialIcons
-                    name="bookmark-border"
-                    size={18}
-                    color={activeTab === 'saved' ? theme.onBackground : theme.onSurfaceVariant}
-                    style={styles.tabIcon}
-                  />
-                  <Animated.Text style={[styles.tabText, savedLabelStyle]}>
-                    {profileCopy.tabs.saved}
-                  </Animated.Text>
-                </View>
-              </Pressable>
-            </View>
-            {currentError ? <Text style={styles.error}>{currentError}</Text> : null}
-          </View>
-        }
-        renderItem={({ item }) => (
-          <Animated.View entering={enteringAnimation} exiting={exitingAnimation}>
+          }
+          renderItem={({ item }) => (
             <PostCard
               post={item}
               onToggleLike={() => handleToggleLike(item)}
               onToggleSave={() => handleToggleSave(item)}
               onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
             />
-          </Animated.View>
-        )}
-        ListEmptyComponent={
-          !currentLoading ? (
-            <Animated.View entering={enteringAnimation} exiting={exitingAnimation} style={styles.emptyState}>
-              <View style={styles.emptyIconWrapper}>
-                <View style={styles.emptyIconInner}>
-                  <MaterialIcons name="add" size={28} color={theme.onSurfaceVariant} />
-                </View>
+          )}
+          ListEmptyComponent={
+            currentLoading ? (
+              <View style={styles.loadingState}>
+                <ActivityIndicator size="small" color={theme.primary} />
+                <Text style={styles.loadingTitle} testID={profileCopy.testIds.loadingTitle}>
+                  {profileCopy.loading.title}
+                </Text>
+                <Text style={styles.loadingBody}>{profileCopy.loading.body}</Text>
               </View>
-              <Text
-                style={styles.emptyTitle}
-                testID={
-                  activeTab === 'posts'
-                    ? profileCopy.testIds.emptyTitle
-                    : profileCopy.testIds.savedEmptyTitle
-                }
-              >
-                {emptyCopy.title}
-              </Text>
-              <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
-              {activeTab === 'posts' ? (
-                <Pressable
-                  style={styles.emptyCta}
-                  onPress={() => navigation.navigate('CreatePost')}
-                  testID={profileCopy.testIds.createPost}
+            ) : (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconWrapper}>
+                  <View style={styles.emptyIconInner}>
+                    <MaterialIcons name="add" size={28} color={theme.onSurfaceVariant} />
+                  </View>
+                </View>
+                <Text
+                  style={styles.emptyTitle}
+                  testID={
+                    activeTab === 'posts'
+                      ? profileCopy.testIds.emptyTitle
+                      : profileCopy.testIds.savedEmptyTitle
+                  }
                 >
-                  <MaterialIcons name="add-circle" size={18} color={theme.onPrimary} />
-                  <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
-                </Pressable>
-              ) : null}
-            </Animated.View>
-          ) : null
-        }
-        ListFooterComponent={
-          currentLoading && currentPosts.length > 0 ? (
-            <Animated.View entering={enteringAnimation} exiting={exitingAnimation} style={styles.footer}>
-              <ActivityIndicator size="small" color={theme.primary} />
-            </Animated.View>
-          ) : null
-        }
-      />
+                  {emptyCopy.title}
+                </Text>
+                <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
+                {activeTab === 'posts' ? (
+                  <Pressable
+                    style={styles.emptyCta}
+                    onPress={() => navigation.navigate('CreatePost')}
+                    testID={profileCopy.testIds.createPost}
+                  >
+                    <MaterialIcons name="add-circle" size={18} color={theme.onPrimary} />
+                    <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            )
+          }
+          ListFooterComponent={
+            currentLoading && currentPosts.length > 0 ? (
+              <View style={styles.footer}>
+                <ActivityIndicator size="small" color={theme.primary} />
+              </View>
+            ) : null
+          }
+        />
+      </ScreenFade>
     </View>
   );
 }
@@ -543,6 +532,10 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    iconSpacer: {
+      width: 40,
+      height: 40,
     },
     listContent: {
       paddingBottom: 32,
@@ -743,6 +736,26 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.onSurfaceVariant,
       textAlign: 'center',
       lineHeight: 20,
+    },
+    loadingState: {
+      paddingVertical: 40,
+      paddingHorizontal: 32,
+      alignItems: 'center',
+    },
+    loadingTitle: {
+      marginTop: 16,
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.onBackground,
+      textAlign: 'center',
+    },
+    loadingBody: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '400',
+      color: theme.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 18,
     },
     emptyCta: {
       marginTop: 20,

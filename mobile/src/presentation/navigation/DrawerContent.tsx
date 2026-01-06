@@ -84,6 +84,10 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
 
   const navigateTo = (screen: string) => {
     navigation.closeDrawer();
+    if (screen === 'Profile') {
+      navigation.navigate('Tabs' as never, { screen: 'Profile' } as never);
+      return;
+    }
     const parent = navigation.getParent();
     if (parent) {
       parent.navigate(screen as never);

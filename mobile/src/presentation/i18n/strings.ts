@@ -324,6 +324,8 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'profile.empty.cta': 'Create New Post',
     'profile.savedEmpty.title': 'No saved posts yet',
     'profile.savedEmpty.body': 'Save posts to see them collected here.',
+    'profile.loading.title': 'Loading your posts…',
+    'profile.loading.body': 'Hang tight while we fetch your latest updates.',
     'profile.error.signInRequired': 'Sign in required.',
     'profile.memberSince': 'Member since {date}',
     'profile.alert.signInRequired.title': 'Sign in required',

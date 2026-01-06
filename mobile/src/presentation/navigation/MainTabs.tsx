@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
 import InboxScreen from '../screens/InboxScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import CreateBottomSheet from '../components/CreateBottomSheet';
 import type { MainStackParamList } from './MainStack';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
@@ -106,22 +107,12 @@ export default function MainTabs() {
         />
         <Tab.Screen
           name="Profile"
-          component={EmptyScreen}
+          component={ProfileScreen}
           options={{
             tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
             tabBarLabel: tabCopy.profile,
-            tabBarButton: (props) => (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => navigation.navigate('Profile')}
-                  style={[styles.tabButton, props.style]}
-                  testID={tabCopy.testIds.profile}
-                  accessibilityLabel={tabCopy.testIds.profile}
-                >
-                  <MaterialIcons name="person" size={24} color={theme.onSurfaceVariant} />
-                  <Text style={[styles.tabLabel, styles.tabLabelInactive]}>{tabCopy.profile}</Text>
-                </Pressable>
-              ),
+            tabBarTestID: tabCopy.testIds.profile,
+            tabBarAccessibilityLabel: tabCopy.testIds.profile,
           }}
         />
       </Tab.Navigator>

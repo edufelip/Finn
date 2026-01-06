@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
@@ -28,6 +29,8 @@ type Navigation = CompositeNavigationProp<
 
 type TopicTone = 'orange' | 'green' | 'purple' | 'blue';
 
+const MIN_SKELETON_MS = 350;
+
 export default function ExploreScreen() {
   const navigation = useNavigation<Navigation>();
   const { session } = useAuth();
@@ -37,8 +40,28 @@ export default function ExploreScreen() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [trending, setTrending] = useState<Community[]>([]);
   const [feedItems, setFeedItems] = useState<Community[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadToken = useRef(0);
+  const isMounted = useRef(true);
+  const skeletonOpacity = useSharedValue(1);
+  const contentOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading) {
+      skeletonOpacity.value = withTiming(1, { duration: 120 });
+      contentOpacity.value = withTiming(0, { duration: 120 });
+      return;
+    }
+    skeletonOpacity.value = withTiming(0, { duration: 180 });
+    contentOpacity.value = withTiming(1, { duration: 240 });
+  }, [contentOpacity, loading, skeletonOpacity]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -49,8 +72,12 @@ export default function ExploreScreen() {
   }, [session?.user?.id, userRepository]);
 
   const loadTrending = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    const token = ++loadToken.current;
+    const start = Date.now();
+    if (isMounted.current) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const data = await communityRepository.getCommunities();
       const sorted = [...data].sort(
@@ -61,14 +88,23 @@ export default function ExploreScreen() {
         exploreCopy.trendingLimit,
         exploreCopy.trendingLimit + exploreCopy.feedLimit
       );
-      setTrending(trendingItems);
-      setFeedItems(feedCandidates);
+      if (isMounted.current && loadToken.current === token) {
+        setTrending(trendingItems);
+        setFeedItems(feedCandidates);
+      }
     } catch (err) {
-      if (err instanceof Error) {
+      if (err instanceof Error && isMounted.current && loadToken.current === token) {
         setError(err.message);
       }
     } finally {
-      setLoading(false);
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, MIN_SKELETON_MS - elapsed);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      if (isMounted.current && loadToken.current === token) {
+        setLoading(false);
+      }
     }
   }, [communityRepository]);
 
@@ -211,6 +247,26 @@ export default function ExploreScreen() {
     </View>
   );
 
+  const renderTopicsSkeleton = () => (
+    <View style={styles.topicsGrid}>
+      {exploreCopy.topics.map((topic) => (
+        <Shimmer
+          key={`topic-skeleton-${topic.id}`}
+          baseColor={theme.surfaceVariant}
+          highlightColor={theme.surface}
+          style={styles.topicSkeleton}
+          borderRadius={16}
+        />
+      ))}
+    </View>
+  );
+
+  const skeletonStyle = useAnimatedStyle(() => ({ opacity: skeletonOpacity.value }));
+  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+
+  const showTrendingSection = loading || trending.length > 0 || Boolean(error);
+  const showFeedSection = !loading && feedItems.length > 0;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <HomeExploreHeader
@@ -226,93 +282,123 @@ export default function ExploreScreen() {
         }}
       />
       <ScreenFade>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{exploreCopy.trendingTitle}</Text>
-              <Pressable
-                onPress={handleSeeAll}
-                testID={exploreCopy.testIds.seeAll}
-                accessibilityLabel={exploreCopy.testIds.seeAll}
-              >
-                <Text style={styles.seeAll}>{exploreCopy.trendingSeeAll}</Text>
-              </Pressable>
-            </View>
-            {loading && trending.length === 0 ? (
-              renderTrendingSkeleton()
-            ) : (
-              <FlatList
-                testID={exploreCopy.testIds.trendingList}
-                horizontal
-                data={trending}
-                keyExtractor={(item) => `${item.id}`}
-                renderItem={renderTrendingItem}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.trendingList}
-                ItemSeparatorComponent={() => <View style={styles.trendingSeparator} />}
-              />
-            )}
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-          </View>
-
-          {loading && trending.length === 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
-              {renderFeedSkeleton()}
-            </View>
-          ) : feedItems.length > 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
-              {feedItems.map((item) => (
-                <Pressable
-                  key={`feed-${item.id}`}
-                  style={styles.feedItem}
-                  onPress={() => navigation.navigate('CommunityDetail', { communityId: item.id })}
-                >
-                  <View style={styles.feedItemBadge} />
-                  <View style={styles.feedItemContent}>
-                    <Text style={styles.feedItemTitle} numberOfLines={1}>
-                      {item.title || exploreCopy.communityFallback}
-                    </Text>
-                    {item.description ? (
-                      <Text style={styles.feedItemBody} numberOfLines={2}>
-                        {item.description}
-                      </Text>
+        <View style={styles.scrollStack}>
+          <Animated.View
+            style={[styles.scrollLayer, contentStyle]}
+            pointerEvents={loading ? 'none' : 'auto'}
+          >
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+              {showTrendingSection ? (
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>{exploreCopy.trendingTitle}</Text>
+                    {trending.length > 0 ? (
+                      <Pressable
+                        onPress={handleSeeAll}
+                        testID={exploreCopy.testIds.seeAll}
+                        accessibilityLabel={exploreCopy.testIds.seeAll}
+                      >
+                        <Text style={styles.seeAll}>{exploreCopy.trendingSeeAll}</Text>
+                      </Pressable>
                     ) : null}
-                    <Text style={styles.feedItemMeta}>
-                      {exploreCopy.trendingMembersLabel(
-                        formatCompactNumber(item.subscribersCount ?? 0)
-                      )}
-                    </Text>
                   </View>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+                  <FlatList
+                    testID={exploreCopy.testIds.trendingList}
+                    horizontal
+                    data={trending}
+                    keyExtractor={(item) => `${item.id}`}
+                    renderItem={renderTrendingItem}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.trendingList}
+                    ItemSeparatorComponent={() => <View style={styles.trendingSeparator} />}
+                  />
+                  {error ? <Text style={styles.error}>{error}</Text> : null}
+                </View>
+              ) : null}
 
-          <View style={styles.section}>
-            <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
-            <View style={styles.topicsGrid}>
-              {exploreCopy.topics.map((topic) => {
-                const tonePalette = topicPalette[topic.tone as TopicTone];
-                return (
-                  <Pressable
-                    key={topic.id}
-                    style={[
-                      styles.topicCard,
-                      { backgroundColor: tonePalette.background, borderColor: tonePalette.border },
-                    ]}
-                  >
-                    <View style={[styles.topicIconWrap, { backgroundColor: tonePalette.border }]}>
-                      <MaterialIcons name={topic.icon} size={18} color={tonePalette.icon} />
-                    </View>
-                    <Text style={styles.topicLabel}>{topic.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        </ScrollView>
+              {showFeedSection ? (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
+                  {feedItems.map((item) => (
+                    <Pressable
+                      key={`feed-${item.id}`}
+                      style={styles.feedItem}
+                      onPress={() => navigation.navigate('CommunityDetail', { communityId: item.id })}
+                    >
+                      <View style={styles.feedItemBadge} />
+                      <View style={styles.feedItemContent}>
+                        <Text style={styles.feedItemTitle} numberOfLines={1}>
+                          {item.title || exploreCopy.communityFallback}
+                        </Text>
+                        {item.description ? (
+                          <Text style={styles.feedItemBody} numberOfLines={2}>
+                            {item.description}
+                          </Text>
+                        ) : null}
+                        <Text style={styles.feedItemMeta}>
+                          {exploreCopy.trendingMembersLabel(
+                            formatCompactNumber(item.subscribersCount ?? 0)
+                          )}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+
+              <View style={styles.section}>
+                <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
+                <View style={styles.topicsGrid}>
+                  {exploreCopy.topics.map((topic) => {
+                    const tonePalette = topicPalette[topic.tone as TopicTone];
+                    return (
+                      <Pressable
+                        key={topic.id}
+                        style={[
+                          styles.topicCard,
+                          { backgroundColor: tonePalette.background, borderColor: tonePalette.border },
+                        ]}
+                      >
+                        <View style={[styles.topicIconWrap, { backgroundColor: tonePalette.border }]}>
+                          <MaterialIcons name={topic.icon} size={18} color={tonePalette.icon} />
+                        </View>
+                        <Text style={styles.topicLabel}>{topic.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </ScrollView>
+          </Animated.View>
+          <Animated.View
+            style={[styles.scrollLayer, skeletonStyle]}
+            pointerEvents={loading ? 'auto' : 'none'}
+          >
+            <ScrollView
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={loading}
+            >
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>{exploreCopy.trendingTitle}</Text>
+                  <Text style={styles.seeAll}>{exploreCopy.trendingSeeAll}</Text>
+                </View>
+                {renderTrendingSkeleton()}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
+                {renderFeedSkeleton()}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
+                {renderTopicsSkeleton()}
+              </View>
+            </ScrollView>
+          </Animated.View>
+        </View>
       </ScreenFade>
     </SafeAreaView>
   );
@@ -327,6 +413,12 @@ const createStyles = (theme: ThemeColors) =>
     content: {
       paddingHorizontal: 16,
       paddingBottom: 120,
+    },
+    scrollStack: {
+      flex: 1,
+    },
+    scrollLayer: {
+      ...StyleSheet.absoluteFillObject,
     },
     section: {
       marginTop: 16,
@@ -474,6 +566,12 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
+    },
+    topicSkeleton: {
+      width: '48%',
+      height: 54,
+      borderRadius: 16,
+      marginBottom: 12,
     },
     topicCard: {
       width: '48%',
