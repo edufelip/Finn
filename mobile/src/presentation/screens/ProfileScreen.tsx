@@ -327,7 +327,7 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
-      <ScreenFade>
+      <ScreenFade onlyOnTabSwitch>
         <FlatList
           testID={profileCopy.testIds.list}
           data={currentPosts}

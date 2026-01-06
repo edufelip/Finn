@@ -252,7 +252,7 @@ export default function HomeScreen() {
           notifications: homeCopy.testIds.notifications,
         }}
       />
-      <ScreenFade>
+      <ScreenFade onlyOnTabSwitch>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <FlatList
           testID={homeCopy.testIds.feedList}

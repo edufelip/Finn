@@ -281,7 +281,7 @@ export default function ExploreScreen() {
           notifications: exploreCopy.testIds.notifications,
         }}
       />
-      <ScreenFade>
+      <ScreenFade onlyOnTabSwitch>
         <View style={styles.scrollStack}>
           <Animated.View
             style={[styles.scrollLayer, contentStyle]}

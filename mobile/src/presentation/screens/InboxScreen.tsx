@@ -240,7 +240,7 @@ export default function InboxScreen() {
           <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
         </View>
       </View>
-      <ScreenFade>
+      <ScreenFade onlyOnTabSwitch>
         <FlatList
           data={sections}
           keyExtractor={(item) => item.key}
