@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, {
   interpolateColor,
@@ -19,7 +19,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { inboxCopy, type InboxMessage, type InboxTabKey } from '../content/inboxCopy';
-import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import ScreenFade from '../components/ScreenFade';
 
@@ -33,6 +33,8 @@ type Section = {
 
 export default function InboxScreen() {
   const theme = useThemeColors();
+  const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const reduceMotion = useReducedMotion();
   const indicatorCenter = useSharedValue(0);
@@ -141,122 +143,124 @@ export default function InboxScreen() {
   const showEmpty = messages.length === 0;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={theme.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>{inboxCopy.title}</Text>
-          <View style={styles.headerSpacer} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar backgroundColor={theme.surface} barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <View style={styles.body}>
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>{inboxCopy.title}</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+          <View style={styles.searchRow}>
+            <MaterialIcons name="search" size={18} color={theme.onSurfaceVariant} />
+            <TextInput
+              testID={inboxCopy.testIds.searchInput}
+              placeholder={inboxCopy.searchPlaceholder}
+              placeholderTextColor={theme.onSurfaceVariant}
+              value={query}
+              onChangeText={setQuery}
+              style={styles.searchInput}
+            />
+          </View>
+          <View style={styles.tabsRow}>
+            <Pressable
+              testID={inboxCopy.testIds.tabPrimary}
+              onPress={() => handleTabPress('primary')}
+              style={styles.tabButton}
+              onLayout={(event) => {
+                const { x, width } = event.nativeEvent.layout;
+                const center = x + width / 2;
+                setTabLayouts((prev) => {
+                  if (prev.primary && prev.primary.center === center && prev.primary.width === width) return prev;
+                  return { ...prev, primary: { center, width } };
+                });
+                if (activeTab === 'primary') {
+                  // Reanimated shared values are mutable by design.
+                  // eslint-disable-next-line react-hooks/immutability
+                  indicatorCenter.value = center;
+                  // eslint-disable-next-line react-hooks/immutability
+                  indicatorWidth.value = width;
+                }
+              }}
+            >
+              <Animated.Text style={[styles.tabLabel, primaryLabelStyle]}>
+                {inboxCopy.tabs.primary}
+              </Animated.Text>
+              {unreadCount > 0 && activeTab === 'primary' ? (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              testID={inboxCopy.testIds.tabRequests}
+              onPress={() => handleTabPress('requests')}
+              style={styles.tabButton}
+              onLayout={(event) => {
+                const { x, width } = event.nativeEvent.layout;
+                const center = x + width / 2;
+                setTabLayouts((prev) => {
+                  if (prev.requests && prev.requests.center === center && prev.requests.width === width) return prev;
+                  return { ...prev, requests: { center, width } };
+                });
+                if (activeTab === 'requests') {
+                  // Reanimated shared values are mutable by design.
+                  // eslint-disable-next-line react-hooks/immutability
+                  indicatorCenter.value = center;
+                  // eslint-disable-next-line react-hooks/immutability
+                  indicatorWidth.value = width;
+                }
+              }}
+            >
+              <Animated.Text style={[styles.tabLabel, requestsLabelStyle]}>
+                {inboxCopy.tabs.requests}
+              </Animated.Text>
+            </Pressable>
+            <Pressable
+              testID={inboxCopy.testIds.tabArchived}
+              onPress={() => handleTabPress('archived')}
+              style={styles.tabButton}
+              onLayout={(event) => {
+                const { x, width } = event.nativeEvent.layout;
+                const center = x + width / 2;
+                setTabLayouts((prev) => {
+                  if (prev.archived && prev.archived.center === center && prev.archived.width === width) return prev;
+                  return { ...prev, archived: { center, width } };
+                });
+                if (activeTab === 'archived') {
+                  // Reanimated shared values are mutable by design.
+                  // eslint-disable-next-line react-hooks/immutability
+                  indicatorCenter.value = center;
+                  // eslint-disable-next-line react-hooks/immutability
+                  indicatorWidth.value = width;
+                }
+              }}
+            >
+              <Animated.Text style={[styles.tabLabel, archivedLabelStyle]}>
+                {inboxCopy.tabs.archived}
+              </Animated.Text>
+            </Pressable>
+            <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
+          </View>
         </View>
-        <View style={styles.searchRow}>
-          <MaterialIcons name="search" size={18} color={theme.onSurfaceVariant} />
-          <TextInput
-            testID={inboxCopy.testIds.searchInput}
-            placeholder={inboxCopy.searchPlaceholder}
-            placeholderTextColor={theme.onSurfaceVariant}
-            value={query}
-            onChangeText={setQuery}
-            style={styles.searchInput}
+        <ScreenFade onlyOnTabSwitch>
+          <FlatList
+            data={sections}
+            keyExtractor={(item) => item.key}
+            renderItem={({ item }) => renderSection(item)}
+            contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 24 }]}
+            ListEmptyComponent={
+              showEmpty ? (
+                <View style={styles.emptyState}>
+                  <MaterialIcons name="mail-outline" size={40} color={theme.onSurfaceVariant} />
+                  <Text style={styles.emptyTitle}>{inboxCopy.empty.title}</Text>
+                  <Text style={styles.emptyBody}>{inboxCopy.empty.body}</Text>
+                </View>
+              ) : null
+            }
           />
-        </View>
-        <View style={styles.tabsRow}>
-          <Pressable
-            testID={inboxCopy.testIds.tabPrimary}
-            onPress={() => handleTabPress('primary')}
-            style={styles.tabButton}
-            onLayout={(event) => {
-              const { x, width } = event.nativeEvent.layout;
-              const center = x + width / 2;
-              setTabLayouts((prev) => {
-                if (prev.primary && prev.primary.center === center && prev.primary.width === width) return prev;
-                return { ...prev, primary: { center, width } };
-              });
-              if (activeTab === 'primary') {
-                // Reanimated shared values are mutable by design.
-                // eslint-disable-next-line react-hooks/immutability
-                indicatorCenter.value = center;
-                // eslint-disable-next-line react-hooks/immutability
-                indicatorWidth.value = width;
-              }
-            }}
-          >
-            <Animated.Text style={[styles.tabLabel, primaryLabelStyle]}>
-              {inboxCopy.tabs.primary}
-            </Animated.Text>
-            {unreadCount > 0 && activeTab === 'primary' ? (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-          <Pressable
-            testID={inboxCopy.testIds.tabRequests}
-            onPress={() => handleTabPress('requests')}
-            style={styles.tabButton}
-            onLayout={(event) => {
-              const { x, width } = event.nativeEvent.layout;
-              const center = x + width / 2;
-              setTabLayouts((prev) => {
-                if (prev.requests && prev.requests.center === center && prev.requests.width === width) return prev;
-                return { ...prev, requests: { center, width } };
-              });
-              if (activeTab === 'requests') {
-                // Reanimated shared values are mutable by design.
-                // eslint-disable-next-line react-hooks/immutability
-                indicatorCenter.value = center;
-                // eslint-disable-next-line react-hooks/immutability
-                indicatorWidth.value = width;
-              }
-            }}
-          >
-            <Animated.Text style={[styles.tabLabel, requestsLabelStyle]}>
-              {inboxCopy.tabs.requests}
-            </Animated.Text>
-          </Pressable>
-          <Pressable
-            testID={inboxCopy.testIds.tabArchived}
-            onPress={() => handleTabPress('archived')}
-            style={styles.tabButton}
-            onLayout={(event) => {
-              const { x, width } = event.nativeEvent.layout;
-              const center = x + width / 2;
-              setTabLayouts((prev) => {
-                if (prev.archived && prev.archived.center === center && prev.archived.width === width) return prev;
-                return { ...prev, archived: { center, width } };
-              });
-              if (activeTab === 'archived') {
-                // Reanimated shared values are mutable by design.
-                // eslint-disable-next-line react-hooks/immutability
-                indicatorCenter.value = center;
-                // eslint-disable-next-line react-hooks/immutability
-                indicatorWidth.value = width;
-              }
-            }}
-          >
-            <Animated.Text style={[styles.tabLabel, archivedLabelStyle]}>
-              {inboxCopy.tabs.archived}
-            </Animated.Text>
-          </Pressable>
-          <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
-        </View>
+        </ScreenFade>
       </View>
-      <ScreenFade onlyOnTabSwitch>
-        <FlatList
-          data={sections}
-          keyExtractor={(item) => item.key}
-          renderItem={({ item }) => renderSection(item)}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            showEmpty ? (
-              <View style={styles.emptyState}>
-                <MaterialIcons name="mail-outline" size={40} color={theme.onSurfaceVariant} />
-                <Text style={styles.emptyTitle}>{inboxCopy.empty.title}</Text>
-                <Text style={styles.emptyBody}>{inboxCopy.empty.body}</Text>
-              </View>
-            ) : null
-          }
-        />
-      </ScreenFade>
     </SafeAreaView>
   );
 }
@@ -272,6 +276,10 @@ const getInitials = (name: string) => {
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
+      flex: 1,
+      backgroundColor: theme.surface,
+    },
+    body: {
       flex: 1,
       backgroundColor: theme.background,
     },

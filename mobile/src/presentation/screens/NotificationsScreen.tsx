@@ -13,7 +13,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -26,7 +26,7 @@ import type { Notification } from '../../domain/models/notification';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
-import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { notificationsCopy } from '../content/notificationsCopy';
 import { formatTimeAgo } from '../i18n/formatters';
@@ -45,6 +45,8 @@ export default function NotificationsScreen() {
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();
   const theme = useThemeColors();
+  const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const reduceMotion = useReducedMotion();
   const indicatorCenter = useSharedValue(0);
@@ -262,8 +264,8 @@ export default function NotificationsScreen() {
   const showEmpty = !loading && filtered.length === 0;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={theme.surface} barStyle="dark-content" />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar backgroundColor={theme.surface} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton}>
@@ -328,7 +330,7 @@ export default function NotificationsScreen() {
           <Animated.View style={[styles.tabIndicator, indicatorStyle]} />
         </View>
       </View>
-      <View style={styles.contentWrap}>
+      <View style={[styles.contentWrap, { paddingBottom: insets.bottom }]}>
         {loading && notifications.length === 0 ? (
           <View style={styles.loadingState}>
             <ActivityIndicator size="large" color={theme.primary} />
