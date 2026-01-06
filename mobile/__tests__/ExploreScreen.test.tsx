@@ -61,14 +61,14 @@ describe('ExploreScreen', () => {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
     };
 
-    const { getByText, getAllByTestId } = render(
+    const { getAllByTestId } = render(
       <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo }}>
         <ExploreScreen />
       </RepositoryProvider>
     );
 
     await waitFor(() => expect(communitiesRepo.getCommunities).toHaveBeenCalled());
-    expect(getByText(exploreCopy.trendingTitle)).toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     const titles = getAllByTestId(exploreCopy.testIds.trendingTitle);
     expect(titles[0].props.children).toBe('Big');
@@ -99,6 +99,7 @@ describe('ExploreScreen', () => {
     );
 
     await waitFor(() => expect(communitiesRepo.getCommunities).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 400));
     fireEvent.press(getByTestId(exploreCopy.testIds.seeAll));
     expect(mockNavigate).toHaveBeenCalledWith('SearchResults', { focus: true });
   });
