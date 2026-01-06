@@ -7,4 +7,6 @@ export const TABLES = {
   subscriptions: 'subscriptions',
   savedPosts: 'saved_posts',
   pushTokens: 'push_tokens',
+  userFollows: 'user_follows',
+  notifications: 'notifications',
 } as const;
