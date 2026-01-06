@@ -59,7 +59,7 @@ export default function ProfileScreen() {
 
   const loadProfile = useCallback(async () => {
     if (!session?.user?.id) {
-      setError(profileCopy.errorSignInRequired);
+      setPostsError(profileCopy.errorSignInRequired);
       return;
     }
 

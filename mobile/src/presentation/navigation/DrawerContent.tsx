@@ -81,16 +81,19 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
 
   const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? commonCopy.emptyDash;
   const versionLabel = drawerCopy.versionLabel(appVersion);
+  const navigate = navigation.navigate as unknown as (screen: string, params?: Record<string, unknown>) => void;
+  const parentNavigate = navigation.getParent()?.navigate as
+    | ((screen: string, params?: Record<string, unknown>) => void)
+    | undefined;
 
   const navigateTo = (screen: string) => {
     navigation.closeDrawer();
     if (screen === 'Profile') {
-      navigation.navigate('Tabs' as never, { screen: 'Profile' } as never);
+      navigate('Tabs', { screen: 'Profile' });
       return;
     }
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate(screen as never);
+    if (parentNavigate) {
+      parentNavigate(screen);
     }
   };
 
@@ -100,9 +103,8 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
       return;
     }
     navigation.closeDrawer();
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate('WebView' as never, { title, url } as never);
+    if (parentNavigate) {
+      parentNavigate('WebView', { title, url });
     }
   };
 

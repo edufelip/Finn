@@ -29,6 +29,11 @@ type NotificationPostRow = {
   content?: string | null;
 };
 
+type NotificationRowRaw = Omit<NotificationRow, 'actor' | 'post'> & {
+  actor?: NotificationActorRow | NotificationActorRow[] | null;
+  post?: NotificationPostRow | NotificationPostRow[] | null;
+};
+
 type NotificationRow = {
   id: number;
   type: 'follow' | 'post_like' | 'post_comment';
@@ -213,8 +218,13 @@ export class SupabaseUserRepository implements UserRepository {
       throw error;
     }
 
-    const rows = (data ?? []) as NotificationRow[];
-    const followActorIds = rows
+    const rows = (data ?? []) as NotificationRowRaw[];
+    const normalizedRows: NotificationRow[] = rows.map((row) => ({
+      ...row,
+      actor: Array.isArray(row.actor) ? row.actor[0] ?? null : row.actor ?? null,
+      post: Array.isArray(row.post) ? row.post[0] ?? null : row.post ?? null,
+    }));
+    const followActorIds = normalizedRows
       .filter((row) => row.type === 'follow' && row.actor?.id)
       .map((row) => row.actor?.id as string);
     let followedSet = new Set<string>();
@@ -232,7 +242,7 @@ export class SupabaseUserRepository implements UserRepository {
       followedSet = new Set((follows ?? []).map((row) => row.following_id));
     }
 
-    return rows
+    return normalizedRows
       .filter((row) => row.actor?.id)
       .map((row) => ({
         id: row.id,

@@ -7,6 +7,8 @@ let notificationsEnabled = true;
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: notificationsEnabled,
+    shouldShowBanner: notificationsEnabled,
+    shouldShowList: notificationsEnabled,
     shouldPlaySound: notificationsEnabled,
     shouldSetBadge: notificationsEnabled,
   }),

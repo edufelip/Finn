@@ -54,7 +54,6 @@ export default function MainTabs() {
           options={{
             tabBarLabel: tabCopy.home,
             tabBarIcon: ({ color }) => <MaterialIcons name="home" size={24} color={color} />,
-            tabBarTestID: tabCopy.testIds.home,
             tabBarAccessibilityLabel: tabCopy.testIds.home,
           }}
         />
@@ -64,7 +63,6 @@ export default function MainTabs() {
           options={{
             tabBarLabel: tabCopy.explore,
             tabBarIcon: ({ color }) => <MaterialIcons name="explore" size={24} color={color} />,
-            tabBarTestID: tabCopy.testIds.explore,
             tabBarAccessibilityLabel: tabCopy.testIds.explore,
           }}
         />
@@ -101,7 +99,6 @@ export default function MainTabs() {
           options={{
             tabBarLabel: tabCopy.inbox,
             tabBarIcon: ({ color }) => <MaterialIcons name="inbox" size={24} color={color} />,
-            tabBarTestID: tabCopy.testIds.inbox,
             tabBarAccessibilityLabel: tabCopy.testIds.inbox,
           }}
         />
@@ -111,7 +108,6 @@ export default function MainTabs() {
           options={{
             tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
             tabBarLabel: tabCopy.profile,
-            tabBarTestID: tabCopy.testIds.profile,
             tabBarAccessibilityLabel: tabCopy.testIds.profile,
           }}
         />
