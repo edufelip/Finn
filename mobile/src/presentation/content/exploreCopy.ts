@@ -18,6 +18,8 @@ export const exploreCopy = {
   trendingTitle: t('explore.trending.title'),
   trendingSeeAll: t('explore.trending.seeAll'),
   trendingLimit: 3,
+  feedLimit: 6,
+  feedSkeletonCount: 2,
   trendingTags: [
     { id: 'tech', label: t('explore.trending.tag.tech'), tone: 'tech' },
     { id: 'travel', label: t('explore.trending.tag.travel'), tone: 'travel' },
@@ -46,5 +48,7 @@ export const exploreCopy = {
     trendingTitle: 'explore-trending-title',
     seeAll: 'explore-see-all',
     feedCard: 'explore-feed-card',
+    trendingSkeleton: 'explore-trending-skeleton',
+    feedSkeleton: 'explore-feed-skeleton',
   },
 };

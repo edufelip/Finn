@@ -1,14 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
@@ -18,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import HomeExploreHeader from '../components/HomeExploreHeader';
 import ScreenFade from '../components/ScreenFade';
+import Shimmer from '../components/Shimmer';
 import type { Community } from '../../domain/models/community';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useAuth } from '../../app/providers/AuthProvider';
@@ -44,6 +36,7 @@ export default function ExploreScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [trending, setTrending] = useState<Community[]>([]);
+  const [feedItems, setFeedItems] = useState<Community[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +56,13 @@ export default function ExploreScreen() {
       const sorted = [...data].sort(
         (a, b) => (b.subscribersCount ?? 0) - (a.subscribersCount ?? 0)
       );
-      setTrending(sorted.slice(0, exploreCopy.trendingLimit));
+      const trendingItems = sorted.slice(0, exploreCopy.trendingLimit);
+      const feedCandidates = sorted.slice(
+        exploreCopy.trendingLimit,
+        exploreCopy.trendingLimit + exploreCopy.feedLimit
+      );
+      setTrending(trendingItems);
+      setFeedItems(feedCandidates);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -184,6 +183,34 @@ export default function ExploreScreen() {
     );
   };
 
+  const renderTrendingSkeleton = () => (
+    <View style={styles.trendingSkeletonRow} testID={exploreCopy.testIds.trendingSkeleton}>
+      {Array.from({ length: exploreCopy.trendingLimit }).map((_, index) => (
+        <Shimmer
+          key={`trending-skeleton-${index}`}
+          baseColor={theme.surfaceVariant}
+          highlightColor={theme.surface}
+          style={styles.trendingSkeletonCard}
+          borderRadius={20}
+        />
+      ))}
+    </View>
+  );
+
+  const renderFeedSkeleton = () => (
+    <View style={styles.feedSkeletonWrap} testID={exploreCopy.testIds.feedSkeleton}>
+      {Array.from({ length: exploreCopy.feedSkeletonCount }).map((_, index) => (
+        <Shimmer
+          key={`feed-skeleton-${index}`}
+          baseColor={theme.surfaceVariant}
+          highlightColor={theme.surface}
+          style={styles.feedSkeletonCard}
+          borderRadius={20}
+        />
+      ))}
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <HomeExploreHeader
@@ -212,9 +239,7 @@ export default function ExploreScreen() {
               </Pressable>
             </View>
             {loading && trending.length === 0 ? (
-              <View style={styles.loadingWrap}>
-                <ActivityIndicator size="small" color={theme.primary} />
-              </View>
+              renderTrendingSkeleton()
             ) : (
               <FlatList
                 testID={exploreCopy.testIds.trendingList}
@@ -230,34 +255,40 @@ export default function ExploreScreen() {
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
-            <View style={styles.feedCard} testID={exploreCopy.testIds.feedCard}>
-              <View style={styles.feedIllustration}>
-                <View style={styles.feedGlowOuter} />
-                <View style={styles.feedGlowInner} />
-                <MaterialIcons name="explore" size={54} color={theme.primary} style={styles.feedIcon} />
-                <MaterialIcons name="star" size={20} color={theme.tertiary} style={styles.feedStar} />
-                <MaterialIcons name="favorite" size={20} color={theme.error} style={styles.feedHeart} />
-                <MaterialIcons name="chat-bubble" size={18} color={theme.secondary} style={styles.feedChat} />
-              </View>
-              <Text style={styles.feedTitle}>{exploreCopy.emptyTitle}</Text>
-              <Text style={styles.feedBody}>{exploreCopy.emptyBody}</Text>
-              <View style={styles.feedActions}>
-                <Pressable style={styles.primaryButton} onPress={handleSeeAll}>
-                  <MaterialIcons name="explore" size={16} color={theme.onPrimary} />
-                  <Text style={styles.primaryButtonText}>{exploreCopy.primaryCta}</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.secondaryButton}
-                  onPress={() => navigation.navigate('CreateCommunity')}
-                >
-                  <MaterialIcons name="add-circle" size={16} color={theme.onSurface} />
-                  <Text style={styles.secondaryButtonText}>{exploreCopy.secondaryCta}</Text>
-                </Pressable>
-              </View>
+          {loading && trending.length === 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
+              {renderFeedSkeleton()}
             </View>
-          </View>
+          ) : feedItems.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{exploreCopy.feedTitle}</Text>
+              {feedItems.map((item) => (
+                <Pressable
+                  key={`feed-${item.id}`}
+                  style={styles.feedItem}
+                  onPress={() => navigation.navigate('CommunityDetail', { communityId: item.id })}
+                >
+                  <View style={styles.feedItemBadge} />
+                  <View style={styles.feedItemContent}>
+                    <Text style={styles.feedItemTitle} numberOfLines={1}>
+                      {item.title || exploreCopy.communityFallback}
+                    </Text>
+                    {item.description ? (
+                      <Text style={styles.feedItemBody} numberOfLines={2}>
+                        {item.description}
+                      </Text>
+                    ) : null}
+                    <Text style={styles.feedItemMeta}>
+                      {exploreCopy.trendingMembersLabel(
+                        formatCompactNumber(item.subscribersCount ?? 0)
+                      )}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           <View style={styles.section}>
             <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
@@ -322,6 +353,15 @@ const createStyles = (theme: ThemeColors) =>
     trendingSeparator: {
       width: 16,
     },
+    trendingSkeletonRow: {
+      flexDirection: 'row',
+      gap: 16,
+    },
+    trendingSkeletonCard: {
+      width: 240,
+      height: 150,
+      borderRadius: 20,
+    },
     trendingCard: {
       width: 240,
       height: 150,
@@ -377,103 +417,50 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.error,
       fontSize: 12,
     },
-    feedCard: {
-      backgroundColor: theme.surface,
-      borderRadius: 24,
-      padding: 24,
-      borderWidth: 1,
-      borderColor: theme.outline,
-      shadowColor: theme.shadow,
-      shadowOpacity: 0.35,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 3,
-    },
-    feedIllustration: {
-      height: 120,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 16,
-    },
-    feedGlowOuter: {
-      position: 'absolute',
-      width: 120,
-      height: 120,
-      borderRadius: 60,
-      backgroundColor: theme.surfaceTint,
-      opacity: 0.12,
-    },
-    feedGlowInner: {
-      position: 'absolute',
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      backgroundColor: theme.surfaceTint,
-      opacity: 0.2,
-    },
-    feedIcon: {
-      transform: [{ rotate: '-12deg' }],
-    },
-    feedStar: {
-      position: 'absolute',
-      top: 12,
-      right: 32,
-    },
-    feedHeart: {
-      position: 'absolute',
-      bottom: 10,
-      left: 24,
-    },
-    feedChat: {
-      position: 'absolute',
-      top: 48,
-      left: 12,
-    },
-    feedTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: theme.onBackground,
-      textAlign: 'center',
-    },
-    feedBody: {
-      fontSize: 13,
-      color: theme.onSurfaceVariant,
-      textAlign: 'center',
-      marginTop: 8,
-      marginBottom: 16,
-    },
-    feedActions: {
+    feedSkeletonWrap: {
       gap: 12,
     },
-    primaryButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      backgroundColor: theme.primary,
-      borderRadius: 14,
-      paddingVertical: 12,
+    feedSkeletonCard: {
+      width: '100%',
+      height: 92,
+      borderRadius: 20,
     },
-    primaryButtonText: {
-      color: theme.onPrimary,
-      fontSize: 14,
-      fontWeight: '700',
-    },
-    secondaryButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      borderRadius: 14,
+    feedItem: {
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      padding: 16,
       borderWidth: 1,
-      borderColor: theme.outline,
-      paddingVertical: 12,
-      backgroundColor: theme.surfaceVariant,
+      borderColor: theme.outlineVariant,
+      marginBottom: 12,
+      flexDirection: 'row',
+      gap: 12,
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
     },
-    secondaryButtonText: {
-      fontSize: 14,
-      fontWeight: '600',
+    feedItemBadge: {
+      width: 6,
+      borderRadius: 999,
+      backgroundColor: theme.primary,
+    },
+    feedItemContent: {
+      flex: 1,
+      gap: 6,
+    },
+    feedItemTitle: {
+      fontSize: 15,
+      fontWeight: '700',
       color: theme.onSurface,
+    },
+    feedItemBody: {
+      fontSize: 12,
+      color: theme.onSurfaceVariant,
+    },
+    feedItemMeta: {
+      fontSize: 11,
+      color: theme.onSurfaceVariant,
     },
     topicsTitle: {
       fontSize: 12,
