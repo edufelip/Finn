@@ -10,6 +10,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import SearchScreen from '../screens/SearchScreen';
+import WebViewScreen from '../screens/WebViewScreen';
 import type { Post } from '../../domain/models/post';
 
 export type MainStackParamList = {
@@ -22,6 +24,8 @@ export type MainStackParamList = {
   PostDetail: { post: Post };
   Profile: undefined;
   Notifications: undefined;
+  SearchResults: { focus?: boolean } | undefined;
+  WebView: { title: string; url: string };
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -37,7 +41,9 @@ export default function MainStack() {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="SearchResults" component={SearchScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="WebView" component={WebViewScreen} />
     </Stack.Navigator>
   );
 }

@@ -12,6 +12,7 @@ type UserRow = {
   photo_url?: string | null;
   created_at?: string;
   online_visible?: boolean | null;
+  notifications_enabled?: boolean | null;
   last_seen_at?: string | null;
 };
 
@@ -22,6 +23,7 @@ function toDomain(row: UserRow): User {
     photoUrl: row.photo_url ?? null,
     createdAt: row.created_at,
     onlineVisible: row.online_visible ?? true,
+    notificationsEnabled: row.notifications_enabled ?? true,
     lastSeenAt: row.last_seen_at ?? null,
   };
 }
@@ -54,6 +56,7 @@ export class SupabaseUserRepository implements UserRepository {
         name: user.name,
         photo_url: user.photoUrl ?? null,
         online_visible: user.onlineVisible ?? true,
+        notifications_enabled: user.notificationsEnabled ?? true,
         last_seen_at: user.lastSeenAt ?? now,
       })
       .select('*')
@@ -87,6 +90,36 @@ export class SupabaseUserRepository implements UserRepository {
       throw error;
     }
     await setCache(CacheKey.user(id), toDomain(data), CACHE_TTL_MS.profiles);
+  }
+
+  async setNotificationsEnabled(id: string, enabled: boolean): Promise<void> {
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .update({ notifications_enabled: enabled })
+      .eq('id', id)
+      .select('*')
+      .single<UserRow>();
+
+    if (error) {
+      throw error;
+    }
+    await setCache(CacheKey.user(id), toDomain(data), CACHE_TTL_MS.profiles);
+  }
+
+  async savePushToken(id: string, token: string, platform: string): Promise<void> {
+    const { error } = await supabase.from(TABLES.pushTokens).upsert(
+      {
+        user_id: id,
+        token,
+        platform,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'token' }
+    );
+
+    if (error) {
+      throw error;
+    }
   }
 
   async updateLastSeenAt(id: string, timestamp: string): Promise<void> {

@@ -1,8 +1,23 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import * as Network from 'expo-network';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
+import type { NavigationProp } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../app/providers/AuthProvider';
 import { usePresence } from '../../app/providers/PresenceProvider';
@@ -10,58 +25,136 @@ import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
-import TopBar from '../components/TopBar';
+import { links } from '../../config/links';
 import type { ThemeColors } from '../theme/colors';
 import { settingsCopy } from '../content/settingsCopy';
+import { commonCopy } from '../content/commonCopy';
+import { maskEmail } from '../i18n/formatters';
+import type { MainStackParamList } from '../navigation/MainStack';
+import { registerPushToken, setNotificationGatePreference } from '../../app/notifications/pushTokens';
 
 export default function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
   const { isDark, toggleTheme } = useTheme();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const mountedRef = useRef(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteEmailInput, setDeleteEmailInput] = useState('');
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    let active = true;
+    userRepository
+      .getUser(session.user.id)
+      .then((profile) => {
+        if (active && mountedRef.current) {
+          const enabled = profile?.notificationsEnabled ?? true;
+          setNotificationsEnabled(enabled);
+          setNotificationGatePreference(enabled);
+        }
+      })
+      .catch(() => {
+        if (active && mountedRef.current) {
+          setNotificationsEnabled(true);
+          setNotificationGatePreference(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id, userRepository]);
 
   const showUnavailable = () => {
     Alert.alert(settingsCopy.alerts.unavailable.title, settingsCopy.alerts.unavailable.message);
   };
 
-  const handleDelete = () => {
-    Alert.alert(settingsCopy.alerts.deleteConfirm.title, settingsCopy.alerts.deleteConfirm.message, [
-      { text: settingsCopy.alerts.deleteConfirm.cancel, style: 'cancel' },
-      {
-        text: settingsCopy.alerts.deleteConfirm.confirm,
-        style: 'destructive',
-        onPress: async () => {
-          if (!session?.user?.id) {
-            Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
-            return;
-          }
-          setLoading(true);
-          const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
-          if (!status.isConnected) {
-            setLoading(false);
-            Alert.alert(settingsCopy.alerts.offline.title, settingsCopy.alerts.offline.message);
-            return;
-          }
-          try {
-            await userRepository.deleteUser(session.user.id);
-            await supabase.auth.signOut();
-            Alert.alert(settingsCopy.alerts.deleted.title, settingsCopy.alerts.deleted.message);
-          } catch (error) {
-            if (error instanceof Error) {
-              Alert.alert(settingsCopy.alerts.failed.title, error.message);
-            }
-          } finally {
-            setLoading(false);
-          }
-        },
-      },
-    ]);
+  const ensurePushPermission = async () => {
+    if (isMockMode()) {
+      return true;
+    }
+    const current = await Notifications.getPermissionsAsync();
+    if (current.status === 'granted') {
+      return true;
+    }
+    if (current.canAskAgain) {
+      const requested = await Notifications.requestPermissionsAsync();
+      return requested.status === 'granted';
+    }
+    return false;
+  };
+
+  const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? commonCopy.emptyDash;
+  const versionLabel = settingsCopy.footer.version(appVersion);
+  const sessionEmail = session?.user?.email ?? '';
+  const maskedEmail = useMemo(() => maskEmail(sessionEmail), [sessionEmail]);
+  const normalizedTargetEmail = sessionEmail.trim().toLowerCase();
+  const normalizedInputEmail = deleteEmailInput.trim().toLowerCase();
+  const canConfirmDelete = Boolean(normalizedTargetEmail) && normalizedInputEmail === normalizedTargetEmail;
+  const showMismatch = Boolean(deleteEmailInput) && !canConfirmDelete;
+  const confirmDisabled = !canConfirmDelete || loading;
+
+  const openWebView = (title: string, url?: string) => {
+    if (!url) {
+      showUnavailable();
+      return;
+    }
+    navigation.navigate('WebView', { title, url });
+  };
+
+  const handleDelete = async (): Promise<boolean> => {
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return false;
+    }
+    setLoading(true);
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      setLoading(false);
+      Alert.alert(settingsCopy.alerts.offline.title, settingsCopy.alerts.offline.message);
+      return false;
+    }
+    try {
+      await userRepository.deleteUser(session.user.id);
+      await supabase.auth.signOut();
+      Alert.alert(settingsCopy.alerts.deleted.title, settingsCopy.alerts.deleted.message);
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert(settingsCopy.alerts.failed.title, error.message);
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openDeleteModal = () => {
+    if (!sessionEmail) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return;
+    }
+    setDeleteEmailInput('');
+    setDeleteModalVisible(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalVisible(false);
+    setDeleteEmailInput('');
   };
 
   const handleOnlineStatusChange = async (value: boolean) => {
@@ -84,138 +177,471 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleNotificationsToggle = async (value: boolean) => {
+    const previous = notificationsEnabled;
+    setNotificationsEnabled(value);
+    setNotificationGatePreference(value);
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      if (mountedRef.current) {
+        setNotificationsEnabled(previous);
+        setNotificationGatePreference(previous);
+      }
+      return;
+    }
+
+    let valueToSave = value;
+
+    if (value) {
+      const granted = await ensurePushPermission();
+      if (!granted) {
+        if (!mountedRef.current) {
+          return;
+        }
+        valueToSave = false;
+        setNotificationsEnabled(false);
+        setNotificationGatePreference(false);
+        Alert.alert(settingsCopy.alerts.notificationsPermission.title, settingsCopy.alerts.notificationsPermission.message, [
+          { text: settingsCopy.alerts.notificationsPermission.cancel, style: 'cancel' },
+          {
+            text: settingsCopy.alerts.notificationsPermission.confirm,
+            style: 'default',
+            onPress: () => {
+              Linking.openSettings().catch(() => {
+                // ignore
+              });
+            },
+          },
+        ]);
+      } else if (session?.user?.id) {
+        try {
+          await registerPushToken(userRepository, session.user.id);
+        } catch {
+          // Ignore token registration failures.
+        }
+      }
+    }
+
+    try {
+      await userRepository.setNotificationsEnabled(session.user.id, valueToSave);
+    } catch {
+      if (mountedRef.current) {
+        setNotificationsEnabled(previous);
+        setNotificationGatePreference(previous);
+        Alert.alert(settingsCopy.alerts.notificationsFailed.title, settingsCopy.alerts.notificationsFailed.message);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(settingsCopy.alerts.logout.title, settingsCopy.alerts.logout.message, [
+      { text: settingsCopy.alerts.logout.cancel, style: 'cancel' },
+      {
+        text: settingsCopy.alerts.logout.confirm,
+        style: 'destructive',
+        onPress: () => {
+          supabase.auth.signOut();
+        },
+      },
+    ]);
+  };
+
   return (
-    <View style={styles.container}>
-      <TopBar onBack={() => navigation.goBack()} />
-      <Text style={styles.title}>{settingsCopy.title}</Text>
-      <Text style={styles.sectionTitle}>{settingsCopy.sections.preferences}</Text>
-      <View style={styles.sectionBox}>
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <MaterialIcons name="wb-sunny" size={18} color={theme.iconMuted} />
-            <Text style={styles.rowText}>{settingsCopy.options.darkMode}</Text>
-          </View>
-          <Switch
-            value={isDark}
-            onValueChange={() => {
-              toggleTheme();
-            }}
-            testID={settingsCopy.testIds.darkMode}
-            accessibilityLabel={settingsCopy.testIds.darkMode}
-          />
-        </View>
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <MaterialIcons name="visibility" size={18} color={theme.iconMuted} />
-            <Text style={styles.rowText}>{settingsCopy.options.onlineStatus}</Text>
-          </View>
-          <Switch
-            value={isOnlineVisible}
-            onValueChange={handleOnlineStatusChange}
-            testID={settingsCopy.testIds.onlineStatus}
-            accessibilityLabel={settingsCopy.testIds.onlineStatus}
-            disabled={updatingOnlineStatus}
-          />
-        </View>
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <MaterialIcons name="content-copy" size={18} color={theme.iconMuted} />
-            <Text style={styles.rowText}>{settingsCopy.options.notifications}</Text>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={(value) => {
-              setNotificationsEnabled(value);
-              showUnavailable();
-            }}
-            testID={settingsCopy.testIds.notifications}
-            accessibilityLabel={settingsCopy.testIds.notifications}
-          />
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back-ios-new" size={20} color={theme.onBackground} />
+        </Pressable>
+        <Text style={styles.title}>{settingsCopy.title}</Text>
       </View>
-      <Text style={styles.sectionTitle}>{settingsCopy.sections.account}</Text>
-      <View style={styles.sectionBox}>
-        <View style={styles.deleteRow}>
-          <Text style={styles.deleteLabel}>{settingsCopy.options.deleteAccount}</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionLabel}>{settingsCopy.sections.preferences}</Text>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="dark-mode" size={20} color={theme.onSurfaceVariant} />
+              </View>
+              <Text style={styles.rowText}>{settingsCopy.options.darkMode}</Text>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={() => {
+                toggleTheme();
+              }}
+              testID={settingsCopy.testIds.darkMode}
+              accessibilityLabel={settingsCopy.testIds.darkMode}
+              trackColor={{ false: theme.outline, true: theme.primary }}
+              thumbColor={isDark ? theme.onPrimary : theme.onSurface}
+            />
+          </View>
+          <View style={[styles.row, styles.rowDivider]}>
+            <View style={styles.rowLeft}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="visibility" size={20} color={theme.onSurfaceVariant} />
+              </View>
+              <Text style={styles.rowText}>{settingsCopy.options.onlineStatus}</Text>
+            </View>
+            <Switch
+              value={isOnlineVisible}
+              onValueChange={handleOnlineStatusChange}
+              testID={settingsCopy.testIds.onlineStatus}
+              accessibilityLabel={settingsCopy.testIds.onlineStatus}
+              disabled={updatingOnlineStatus}
+              trackColor={{ false: theme.outline, true: theme.primary }}
+              thumbColor={isOnlineVisible ? theme.onPrimary : theme.onSurface}
+            />
+          </View>
+          <View style={[styles.row, styles.rowDivider]}>
+            <View style={styles.rowLeft}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="notifications" size={20} color={theme.onSurfaceVariant} />
+              </View>
+              <Text style={styles.rowText}>{settingsCopy.options.notifications}</Text>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleNotificationsToggle}
+              testID={settingsCopy.testIds.notifications}
+              accessibilityLabel={settingsCopy.testIds.notifications}
+              trackColor={{ false: theme.outline, true: theme.primary }}
+              thumbColor={notificationsEnabled ? theme.onPrimary : theme.onSurface}
+            />
+          </View>
+        </View>
+        <Text style={styles.sectionNote}>{settingsCopy.sections.preferencesNote}</Text>
+
+        <Text style={styles.sectionLabel}>{settingsCopy.sections.account}</Text>
+        <View style={styles.card}>
           <Pressable
-            style={[styles.deleteButton, loading && styles.deleteButtonDisabled]}
-            onPress={handleDelete}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            onPress={handleLogout}
+            testID={settingsCopy.testIds.logout}
+            accessibilityLabel={settingsCopy.testIds.logout}
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="logout" size={20} color={theme.onSurfaceVariant} />
+              </View>
+              <Text style={styles.rowText}>{settingsCopy.options.logout}</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
+            onPress={openDeleteModal}
             disabled={loading}
             testID={settingsCopy.testIds.delete}
             accessibilityLabel={settingsCopy.testIds.delete}
           >
-            <Text style={styles.deleteButtonText}>
-              {loading ? settingsCopy.deleteButtonLoading : settingsCopy.deleteButton}
-            </Text>
+            <View style={styles.rowLeft}>
+              <View style={[styles.iconCircle, styles.dangerIconCircle]}>
+                <MaterialIcons name="delete" size={20} color={theme.error} />
+              </View>
+              <Text style={[styles.rowText, styles.dangerText]}>{settingsCopy.options.deleteAccount}</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
           </Pressable>
         </View>
-      </View>
-    </View>
+        <Text style={styles.sectionNote}>{settingsCopy.sections.accountNote}</Text>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerVersion}>{versionLabel}</Text>
+          <View style={styles.footerLinks}>
+            <Pressable
+              onPress={() => openWebView(settingsCopy.footer.privacy, links.privacyPolicy)}
+              testID={settingsCopy.testIds.privacy}
+              accessibilityLabel={settingsCopy.testIds.privacy}
+            >
+              <Text style={styles.footerLinkText}>{settingsCopy.footer.privacy}</Text>
+            </Pressable>
+            <Pressable
+              onPress={showUnavailable}
+              testID={settingsCopy.testIds.terms}
+              accessibilityLabel={settingsCopy.testIds.terms}
+            >
+              <Text style={styles.footerLinkText}>{settingsCopy.footer.terms}</Text>
+            </Pressable>
+            <Pressable
+              onPress={showUnavailable}
+              testID={settingsCopy.testIds.help}
+              accessibilityLabel={settingsCopy.testIds.help}
+            >
+              <Text style={styles.footerLinkText}>{settingsCopy.footer.help}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+      <Modal
+        transparent
+        visible={deleteModalVisible}
+        animationType="fade"
+        onRequestClose={closeDeleteModal}
+        testID={settingsCopy.testIds.deleteModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{settingsCopy.deleteModal.title}</Text>
+            <Text style={styles.modalBody}>{settingsCopy.deleteModal.body}</Text>
+            <Text style={styles.modalHint}>{settingsCopy.deleteModal.hint(maskedEmail)}</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder={settingsCopy.deleteModal.placeholder}
+              placeholderTextColor={theme.onSurfaceVariant}
+              value={deleteEmailInput}
+              onChangeText={setDeleteEmailInput}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              testID={settingsCopy.testIds.deleteEmail}
+              accessibilityLabel={settingsCopy.testIds.deleteEmail}
+            />
+            {showMismatch ? (
+              <Text style={styles.modalError}>{settingsCopy.deleteModal.mismatch}</Text>
+            ) : null}
+            <View style={styles.modalActions}>
+              <Pressable
+                style={({ pressed }) => [styles.modalCancel, pressed && styles.modalButtonPressed]}
+                onPress={closeDeleteModal}
+                testID={settingsCopy.testIds.deleteCancel}
+                accessibilityLabel={settingsCopy.testIds.deleteCancel}
+              >
+                <Text style={styles.modalCancelText}>{settingsCopy.deleteModal.cancel}</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalConfirm,
+                  confirmDisabled && styles.modalConfirmDisabled,
+                  pressed && !confirmDisabled && styles.modalButtonPressed,
+                ]}
+                onPress={async () => {
+                  if (confirmDisabled) return;
+                  const deleted = await handleDelete();
+                  if (deleted) {
+                    closeDeleteModal();
+                  }
+                }}
+                disabled={confirmDisabled}
+                testID={settingsCopy.testIds.deleteConfirm}
+                accessibilityLabel={settingsCopy.testIds.deleteConfirm}
+              >
+                <Text style={styles.modalConfirmText}>{settingsCopy.deleteModal.confirm}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
-      backgroundColor: theme.backgroundLight,
+      backgroundColor: theme.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 6,
+      paddingBottom: 12,
+      backgroundColor: theme.background,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    backButtonPressed: {
+      backgroundColor: theme.surfaceVariant,
     },
     title: {
-      fontSize: 32,
+      fontSize: 24,
       fontWeight: '700',
-      marginTop: 16,
-      marginLeft: 32,
-      color: theme.textPrimary,
+      color: theme.onBackground,
     },
-    sectionTitle: {
-      fontSize: 18,
-      marginTop: 16,
-      marginLeft: 36,
-      color: theme.textSecondary,
+    content: {
+      paddingBottom: 32,
+      paddingTop: 4,
     },
-    sectionBox: {
+    sectionLabel: {
+      marginTop: 16,
+      marginBottom: 8,
+      marginHorizontal: 20,
+      fontSize: 12,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      color: theme.onSurfaceVariant,
+      fontWeight: '600',
+    },
+    sectionNote: {
       marginTop: 8,
-      marginHorizontal: 36,
+      marginHorizontal: 20,
+      fontSize: 12,
+      color: theme.onSurfaceVariant,
+    },
+    card: {
+      marginHorizontal: 16,
+      borderRadius: 20,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.outline,
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.06,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 8,
+      elevation: 2,
+      overflow: 'hidden',
     },
     row: {
-      height: 45,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginVertical: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    rowDivider: {
+      borderTopWidth: 1,
+      borderTopColor: theme.outlineVariant,
+    },
+    rowPressed: {
+      backgroundColor: theme.surfaceVariant,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: theme.scrim,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modalCard: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.onSurface,
+      marginBottom: 8,
+    },
+    modalBody: {
+      color: theme.onSurfaceVariant,
+      fontSize: 13,
+      marginBottom: 12,
+    },
+    modalHint: {
+      color: theme.onSurface,
+      fontSize: 12,
+      marginBottom: 12,
+    },
+    modalInput: {
+      borderWidth: 1,
+      borderColor: theme.outline,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: theme.onSurface,
+      backgroundColor: theme.surfaceVariant,
+    },
+    modalError: {
+      color: theme.error,
+      fontSize: 12,
+      marginTop: 8,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 16,
+      gap: 12,
+    },
+    modalCancel: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.outline,
+      alignItems: 'center',
+    },
+    modalCancelText: {
+      color: theme.onSurface,
+      fontWeight: '600',
+    },
+    modalConfirm: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: theme.error,
+      alignItems: 'center',
+    },
+    modalConfirmDisabled: {
+      backgroundColor: theme.outlineVariant,
+    },
+    modalConfirmText: {
+      color: theme.onError,
+      fontWeight: '600',
+    },
+    modalButtonPressed: {
+      opacity: 0.8,
     },
     rowLeft: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: 12,
+      flex: 1,
+      paddingRight: 12,
     },
-    rowText: {
-      fontSize: 18,
-      color: theme.textPrimary,
-    },
-    deleteRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    deleteLabel: {
-      fontSize: 14,
-      color: theme.textPrimary,
-    },
-    deleteButton: {
-      height: 42,
-      paddingHorizontal: 16,
-      borderWidth: 1,
-      borderColor: theme.danger,
+    iconCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: theme.surfaceVariant,
     },
-    deleteButtonDisabled: {
-      opacity: 0.7,
+    rowText: {
+      fontSize: 15,
+      color: theme.onSurface,
+      fontWeight: '500',
     },
-    deleteButtonText: {
+    dangerIconCircle: {
+      backgroundColor: theme.errorContainer,
+    },
+    dangerText: {
+      color: theme.error,
+    },
+    footer: {
+      marginTop: 24,
+      alignItems: 'center',
+      paddingBottom: 24,
+    },
+    footerVersion: {
       fontSize: 11,
-      color: theme.danger,
-      textTransform: 'lowercase',
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+      color: theme.onSurfaceVariant,
+      fontWeight: '600',
+    },
+    footerLinks: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 24,
+      marginTop: 12,
+    },
+    footerLinkText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.onSurfaceVariant,
     },
   });

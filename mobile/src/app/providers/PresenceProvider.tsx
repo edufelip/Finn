@@ -183,15 +183,31 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
         setIsOnline(visible);
         return;
       }
-      await userRepository.setOnlineVisibility(userId, visible);
+      const previousVisible = visibilityRef.current;
+      const previousOnline = isOnline;
       setIsOnlineVisible(visible);
-      if (visible && appState.current === 'active') {
-        await startPresence(userId);
-      } else {
-        await stopPresence(userId, true);
+      if (!visible) {
+        setIsOnline(false);
+      }
+      try {
+        await userRepository.setOnlineVisibility(userId, visible);
+        if (visible && appState.current === 'active') {
+          await startPresence(userId);
+        } else {
+          await stopPresence(userId, true);
+        }
+      } catch (error) {
+        setIsOnlineVisible(previousVisible);
+        setIsOnline(previousOnline);
+        if (previousVisible && appState.current === 'active') {
+          await startPresence(userId);
+        } else {
+          await stopPresence(userId, true);
+        }
+        throw error;
       }
     },
-    [session?.user?.id, startPresence, stopPresence, userRepository]
+    [isOnline, session?.user?.id, startPresence, stopPresence, userRepository]
   );
 
   const value = useMemo(

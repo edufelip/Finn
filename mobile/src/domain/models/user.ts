@@ -6,5 +6,6 @@ export type User = {
   followersCount?: number;
   followingCount?: number;
   onlineVisible?: boolean;
+  notificationsEnabled?: boolean;
   lastSeenAt?: string | null;
 };

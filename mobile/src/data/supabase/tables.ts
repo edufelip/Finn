@@ -6,4 +6,5 @@ export const TABLES = {
   likes: 'likes',
   subscriptions: 'subscriptions',
   savedPosts: 'saved_posts',
+  pushTokens: 'push_tokens',
 } as const;
