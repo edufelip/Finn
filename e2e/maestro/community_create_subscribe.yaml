@@ -21,7 +21,10 @@ appId: com.edufelip.finn
 - tapOn: "OK"
 - tapOn:
     id: "tab-explore"
-- assertVisible: "Search"
+- tapOn:
+    id: "explore-see-all"
+- assertVisible:
+    id: "community-search"
 - assertVisible: "Maestro Community"
 - tapOn:
     id: "community-card-3"

@@ -13,6 +13,7 @@ jest.mock('@react-navigation/native', () => {
     useNavigation: () => ({
       navigate: mockNavigate,
       getParent: () => ({ openDrawer: jest.fn() }),
+      goBack: jest.fn(),
     }),
     useRoute: () => ({ params: {} }),
     useFocusEffect: (effect: () => void | (() => void)) =>

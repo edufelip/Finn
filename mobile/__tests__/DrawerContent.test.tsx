@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import DrawerContent from '../src/presentation/navigation/DrawerContent';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
@@ -108,7 +108,7 @@ describe('DrawerContent', () => {
     );
 
     await waitFor(() => expect(usersRepo.getUser).toHaveBeenCalled());
-    getByTestId(drawerCopy.testIds.logout).props.onPress();
+    fireEvent.press(getByTestId(drawerCopy.testIds.logout));
     expect(Alert.alert).toHaveBeenCalledWith(
       drawerCopy.alerts.logout.title,
       drawerCopy.alerts.logout.message,

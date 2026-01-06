@@ -151,6 +151,7 @@ describe('ProfileScreen', () => {
     };
     const postsRepo = {
       getPostsFromUser: jest.fn().mockResolvedValue([]),
+      getSavedPosts: jest.fn().mockResolvedValue([]),
       findLike: jest.fn().mockResolvedValue(false),
       likePost: jest.fn(),
       dislikePost: jest.fn(),
@@ -165,6 +166,36 @@ describe('ProfileScreen', () => {
     );
 
     await waitFor(() => expect(getByText(profileCopy.empty.title)).toBeTruthy());
+  });
+
+  it('switches to saved tab without navigation', async () => {
+    const usersRepo = {
+      getUser: jest.fn().mockResolvedValue({
+        id: 'user-1',
+        name: 'Jane Doe',
+        photoUrl: null,
+      }),
+    };
+    const postsRepo = {
+      getPostsFromUser: jest.fn().mockResolvedValue([]),
+      getSavedPosts: jest.fn().mockResolvedValue([]),
+      findLike: jest.fn().mockResolvedValue(false),
+      likePost: jest.fn(),
+      dislikePost: jest.fn(),
+      bookmarkPost: jest.fn(),
+      unbookmarkPost: jest.fn(),
+    };
+
+    const { getByTestId, getByText } = render(
+      <RepositoryProvider overrides={{ users: usersRepo, posts: postsRepo }}>
+        <ProfileScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent.press(getByTestId(profileCopy.testIds.tabSaved));
+
+    await waitFor(() => expect(getByText(profileCopy.savedEmpty.title)).toBeTruthy());
+    expect(mockNavigate).not.toHaveBeenCalledWith('SavedPosts');
   });
 
   it('likes a post', async () => {

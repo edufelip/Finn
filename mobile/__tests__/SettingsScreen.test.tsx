@@ -6,10 +6,14 @@ import SettingsScreen from '../src/presentation/screens/SettingsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { settingsCopy } from '../src/presentation/content/settingsCopy';
 
-const setOnlineVisibility = jest.fn();
+const mockSetOnlineVisibility = jest.fn();
+const mockSetNotificationsEnabled = jest.fn();
+const mockSavePushToken = jest.fn();
+const mockRegisterPushToken = jest.fn();
+const mockSetNotificationGatePreference = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: jest.fn() }),
+  useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
 }));
 
 jest.mock('../src/app/providers/AuthProvider', () => ({
@@ -22,12 +26,22 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
 jest.mock('../src/app/providers/PresenceProvider', () => ({
   usePresence: () => ({
     isOnlineVisible: true,
-    setOnlineVisibility,
+    setOnlineVisibility: mockSetOnlineVisibility,
   }),
 }));
 
 jest.mock('expo-network', () => ({
   getNetworkStateAsync: jest.fn(),
+}));
+
+jest.mock('expo-notifications', () => ({
+  getPermissionsAsync: jest.fn(),
+  requestPermissionsAsync: jest.fn(),
+}));
+
+jest.mock('../src/app/notifications/pushTokens', () => ({
+  registerPushToken: (...args: any[]) => mockRegisterPushToken(...args),
+  setNotificationGatePreference: (...args: any[]) => mockSetNotificationGatePreference(...args),
 }));
 
 jest.mock('../src/data/supabase/client', () => ({
@@ -39,6 +53,7 @@ jest.mock('../src/data/supabase/client', () => ({
 }));
 
 const network = jest.requireMock('expo-network');
+const notifications = jest.requireMock('expo-notifications');
 const { supabase } = jest.requireMock('../src/data/supabase/client');
 
 describe('SettingsScreen', () => {
@@ -50,13 +65,23 @@ describe('SettingsScreen', () => {
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     network.getNetworkStateAsync.mockReset();
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    notifications.getPermissionsAsync.mockReset();
+    notifications.requestPermissionsAsync.mockReset();
+    notifications.getPermissionsAsync.mockResolvedValue({ status: 'granted', canAskAgain: false });
     supabase.auth.signOut.mockReset();
-    setOnlineVisibility.mockReset();
+    mockSetOnlineVisibility.mockReset();
+    mockSetNotificationsEnabled.mockReset();
+    mockRegisterPushToken.mockReset();
+    mockSetNotificationGatePreference.mockReset();
+    mockSavePushToken.mockReset();
   });
 
-  it('shows placeholder alert for toggles', () => {
+  it('updates notifications preference', async () => {
     const usersRepo = {
       deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
     };
 
     const { getByTestId } = render(
@@ -65,20 +90,74 @@ describe('SettingsScreen', () => {
       </RepositoryProvider>
     );
 
-    fireEvent(getByTestId(settingsCopy.testIds.darkMode), 'valueChange', true);
     fireEvent(getByTestId(settingsCopy.testIds.notifications), 'valueChange', false);
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      settingsCopy.alerts.unavailable.title,
-      settingsCopy.alerts.unavailable.message
+    await waitFor(() => {
+      expect(mockSetNotificationsEnabled).toHaveBeenCalledWith('user-1', false);
+    });
+
+    expect(mockRegisterPushToken).not.toHaveBeenCalled();
+  });
+
+  it('reverts notifications when permission denied', async () => {
+    notifications.getPermissionsAsync.mockResolvedValue({ status: 'denied', canAskAgain: false });
+    const usersRepo = {
+      deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: false }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
+    };
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
     );
+
+    fireEvent(getByTestId(settingsCopy.testIds.notifications), 'valueChange', true);
+
+    await waitFor(() => {
+      expect(mockSetNotificationsEnabled).toHaveBeenCalledWith('user-1', false);
+      expect(Alert.alert).toHaveBeenCalledWith(
+        settingsCopy.alerts.notificationsPermission.title,
+        settingsCopy.alerts.notificationsPermission.message,
+        expect.any(Array)
+      );
+    });
+  });
+
+  it('registers token when enabling notifications with permission', async () => {
+    notifications.getPermissionsAsync.mockResolvedValue({ status: 'granted', canAskAgain: false });
+    const usersRepo = {
+      deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: false }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
+    };
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent(getByTestId(settingsCopy.testIds.notifications), 'valueChange', true);
+
+    await waitFor(() => {
+      expect(mockRegisterPushToken).toHaveBeenCalled();
+      expect(mockRegisterPushToken.mock.calls[0][1]).toBe('user-1');
+      expect(mockSetNotificationsEnabled).toHaveBeenCalledWith('user-1', true);
+    });
   });
 
   it('updates online visibility preference', async () => {
     const usersRepo = {
       deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
     };
-    setOnlineVisibility.mockResolvedValue(undefined);
+    mockSetOnlineVisibility.mockResolvedValue(undefined);
 
     const { getByTestId } = render(
       <RepositoryProvider overrides={{ users: usersRepo }}>
@@ -89,27 +168,28 @@ describe('SettingsScreen', () => {
     fireEvent(getByTestId(settingsCopy.testIds.onlineStatus), 'valueChange', false);
 
     await waitFor(() => {
-      expect(setOnlineVisibility).toHaveBeenCalledWith(false);
+      expect(mockSetOnlineVisibility).toHaveBeenCalledWith(false);
     });
   });
 
   it('deletes profile data when online', async () => {
     const usersRepo = {
       deleteUser: jest.fn().mockResolvedValue(undefined),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
     };
 
-    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-      const confirm = buttons?.find((button) => button.style === 'destructive');
-      confirm?.onPress?.();
-    });
-
-    const { getByTestId } = render(
+    const { getByTestId, findByTestId } = render(
       <RepositoryProvider overrides={{ users: usersRepo }}>
         <SettingsScreen />
       </RepositoryProvider>
     );
 
     fireEvent.press(getByTestId(settingsCopy.testIds.delete));
+    const emailInput = await findByTestId(settingsCopy.testIds.deleteEmail);
+    fireEvent.changeText(emailInput, 'user@example.com');
+    fireEvent.press(getByTestId(settingsCopy.testIds.deleteConfirm));
 
     await waitFor(() => {
       expect(usersRepo.deleteUser).toHaveBeenCalledWith('user-1');
@@ -121,10 +201,12 @@ describe('SettingsScreen', () => {
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
-  it('blocks delete when offline', async () => {
-    network.getNetworkStateAsync.mockResolvedValue({ isConnected: false });
+  it('confirms logout before signing out', async () => {
     const usersRepo = {
       deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
     };
 
     jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
@@ -138,7 +220,32 @@ describe('SettingsScreen', () => {
       </RepositoryProvider>
     );
 
+    fireEvent.press(getByTestId(settingsCopy.testIds.logout));
+
+    await waitFor(() => {
+      expect(supabase.auth.signOut).toHaveBeenCalled();
+    });
+  });
+
+  it('blocks delete when offline', async () => {
+    network.getNetworkStateAsync.mockResolvedValue({ isConnected: false });
+    const usersRepo = {
+      deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
+    };
+
+    const { getByTestId, findByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
+    );
+
     fireEvent.press(getByTestId(settingsCopy.testIds.delete));
+    const emailInput = await findByTestId(settingsCopy.testIds.deleteEmail);
+    fireEvent.changeText(emailInput, 'user@example.com');
+    fireEvent.press(getByTestId(settingsCopy.testIds.deleteConfirm));
 
     await waitFor(() => {
       expect(usersRepo.deleteUser).not.toHaveBeenCalled();
@@ -152,6 +259,9 @@ describe('SettingsScreen', () => {
   it('renders settings copy', () => {
     const usersRepo = {
       deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
     };
 
     const { getByText } = render(
@@ -163,10 +273,15 @@ describe('SettingsScreen', () => {
     expect(getByText(settingsCopy.title)).toBeTruthy();
     expect(getByText(settingsCopy.sections.preferences)).toBeTruthy();
     expect(getByText(settingsCopy.sections.account)).toBeTruthy();
+    expect(getByText(settingsCopy.sections.preferencesNote)).toBeTruthy();
+    expect(getByText(settingsCopy.sections.accountNote)).toBeTruthy();
     expect(getByText(settingsCopy.options.darkMode)).toBeTruthy();
     expect(getByText(settingsCopy.options.notifications)).toBeTruthy();
     expect(getByText(settingsCopy.options.onlineStatus)).toBeTruthy();
+    expect(getByText(settingsCopy.options.logout)).toBeTruthy();
     expect(getByText(settingsCopy.options.deleteAccount)).toBeTruthy();
-    expect(getByText(settingsCopy.deleteButton)).toBeTruthy();
+    expect(getByText(settingsCopy.footer.privacy)).toBeTruthy();
+    expect(getByText(settingsCopy.footer.terms)).toBeTruthy();
+    expect(getByText(settingsCopy.footer.help)).toBeTruthy();
   });
 });

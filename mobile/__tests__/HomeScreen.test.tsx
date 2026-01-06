@@ -14,12 +14,17 @@ const waitForHomeEffects = async (postsRepo: { getUserFeed: jest.Mock }, usersRe
   await waitFor(() => expect(usersRepo.getUser).toHaveBeenCalled());
 };
 
-jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({
-    navigate: mockNavigate,
-    getParent: () => ({ openDrawer: jest.fn() }),
-  }),
-}));
+jest.mock('@react-navigation/native', () => {
+  const React = require('react');
+  return {
+    useNavigation: () => ({
+      navigate: mockNavigate,
+      getParent: () => ({ openDrawer: jest.fn() }),
+    }),
+    useFocusEffect: (effect: () => void | (() => void)) =>
+      React.useEffect(() => effect(), [effect]),
+  };
+});
 
 jest.mock('../src/app/providers/AuthProvider', () => ({
   useAuth: () => mockUseAuth(),
