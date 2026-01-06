@@ -1,3 +1,4 @@
+import type { Notification } from '../../domain/models/notification';
 import type { User } from '../../domain/models/user';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
 import { CacheKey, CACHE_TTL_MS } from '../cache/cachePolicy';
@@ -16,6 +17,28 @@ type UserRow = {
   last_seen_at?: string | null;
 };
 
+type NotificationActorRow = {
+  id: string;
+  name: string;
+  photo_url?: string | null;
+};
+
+type NotificationPostRow = {
+  id: number;
+  image_url?: string | null;
+  content?: string | null;
+};
+
+type NotificationRow = {
+  id: number;
+  type: 'follow' | 'post_like' | 'post_comment';
+  created_at: string;
+  read_at?: string | null;
+  metadata?: { comment_preview?: string | null } | null;
+  actor?: NotificationActorRow | null;
+  post?: NotificationPostRow | null;
+};
+
 function toDomain(row: UserRow): User {
   return {
     id: row.id,
@@ -27,6 +50,31 @@ function toDomain(row: UserRow): User {
     lastSeenAt: row.last_seen_at ?? null,
   };
 }
+
+const fetchFollowCounts = async (userId: string) => {
+  const [followers, following] = await Promise.all([
+    supabase
+      .from(TABLES.userFollows)
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', userId),
+    supabase
+      .from(TABLES.userFollows)
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', userId),
+  ]);
+
+  if (followers.error) {
+    throw followers.error;
+  }
+  if (following.error) {
+    throw following.error;
+  }
+
+  return {
+    followersCount: followers.count ?? 0,
+    followingCount: following.count ?? 0,
+  };
+};
 
 export class SupabaseUserRepository implements UserRepository {
   async getUser(id: string): Promise<User | null> {
@@ -41,7 +89,12 @@ export class SupabaseUserRepository implements UserRepository {
       if (error) {
         throw error;
       }
-      return data ? toDomain(data) : null;
+      if (!data) {
+        return null;
+      }
+      const base = toDomain(data);
+      const counts = await fetchFollowCounts(id);
+      return { ...base, ...counts };
     });
 
     return cached ?? null;
@@ -66,8 +119,10 @@ export class SupabaseUserRepository implements UserRepository {
       throw error;
     }
     const created = toDomain(data);
-    await setCache(CacheKey.user(created.id), created, CACHE_TTL_MS.profiles);
-    return created;
+    const counts = await fetchFollowCounts(created.id);
+    const payload = { ...created, ...counts };
+    await setCache(CacheKey.user(created.id), payload, CACHE_TTL_MS.profiles);
+    return payload;
   }
 
   async deleteUser(id: string): Promise<void> {
@@ -89,7 +144,8 @@ export class SupabaseUserRepository implements UserRepository {
     if (error) {
       throw error;
     }
-    await setCache(CacheKey.user(id), toDomain(data), CACHE_TTL_MS.profiles);
+    const counts = await fetchFollowCounts(id);
+    await setCache(CacheKey.user(id), { ...toDomain(data), ...counts }, CACHE_TTL_MS.profiles);
   }
 
   async setNotificationsEnabled(id: string, enabled: boolean): Promise<void> {
@@ -103,7 +159,8 @@ export class SupabaseUserRepository implements UserRepository {
     if (error) {
       throw error;
     }
-    await setCache(CacheKey.user(id), toDomain(data), CACHE_TTL_MS.profiles);
+    const counts = await fetchFollowCounts(id);
+    await setCache(CacheKey.user(id), { ...toDomain(data), ...counts }, CACHE_TTL_MS.profiles);
   }
 
   async savePushToken(id: string, token: string, platform: string): Promise<void> {
@@ -133,6 +190,157 @@ export class SupabaseUserRepository implements UserRepository {
     if (error) {
       throw error;
     }
-    await setCache(CacheKey.user(id), toDomain(data), CACHE_TTL_MS.profiles);
+    const counts = await fetchFollowCounts(id);
+    await setCache(CacheKey.user(id), { ...toDomain(data), ...counts }, CACHE_TTL_MS.profiles);
+  }
+
+  async getNotifications(userId: string): Promise<Notification[]> {
+    const { data, error } = await supabase
+      .from(TABLES.notifications)
+      .select(
+        `id,
+        type,
+        created_at,
+        read_at,
+        metadata,
+        actor:profiles!notifications_actor_id_fkey ( id, name, photo_url ),
+        post:posts ( id, image_url, content )`
+      )
+      .eq('recipient_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const rows = (data ?? []) as NotificationRow[];
+    const followActorIds = rows
+      .filter((row) => row.type === 'follow' && row.actor?.id)
+      .map((row) => row.actor?.id as string);
+    let followedSet = new Set<string>();
+
+    if (followActorIds.length > 0) {
+      const { data: follows, error: followError } = await supabase
+        .from(TABLES.userFollows)
+        .select('following_id')
+        .eq('follower_id', userId)
+        .in('following_id', followActorIds);
+
+      if (followError) {
+        throw followError;
+      }
+      followedSet = new Set((follows ?? []).map((row) => row.following_id));
+    }
+
+    return rows
+      .filter((row) => row.actor?.id)
+      .map((row) => ({
+        id: row.id,
+        type: row.type,
+        createdAt: row.created_at,
+        readAt: row.read_at ?? null,
+        actor: {
+          id: row.actor?.id ?? '',
+          name: row.actor?.name ?? '',
+          photoUrl: row.actor?.photo_url ?? null,
+        },
+        post: row.post
+          ? {
+              id: row.post.id,
+              imageUrl: row.post.image_url ?? null,
+              content: row.post.content ?? null,
+            }
+          : undefined,
+        metadata: row.metadata
+          ? {
+              commentPreview: row.metadata.comment_preview ?? null,
+            }
+          : undefined,
+        isFollowedByMe: row.type === 'follow' ? followedSet.has(row.actor?.id ?? '') : undefined,
+      }));
+  }
+
+  async markNotificationRead(notificationId: number): Promise<void> {
+    const { error } = await supabase
+      .from(TABLES.notifications)
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', notificationId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from(TABLES.notifications)
+      .update({ read_at: new Date().toISOString() })
+      .eq('recipient_id', userId)
+      .is('read_at', null);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async followUser(followerId: string, followingId: string): Promise<void> {
+    const { error } = await supabase.from(TABLES.userFollows).insert({
+      follower_id: followerId,
+      following_id: followingId,
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async unfollowUser(followerId: string, followingId: string): Promise<void> {
+    const { error } = await supabase
+      .from(TABLES.userFollows)
+      .delete()
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from(TABLES.userFollows)
+      .select('id')
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+      .maybeSingle<{ id: number }>();
+
+    if (error) {
+      throw error;
+    }
+    return Boolean(data?.id);
+  }
+
+  async getFollowersCount(userId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from(TABLES.userFollows)
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', userId);
+
+    if (error) {
+      throw error;
+    }
+    return count ?? 0;
+  }
+
+  async getFollowingCount(userId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from(TABLES.userFollows)
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', userId);
+
+    if (error) {
+      throw error;
+    }
+    return count ?? 0;
   }
 }

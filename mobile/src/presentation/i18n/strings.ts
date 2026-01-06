@@ -101,7 +101,27 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
 
     // Notifications
     'notifications.title': 'Notifications',
-    'notifications.body': 'Coming soon…',
+    'notifications.tabs.all': 'All',
+    'notifications.tabs.myPosts': 'My posts',
+    'notifications.section.new': 'New',
+    'notifications.section.earlier': 'Earlier',
+    'notifications.action.markAllRead': 'Mark all as read',
+    'notifications.action.followBack': 'Follow back',
+    'notifications.action.following': 'Following',
+    'notifications.empty.title': 'No notifications yet',
+    'notifications.empty.body':
+      'When someone follows you or interacts with your posts, you will see it here.',
+    'notifications.item.followedYouSuffix': 'followed you.',
+    'notifications.item.likedPostSuffix': 'liked your post.',
+    'notifications.item.commentedPostSuffix': 'commented: \"{preview}\"',
+    'notifications.item.commentFallback': 'New comment on your post.',
+    'notifications.item.likeFallback': 'New like on your post.',
+    'notifications.error.title': 'Unable to load notifications',
+    'notifications.error.message': 'Please try again.',
+    'notifications.alert.followFailed.title': 'Unable to follow',
+    'notifications.alert.followFailed.message': 'Please try again.',
+    'notifications.alert.markReadFailed.title': 'Unable to update notifications',
+    'notifications.alert.markReadFailed.message': 'Please try again.',
 
     // Register
     'register.title': 'Create your account',
