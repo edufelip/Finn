@@ -12,6 +12,7 @@ jest.mock('@react-navigation/native', () => ({
     navigate: mockNavigate,
     getParent: () => ({ openDrawer: jest.fn() }),
   }),
+  useIsFocused: () => true,
 }));
 
 jest.mock('../src/app/providers/AuthProvider', () => ({

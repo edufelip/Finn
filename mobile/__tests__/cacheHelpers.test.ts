@@ -11,7 +11,7 @@ const network = jest.requireMock('expo-network');
 describe('cacheFirst', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
-    await setCache('test:key', { ok: true }, 1);
+    await setCache('test:key', { ok: true }, 1000);
   });
 
   it('returns cached value without calling fetcher', async () => {
