@@ -8,6 +8,16 @@ jest.mock('@react-navigation/native', () => ({
   useIsFocused: () => true,
 }));
 
+jest.mock('../src/app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    session: null,
+    initializing: false,
+    isGuest: false,
+    enterGuest: jest.fn(),
+    exitGuest: jest.fn(),
+  }),
+}));
+
 describe('InboxScreen', () => {
   it('renders header and tabs', () => {
     const { getByText, getByTestId } = render(<InboxScreen />);

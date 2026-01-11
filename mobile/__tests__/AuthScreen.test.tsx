@@ -43,6 +43,16 @@ jest.mock('../src/data/supabase/client', () => ({
   },
 }));
 
+jest.mock('../src/app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    session: null,
+    initializing: false,
+    isGuest: false,
+    enterGuest: jest.fn(),
+    exitGuest: jest.fn(),
+  }),
+}));
+
 const network = jest.requireMock('expo-network');
 const { supabase } = jest.requireMock('../src/data/supabase/client');
 const appleAuth = jest.requireMock('expo-apple-authentication');

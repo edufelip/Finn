@@ -5,6 +5,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import HomeScreen from '../src/presentation/screens/HomeScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { homeCopy } from '../src/presentation/content/homeCopy';
+import { guestCopy } from '../src/presentation/content/guestCopy';
 
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
@@ -309,10 +310,10 @@ describe('HomeScreen', () => {
     );
 
     fireEvent.press(getByTestId('post-like-7'));
-    expect(Alert.alert).toHaveBeenCalledWith(
-      homeCopy.alerts.signInRequired.title,
-      homeCopy.alerts.signInRequired.message
-    );
+    expect(Alert.alert).toHaveBeenCalledWith(guestCopy.action.title, guestCopy.action.body, [
+      { text: guestCopy.action.cancel, style: 'cancel' },
+      { text: guestCopy.action.signIn, onPress: expect.any(Function) },
+    ]);
     await waitForHomeEffects(postsRepo, usersRepo);
   });
 
