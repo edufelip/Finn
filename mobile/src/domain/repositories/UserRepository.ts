@@ -12,6 +12,7 @@ export interface UserRepository {
   getNotifications(userId: string): Promise<Notification[]>;
   markNotificationRead(notificationId: number): Promise<void>;
   markAllNotificationsRead(userId: string): Promise<void>;
+  updateProfilePhoto(userId: string, imageUri: string): Promise<User>;
   followUser(followerId: string, followingId: string): Promise<void>;
   unfollowUser(followerId: string, followingId: string): Promise<void>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isMockMode } from '../../config/appConfig';
 import { supabase } from '../../data/supabase/client';
@@ -12,9 +13,13 @@ import { registerPushToken, setNotificationGatePreference } from '../notificatio
 type AuthContextValue = {
   session: Session | null;
   initializing: boolean;
+  isGuest: boolean;
+  enterGuest: () => Promise<void>;
+  exitGuest: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const GUEST_MODE_KEY = 'auth_guest_mode';
 
 const createMockSession = (): Session => ({
   access_token: 'mock-access-token',
@@ -38,25 +43,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(() =>
     isMockMode() ? createMockSession() : null
   );
+  const [isGuest, setIsGuest] = useState(false);
   const [initializing, setInitializing] = useState(() => !isMockMode());
   const repositories = useRepositories();
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
+    const loadAuthState = async () => {
+      if (isMockMode()) {
         if (!mounted) return;
-        setSession(data.session ?? null);
+        setSession(createMockSession());
+        setIsGuest(false);
         setInitializing(false);
-      })
-      .catch(() => {
+        return;
+      }
+      try {
+        const [sessionResult, guestFlag] = await Promise.all([
+          supabase.auth.getSession(),
+          AsyncStorage.getItem(GUEST_MODE_KEY),
+        ]);
         if (!mounted) return;
-        setInitializing(false);
-      });
+        const nextSession = sessionResult.data.session ?? null;
+        setSession(nextSession);
+        setIsGuest(Boolean(guestFlag === 'true' && !nextSession));
+      } catch {
+        if (!mounted) return;
+        setSession(null);
+        setIsGuest(false);
+      } finally {
+        if (mounted) {
+          setInitializing(false);
+        }
+      }
+    };
+
+    loadAuthState();
 
     const { data } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      if (newSession) {
+        setIsGuest(false);
+        AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
+      }
     });
 
     return () => {
@@ -136,8 +164,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       initializing,
+      isGuest,
+      enterGuest: async () => {
+        if (session) {
+          return;
+        }
+        setIsGuest(true);
+        try {
+          await AsyncStorage.setItem(GUEST_MODE_KEY, 'true');
+        } catch {
+          // Ignore storage failures.
+        }
+      },
+      exitGuest: async () => {
+        setIsGuest(false);
+        try {
+          await AsyncStorage.removeItem(GUEST_MODE_KEY);
+        } catch {
+          // Ignore storage failures.
+        }
+      },
     }),
-    [session, initializing]
+    [session, initializing, isGuest]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

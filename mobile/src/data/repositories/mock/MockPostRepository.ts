@@ -7,6 +7,10 @@ export class MockPostRepository implements PostRepository {
     return [...mockPosts].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
   }
 
+  async getPublicFeed(_page: number): Promise<Post[]> {
+    return [...mockPosts].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+  }
+
   async getPostsFromCommunity(communityId: number, _page: number): Promise<Post[]> {
     return mockPosts.filter((post) => post.communityId === communityId);
   }

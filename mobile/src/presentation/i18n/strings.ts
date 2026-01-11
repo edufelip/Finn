@@ -37,6 +37,8 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'auth.alert.appleUnavailable.message': 'Apple Sign In is not available on this device.',
     'auth.alert.appleFailed.title': 'Apple sign-in failed',
     'auth.alert.appleFailed.missingToken': 'Missing identity token.',
+    'auth.guestCta': 'Continue as guest',
+    'auth.guestHint': 'Browse read-only. Sign in to like, comment, or post.',
 
     // Tabs
     'tabs.home': 'Home',
@@ -71,6 +73,9 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'home.alert.signInRequired.message': 'Please sign in again.',
     'home.alert.likeFailed.title': 'Failed to update like',
     'home.alert.savedFailed.title': 'Failed to update saved posts',
+    'home.guestBanner.title': 'Guest mode',
+    'home.guestBanner.body': 'You can browse, but likes, comments, and posting require an account.',
+    'home.guestBanner.cta': 'Sign in',
 
     // Explore
     'explore.searchPlaceholder': 'Search communities...',
@@ -134,6 +139,26 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'notifications.alert.followFailed.message': 'Please try again.',
     'notifications.alert.markReadFailed.title': 'Unable to update notifications',
     'notifications.alert.markReadFailed.message': 'Please try again.',
+
+    // Guest
+    'guest.action.title': 'Sign in required',
+    'guest.action.body': 'Create an account or sign in to continue.',
+    'guest.action.signIn': 'Sign in',
+    'guest.action.cancel': 'Not now',
+    'guest.profile.title': 'Create your profile',
+    'guest.profile.body': 'Sign in to personalize your profile, save posts, and join communities.',
+    'guest.profile.cta': 'Sign in',
+    'guest.restricted.title': 'Sign in to access {feature}',
+    'guest.restricted.body': 'Create an account or sign in to use {feature}.',
+    'guest.restricted.cta': 'Sign in',
+    'guest.feature.inbox': 'Inbox',
+    'guest.feature.notifications': 'Notifications',
+    'guest.feature.settings': 'Settings',
+    'guest.feature.savedPosts': 'Saved posts',
+    'guest.feature.profile': 'Profile',
+    'guest.feature.createPost': 'Create post',
+    'guest.feature.createCommunity': 'Create community',
+    'guest.userLabel': 'Guest',
 
     // Register
     'register.title': 'Create your account',
@@ -311,12 +336,13 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'settings.alert.notificationsFailed.title': 'Update failed',
     'settings.alert.notificationsFailed.message': 'We could not update your notification preference.',
     'settings.alert.deleteConfirm.title': 'Delete account',
-    'settings.alert.deleteConfirm.message': 'Are you sure you want to delete your account?',
+    'settings.alert.deleteConfirm.message':
+      'Deleting your account will remove your communities and posts. This action is permanent.',
     'settings.alert.deleteConfirm.cancel': 'Cancel',
     'settings.alert.deleteConfirm.confirm': 'Delete',
     'settings.deleteModal.title': 'Delete account',
     'settings.deleteModal.body':
-      'This action is permanent. Type your email to confirm you want to delete your account.',
+      'Deleting your account will remove your communities and posts. This action is permanent. Type your email to confirm.',
     'settings.deleteModal.hint': 'Type {email} to confirm.',
     'settings.deleteModal.placeholder': 'Enter your email',
     'settings.deleteModal.mismatch': 'Email does not match.',
@@ -370,7 +396,7 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'postDetail.commentsTitle': 'Comments',
     'postDetail.empty': 'No comments yet.',
     'postDetail.commentAge': ' - 7 days ago',
-    'postDetail.commentAuthorFallback': 'Unknown',
+    'postDetail.commentAuthorFallback': 'Deleted user',
     'postDetail.currentUserFallback': 'You',
     'postDetail.alert.loadFailed.title': 'Failed to load comments',
     'postDetail.alert.signInRequired.title': 'Sign in required',
@@ -391,7 +417,7 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'postComments.inputPlaceholder': 'Add a comment...',
     'postComments.submit': 'Send',
     'postComments.submitLoading': 'Sending...',
-    'postComments.commentAuthorFallback': 'Unknown',
+    'postComments.commentAuthorFallback': 'Deleted user',
     'postComments.currentUserFallback': 'You',
     'postComments.alert.loadFailed.title': 'Failed to load comments',
     'postComments.alert.signInRequired.title': 'Sign in required',

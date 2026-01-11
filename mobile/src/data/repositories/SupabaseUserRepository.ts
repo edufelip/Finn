@@ -7,6 +7,9 @@ import { clearCache, setCache } from '../cache/cacheStore';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
 
+const USER_AVATAR_BUCKET = 'user-avatars';
+const POST_IMAGE_BUCKET = 'post-images';
+
 type UserRow = {
   id: string;
   name: string;
@@ -44,16 +47,66 @@ type NotificationRow = {
   post?: NotificationPostRow | null;
 };
 
+function isRemoteUrl(url: string) {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+function isLocalFile(uri: string) {
+  return uri.startsWith('file://') || uri.startsWith('content://') || uri.startsWith('ph://');
+}
+
+function resolveUserPhotoUrl(photoUrl?: string | null): string | null {
+  if (!photoUrl) {
+    return null;
+  }
+  if (isRemoteUrl(photoUrl)) {
+    return photoUrl;
+  }
+  const { data } = supabase.storage.from(USER_AVATAR_BUCKET).getPublicUrl(photoUrl);
+  return data?.publicUrl ?? null;
+}
+
+function resolvePostImageUrl(imageUrl?: string | null): string | null {
+  if (!imageUrl) {
+    return null;
+  }
+  if (isRemoteUrl(imageUrl)) {
+    return imageUrl;
+  }
+  const { data } = supabase.storage.from(POST_IMAGE_BUCKET).getPublicUrl(imageUrl);
+  return data?.publicUrl ?? null;
+}
+
 function toDomain(row: UserRow): User {
   return {
     id: row.id,
     name: row.name,
-    photoUrl: row.photo_url ?? null,
+    photoUrl: resolveUserPhotoUrl(row.photo_url ?? null),
     createdAt: row.created_at,
     onlineVisible: row.online_visible ?? true,
     notificationsEnabled: row.notifications_enabled ?? true,
     lastSeenAt: row.last_seen_at ?? null,
   };
+}
+
+async function uploadUserAvatar(imageUri: string, userId: string): Promise<string> {
+  const response = await fetch(imageUri);
+  const blob = await response.blob();
+  const extension = imageUri.split('?')[0]?.split('.').pop()?.toLowerCase() || 'jpg';
+  const normalizedExtension = extension === 'jpeg' ? 'jpg' : extension;
+  const contentType =
+    blob.type || (normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`);
+  const filePath = `${userId}/${Date.now()}.${normalizedExtension}`;
+
+  const { data, error } = await supabase.storage
+    .from(USER_AVATAR_BUCKET)
+    .upload(filePath, blob, { upsert: true, contentType });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.path;
 }
 
 const fetchFollowCounts = async (userId: string) => {
@@ -199,6 +252,25 @@ export class SupabaseUserRepository implements UserRepository {
     await setCache(CacheKey.user(id), { ...toDomain(data), ...counts }, CACHE_TTL_MS.profiles);
   }
 
+  async updateProfilePhoto(userId: string, imageUri: string): Promise<User> {
+    const shouldUpload = isLocalFile(imageUri) || isRemoteUrl(imageUri);
+    const path = shouldUpload ? await uploadUserAvatar(imageUri, userId) : imageUri;
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .update({ photo_url: path })
+      .eq('id', userId)
+      .select('*')
+      .single<UserRow>();
+
+    if (error) {
+      throw error;
+    }
+    const counts = await fetchFollowCounts(userId);
+    const payload = { ...toDomain(data), ...counts };
+    await setCache(CacheKey.user(userId), payload, CACHE_TTL_MS.profiles);
+    return payload;
+  }
+
   async getNotifications(userId: string): Promise<Notification[]> {
     const { data, error } = await supabase
       .from(TABLES.notifications)
@@ -252,12 +324,12 @@ export class SupabaseUserRepository implements UserRepository {
         actor: {
           id: row.actor?.id ?? '',
           name: row.actor?.name ?? '',
-          photoUrl: row.actor?.photo_url ?? null,
+          photoUrl: resolveUserPhotoUrl(row.actor?.photo_url ?? null),
         },
         post: row.post
           ? {
               id: row.post.id,
-              imageUrl: row.post.image_url ?? null,
+              imageUrl: resolvePostImageUrl(row.post.image_url ?? null),
               content: row.post.content ?? null,
             }
           : undefined,

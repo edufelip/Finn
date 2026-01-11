@@ -32,6 +32,9 @@ describe('SupabasePostRepository', () => {
         data: { signedUrl: 'https://signed.example.com/community.jpg' },
         error: null,
       }),
+      getPublicUrl: jest.fn().mockReturnValue({
+        data: { publicUrl: 'https://public.example.com/post.jpg' },
+      }),
     });
     clearCache.mockReset();
   });
@@ -169,23 +172,43 @@ describe('SupabasePostRepository', () => {
         data: { signedUrl: 'https://signed.example.com/post.jpg' },
         error: null,
       }),
+      getPublicUrl: jest.fn().mockReturnValue({
+        data: { publicUrl: 'https://public.example.com/post.jpg' },
+      }),
     });
 
     const postsQuery = {
       insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({
-        data: {
-          id: 4,
-          content: 'hello',
-          community_id: 1,
-          user_id: 'user-1',
-          image_url: 'user-1/post.jpg',
-          communities: { title: 'General', image_url: null },
-          profiles: { name: 'User' },
-        },
-        error: null,
-      }),
+      single: jest
+        .fn()
+        .mockResolvedValueOnce({
+          data: {
+            id: 4,
+            content: 'hello',
+            community_id: 1,
+            user_id: 'user-1',
+            image_url: null,
+            communities: { title: 'General', image_url: null },
+            profiles: { name: 'User' },
+          },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: {
+            id: 4,
+            content: 'hello',
+            community_id: 1,
+            user_id: 'user-1',
+            image_url: 'user-1/post.jpg',
+            communities: { title: 'General', image_url: null },
+            profiles: { name: 'User' },
+          },
+          error: null,
+        }),
     };
 
     supabase.from.mockImplementation((table: string) => {
@@ -214,6 +237,72 @@ describe('SupabasePostRepository', () => {
       upsert: true,
       contentType: 'image/jpeg',
     });
+    expect(postsQuery.update).toHaveBeenCalledWith({ image_url: 'user-1/post.jpg' });
+  });
+
+  it('rolls back post when image upload fails', async () => {
+    const uploadError = new Error('upload failed');
+    const upload = jest.fn().mockResolvedValue({
+      data: null,
+      error: uploadError,
+    });
+    supabase.storage.from.mockReturnValue({
+      upload,
+      createSignedUrl: jest.fn().mockResolvedValue({
+        data: { signedUrl: 'https://signed.example.com/post.jpg' },
+        error: null,
+      }),
+      getPublicUrl: jest.fn().mockReturnValue({
+        data: { publicUrl: 'https://public.example.com/post.jpg' },
+      }),
+    });
+
+    const postsQuery = {
+      insert: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockResolvedValue({ error: null }),
+      select: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({
+        data: {
+          id: 7,
+          content: 'hello',
+          community_id: 1,
+          user_id: 'user-1',
+          image_url: null,
+          communities: { title: 'General', image_url: null },
+          profiles: { name: 'User' },
+        },
+        error: null,
+      }),
+    };
+
+    supabase.from.mockImplementation((table: string) => {
+      if (table === TABLES.posts) return postsQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const blob = { type: 'image/jpeg' } as Blob;
+    global.fetch = jest.fn().mockResolvedValue({
+      blob: jest.fn().mockResolvedValue(blob),
+    }) as unknown as typeof fetch;
+
+    const repository = new SupabasePostRepository();
+
+    await expect(
+      repository.savePost(
+        {
+          id: 0,
+          content: 'hello',
+          communityId: 1,
+          userId: 'user-1',
+        },
+        'file://post.jpg'
+      )
+    ).rejects.toThrow('upload failed');
+
+    expect(upload).toHaveBeenCalled();
+    expect(postsQuery.delete).toHaveBeenCalled();
+    expect(postsQuery.eq).toHaveBeenCalledWith('id', 7);
   });
 
   it('marks posts as liked for current user', async () => {
@@ -450,18 +539,15 @@ describe('SupabasePostRepository', () => {
     expect(supabase.storage.from).toHaveBeenCalledWith('community-images');
   });
 
-  it('resolves signed post image urls', async () => {
-    const createSignedUrl = jest
-      .fn()
-      .mockResolvedValueOnce({
-        data: { signedUrl: 'https://signed.example.com/community.jpg' },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: { signedUrl: 'https://signed.example.com/post.jpg' },
-        error: null,
-      });
-    supabase.storage.from.mockReturnValue({ createSignedUrl });
+  it('resolves public post image urls', async () => {
+    const createSignedUrl = jest.fn().mockResolvedValue({
+      data: { signedUrl: 'https://signed.example.com/community.jpg' },
+      error: null,
+    });
+    const getPublicUrl = jest.fn().mockReturnValue({
+      data: { publicUrl: 'https://public.example.com/post.jpg' },
+    });
+    supabase.storage.from.mockReturnValue({ createSignedUrl, getPublicUrl });
 
     const subscriptionsQuery = {
       select: jest.fn().mockReturnThis(),
@@ -512,6 +598,6 @@ describe('SupabasePostRepository', () => {
     const result = await repository.getUserFeed('user-1', 0);
 
     expect(result[0].communityImageUrl).toBe('https://signed.example.com/community.jpg');
-    expect(result[0].imageUrl).toBe('https://signed.example.com/post.jpg');
+    expect(result[0].imageUrl).toBe('https://public.example.com/post.jpg');
   });
 });

@@ -6,6 +6,8 @@ import { getCache, setCache } from '../cache/cacheStore';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
 
+const USER_AVATAR_BUCKET = 'user-avatars';
+
 type CommentRow = {
   id: number;
   content: string;
@@ -18,12 +20,27 @@ type CommentRow = {
   } | null;
 };
 
+function isRemoteUrl(url: string) {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+function resolveUserPhotoUrl(photoUrl?: string | null): string | null {
+  if (!photoUrl) {
+    return null;
+  }
+  if (isRemoteUrl(photoUrl)) {
+    return photoUrl;
+  }
+  const { data } = supabase.storage.from(USER_AVATAR_BUCKET).getPublicUrl(photoUrl);
+  return data?.publicUrl ?? null;
+}
+
 function toDomain(row: CommentRow): Comment {
   return {
     id: row.id,
     postId: row.post_id,
     userId: row.user_id,
-    userImageUrl: row.profiles?.photo_url ?? null,
+    userImageUrl: resolveUserPhotoUrl(row.profiles?.photo_url ?? null),
     userName: row.profiles?.name,
     content: row.content,
     createdAt: row.created_at,

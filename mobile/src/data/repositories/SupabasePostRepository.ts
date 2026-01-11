@@ -66,15 +66,8 @@ async function resolvePostImageUrl(imageUrl?: string | null): Promise<string | n
     return imageUrl;
   }
 
-  const { data, error } = await supabase.storage
-    .from(POST_IMAGE_BUCKET)
-    .createSignedUrl(imageUrl, SIGNED_URL_TTL_SECONDS);
-
-  if (error || !data?.signedUrl) {
-    return null;
-  }
-
-  return data.signedUrl;
+  const { data } = supabase.storage.from(POST_IMAGE_BUCKET).getPublicUrl(imageUrl);
+  return data?.publicUrl ?? null;
 }
 
 async function resolveCommunityImageUrl(imageUrl?: string | null): Promise<string | null> {
@@ -110,7 +103,7 @@ type UploadResult = {
 };
 
 async function uploadPostImage(imageUri: string, userId: string): Promise<UploadResult> {
-  if (!isLocalFile(imageUri)) {
+  if (!isLocalFile(imageUri) && !isRemoteUrl(imageUri)) {
     return { path: imageUri, wasUploaded: false };
   }
 
@@ -201,6 +194,28 @@ export class SupabasePostRepository implements PostRepository {
           })
         )
       );
+    });
+
+    return cached ?? [];
+  }
+
+  async getPublicFeed(page: number): Promise<Post[]> {
+    const cacheKey = CacheKey.feedByUser('public', page);
+    const cached = await cacheFirst<Post[]>(cacheKey, CACHE_TTL_MS.feed, async () => {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from(TABLES.posts)
+        .select('*, communities(title, image_url), profiles(name), likes(count), comments(count)')
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        throw error;
+      }
+
+      return Promise.all((data ?? []).map((row) => toDomainWithImages(row as PostRow)));
     });
 
     return cached ?? [];
@@ -451,30 +466,47 @@ export class SupabasePostRepository implements PostRepository {
   }
 
   async savePost(post: Post, imageUri?: string | null): Promise<Post> {
-    let resolvedImageUrl = post.imageUrl ?? null;
-    let uploadedPath: string | null = null;
-    if (imageUri) {
-      const upload = await uploadPostImage(imageUri, post.userId);
-      resolvedImageUrl = upload.path;
-      uploadedPath = upload.wasUploaded ? upload.path : null;
+    const shouldUpload = Boolean(imageUri && (isLocalFile(imageUri) || isRemoteUrl(imageUri)));
+    const insertImageUrl = !imageUri ? post.imageUrl ?? null : shouldUpload ? null : imageUri;
+
+    const { data: createdRow, error: createError } = await supabase
+      .from(TABLES.posts)
+      .insert({
+        content: post.content,
+        community_id: post.communityId,
+        user_id: post.userId,
+        image_url: insertImageUrl,
+      })
+      .select('*, communities(title, image_url), profiles(name), likes(count), comments(count)')
+      .single<PostRow>();
+
+    if (createError) {
+      throw createError;
     }
 
+    if (!shouldUpload || !imageUri) {
+      const created = await toDomainWithImages(createdRow);
+      await clearCache(CacheKey.feedByUser(post.userId, 0));
+      return created;
+    }
+
+    let uploadedPath: string | null = null;
+
     try {
-      const { data, error } = await supabase
+      const upload = await uploadPostImage(imageUri, post.userId);
+      uploadedPath = upload.path;
+      const { data: updatedRow, error: updateError } = await supabase
         .from(TABLES.posts)
-        .insert({
-          content: post.content,
-          community_id: post.communityId,
-          user_id: post.userId,
-          image_url: resolvedImageUrl,
-        })
+        .update({ image_url: upload.path })
+        .eq('id', createdRow.id)
         .select('*, communities(title, image_url), profiles(name), likes(count), comments(count)')
         .single<PostRow>();
 
-      if (error) {
-        throw error;
+      if (updateError) {
+        throw updateError;
       }
-      const created = await toDomainWithImages(data);
+
+      const created = await toDomainWithImages(updatedRow);
       await clearCache(CacheKey.feedByUser(post.userId, 0));
       return created;
     } catch (error) {
@@ -484,6 +516,11 @@ export class SupabasePostRepository implements PostRepository {
         } catch {
           // Ignore cleanup failures to preserve the original error context.
         }
+      }
+      try {
+        await supabase.from(TABLES.posts).delete().eq('id', createdRow.id);
+      } catch {
+        // Ignore rollback failures to preserve the original error context.
       }
       throw error;
     }

@@ -32,10 +32,12 @@ import { commonCopy } from '../content/commonCopy';
 import { maskEmail } from '../i18n/formatters';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { registerPushToken, setNotificationGatePreference } from '../../app/notifications/pushTokens';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository } = useRepositories();
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
   const { isDark, toggleTheme } = useTheme();
@@ -108,6 +110,16 @@ export default function SettingsScreen() {
   const showMismatch = Boolean(deleteEmailInput) && !canConfirmDelete;
   const confirmDisabled = !canConfirmDelete || loading;
 
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.settings)}
+        body={guestCopy.restricted.body(guestCopy.features.settings)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
+
   const openWebView = (title: string, url?: string) => {
     if (!url) {
       showUnavailable();
@@ -130,6 +142,13 @@ export default function SettingsScreen() {
     }
     try {
       await userRepository.deleteUser(session.user.id);
+      try {
+        await supabase.functions.invoke('delete-user-assets', {
+          body: { userId: session.user.id },
+        });
+      } catch {
+        // Ignore cleanup failures to avoid blocking account deletion.
+      }
       await supabase.auth.signOut();
       Alert.alert(settingsCopy.alerts.deleted.title, settingsCopy.alerts.deleted.message);
       return true;
