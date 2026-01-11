@@ -33,10 +33,12 @@ import { palette } from '../theme/palette';
 import { createPostCopy } from '../content/createPostCopy';
 import { imagePickerCopy } from '../content/imagePickerCopy';
 import ImageSourceSheet from '../components/ImageSourceSheet';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
 
 export default function CreatePostScreen() {
   const navigation = useNavigation();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const [content, setContent] = useState('');
   const [communities, setCommunities] = useState<Community[]>([]);
   const [selectedCommunityId, setSelectedCommunityId] = useState<number | null>(null);
@@ -89,6 +91,16 @@ export default function CreatePostScreen() {
       cancelled = true;
     };
   }, [communityRepository, session?.user?.id]);
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.createPost)}
+        body={guestCopy.restricted.body(guestCopy.features.createPost)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
 
   const handlePickFromGallery = async () => {
     setImageSourceOpen(false);

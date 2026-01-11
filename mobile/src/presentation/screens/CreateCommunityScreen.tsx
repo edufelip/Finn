@@ -28,10 +28,12 @@ import type { ThemeColors } from '../theme/colors';
 import { createCommunityCopy } from '../content/createCommunityCopy';
 import { imagePickerCopy } from '../content/imagePickerCopy';
 import ImageSourceSheet from '../components/ImageSourceSheet';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
 
 export default function CreateCommunityScreen() {
   const navigation = useNavigation();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { communities: communityRepository } = useRepositories();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -48,6 +50,16 @@ export default function CreateCommunityScreen() {
     () => [`${theme.background}00`, theme.background],
     [theme.background]
   );
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.createCommunity)}
+        body={guestCopy.restricted.body(guestCopy.features.createCommunity)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
 
   const handlePickFromGallery = async () => {
     setImageSourceOpen(false);

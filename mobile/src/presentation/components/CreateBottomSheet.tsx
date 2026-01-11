@@ -12,6 +12,8 @@ type CreateBottomSheetProps = {
   onClose: () => void;
   onCreateCommunity: () => void;
   onCreatePost: () => void;
+  isGuest?: boolean;
+  onGuestGate?: () => void;
 };
 
 export default function CreateBottomSheet({
@@ -19,10 +21,19 @@ export default function CreateBottomSheet({
   onClose,
   onCreateCommunity,
   onCreatePost,
+  isGuest = false,
+  onGuestGate,
 }: CreateBottomSheetProps) {
   const theme = useThemeColors();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const handleGuestGate = () => {
+    if (isGuest && onGuestGate) {
+      onClose();
+      onGuestGate();
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -45,15 +56,21 @@ export default function CreateBottomSheet({
               styles.card,
               styles.communityCard,
               styles.cardLeft,
+              isGuest && styles.cardLocked,
               pressed && styles.cardPressed,
             ]}
-            onPress={onCreateCommunity}
+            onPress={isGuest ? handleGuestGate : onCreateCommunity}
             testID={createBottomSheetCopy.testIds.community}
             accessibilityLabel={createBottomSheetCopy.testIds.community}
           >
             <View style={[styles.iconCircle, styles.communityIcon]}>
               <MaterialIcons name="groups" size={26} color={theme.onPrimary} />
             </View>
+            {isGuest ? (
+              <View style={styles.lockBadge}>
+                <MaterialIcons name="lock" size={14} color={theme.onSurfaceVariant} />
+              </View>
+            ) : null}
             <Text style={styles.cardTitle}>{createBottomSheetCopy.communityLabel}</Text>
             <Text style={styles.cardBody}>{createBottomSheetCopy.communityDescription}</Text>
           </Pressable>
@@ -62,15 +79,21 @@ export default function CreateBottomSheet({
               styles.card,
               styles.postCard,
               styles.cardRight,
+              isGuest && styles.cardLocked,
               pressed && styles.cardPressed,
             ]}
-            onPress={onCreatePost}
+            onPress={isGuest ? handleGuestGate : onCreatePost}
             testID={createBottomSheetCopy.testIds.post}
             accessibilityLabel={createBottomSheetCopy.testIds.post}
           >
             <View style={[styles.iconCircle, styles.postIcon]}>
               <MaterialIcons name="edit-note" size={26} color={theme.onPrimary} />
             </View>
+            {isGuest ? (
+              <View style={styles.lockBadge}>
+                <MaterialIcons name="lock" size={14} color={theme.onSurfaceVariant} />
+              </View>
+            ) : null}
             <Text style={styles.cardTitle}>{createBottomSheetCopy.postLabel}</Text>
             <Text style={styles.cardBody}>{createBottomSheetCopy.postDescription}</Text>
           </Pressable>
@@ -190,6 +213,18 @@ const createStyles = (theme: ThemeColors) =>
     cardPressed: {
       transform: [{ scale: 0.97 }],
       opacity: 0.95,
+    },
+    cardLocked: {
+      opacity: 0.65,
+    },
+    lockBadge: {
+      marginBottom: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.outline,
+      backgroundColor: theme.surface,
     },
     bottomSpacer: {
       height: 12,

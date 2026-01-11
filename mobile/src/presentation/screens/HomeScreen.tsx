@@ -20,6 +20,8 @@ import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { homeCopy } from '../content/homeCopy';
+import GuestBanner from '../components/GuestBanner';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -28,7 +30,7 @@ type Navigation = CompositeNavigationProp<
 
 export default function HomeScreen() {
   const navigation = useNavigation<Navigation>();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -56,11 +58,14 @@ export default function HomeScreen() {
 
   const loadPage = useCallback(
     async (pageToLoad: number, replace = false) => {
-      if (!session?.user?.id) return;
       setLoading(true);
       setError(null);
       try {
-        const data = await repository.getUserFeed(session.user.id, pageToLoad);
+        const data = isGuest
+          ? await repository.getPublicFeed(pageToLoad)
+          : session?.user?.id
+            ? await repository.getUserFeed(session.user.id, pageToLoad)
+            : [];
         setPosts((prev) => (replace ? data : [...prev, ...data]));
         setPage(pageToLoad);
         setHasMore(data.length > 0);
@@ -73,13 +78,13 @@ export default function HomeScreen() {
         setRefreshing(false);
       }
     },
-    [session?.user?.id, repository]
+    [isGuest, repository, session?.user?.id]
   );
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id && !isGuest) return;
     loadPage(0, true);
-  }, [loadPage, session?.user?.id]);
+  }, [isGuest, loadPage, session?.user?.id]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -93,7 +98,7 @@ export default function HomeScreen() {
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert(homeCopy.alerts.signInRequired.title, homeCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -147,7 +152,7 @@ export default function HomeScreen() {
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert(homeCopy.alerts.signInRequired.title, homeCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -245,13 +250,20 @@ export default function HomeScreen() {
         placeholder={homeCopy.searchPlaceholder}
         onPressAvatar={openDrawer}
         onPressSearch={() => navigation.navigate('SearchResults', { focus: true })}
-        onPressNotifications={() => navigation.navigate('Notifications')}
+        onPressNotifications={() => {
+          if (isGuest) {
+            showGuestGateAlert({ onSignIn: () => void exitGuest() });
+            return;
+          }
+          navigation.navigate('Notifications');
+        }}
         testIds={{
           avatar: homeCopy.testIds.avatar,
           search: homeCopy.testIds.search,
           notifications: homeCopy.testIds.notifications,
         }}
       />
+      {isGuest ? <GuestBanner onSignIn={() => void exitGuest()} /> : null}
       <ScreenFade onlyOnTabSwitch>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <FlatList

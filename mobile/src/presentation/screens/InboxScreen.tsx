@@ -22,6 +22,9 @@ import { inboxCopy, type InboxMessage, type InboxTabKey } from '../content/inbox
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import ScreenFade from '../components/ScreenFade';
+import { useAuth } from '../../app/providers/AuthProvider';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
 
 type SectionKey = 'unread' | 'earlier';
 
@@ -32,6 +35,7 @@ type Section = {
 };
 
 export default function InboxScreen() {
+  const { isGuest, exitGuest } = useAuth();
   const theme = useThemeColors();
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -106,6 +110,16 @@ export default function InboxScreen() {
   const archivedLabelStyle = useAnimatedStyle(() => ({
     color: interpolateColor(tabProgress.value, [0, 1, 2], [theme.onSurfaceVariant, theme.onSurfaceVariant, theme.primary]),
   }));
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.inbox)}
+        body={guestCopy.restricted.body(guestCopy.features.inbox)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
 
   const renderSection = (section: Section) => (
     <View key={section.key}>

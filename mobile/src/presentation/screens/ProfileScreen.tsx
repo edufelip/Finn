@@ -30,10 +30,13 @@ import { profileCopy } from '../content/profileCopy';
 import { commonCopy } from '../content/commonCopy';
 import { formatMonthYear } from '../i18n/formatters';
 import { palette } from '../theme/palette';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository, posts: postRepository } = useRepositories();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -129,7 +132,7 @@ export default function ProfileScreen() {
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert(profileCopy.alerts.signInRequired.title, profileCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -181,7 +184,7 @@ export default function ProfileScreen() {
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert(profileCopy.alerts.signInRequired.title, profileCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -299,6 +302,17 @@ export default function ProfileScreen() {
     opacity: interpolate(tabProgress.value, [0, 1], [0.72, 1]),
     transform: [{ scale: interpolate(tabProgress.value, [0, 1], [0.96, 1]) }],
   }));
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.profile.title}
+        body={guestCopy.profile.body}
+        onSignIn={() => void exitGuest()}
+        ctaLabel={guestCopy.profile.cta}
+      />
+    );
+  }
 
   const handleTabChange = (nextTab: 'posts' | 'saved') => {
     if (nextTab === activeTabRef.current) {

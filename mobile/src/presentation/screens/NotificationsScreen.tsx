@@ -31,6 +31,8 @@ import type { ThemeColors } from '../theme/colors';
 import { notificationsCopy } from '../content/notificationsCopy';
 import { formatTimeAgo } from '../i18n/formatters';
 import { commonCopy } from '../content/commonCopy';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
 
 type TabKey = 'all' | 'posts';
 
@@ -42,7 +44,7 @@ type NotificationSection = {
 
 export default function NotificationsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository } = useRepositories();
   const theme = useThemeColors();
   const { isDark } = useTheme();
@@ -134,6 +136,16 @@ export default function NotificationsScreen() {
   const postsLabelStyle = useAnimatedStyle(() => ({
     color: interpolateColor(tabProgress.value, [0, 1], [theme.onSurfaceVariant, theme.primary]),
   }));
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.notifications)}
+        body={guestCopy.restricted.body(guestCopy.features.notifications)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
 
   const handleMarkAllRead = async () => {
     if (!session?.user?.id || markingRead) return;

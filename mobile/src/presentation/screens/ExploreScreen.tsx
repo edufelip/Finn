@@ -21,6 +21,7 @@ import type { ThemeColors } from '../theme/colors';
 import { palette } from '../theme/palette';
 import { exploreCopy } from '../content/exploreCopy';
 import { formatCompactNumber } from '../i18n/formatters';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Explore'>,
@@ -33,7 +34,7 @@ const MIN_SKELETON_MS = 350;
 
 export default function ExploreScreen() {
   const navigation = useNavigation<Navigation>();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { communities: communityRepository, users: userRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -274,7 +275,13 @@ export default function ExploreScreen() {
         placeholder={exploreCopy.searchPlaceholder}
         onPressAvatar={openDrawer}
         onPressSearch={() => navigation.navigate('SearchResults', { focus: true })}
-        onPressNotifications={() => navigation.navigate('Notifications')}
+        onPressNotifications={() => {
+          if (isGuest) {
+            showGuestGateAlert({ onSignIn: () => void exitGuest() });
+            return;
+          }
+          navigation.navigate('Notifications');
+        }}
         testIds={{
           avatar: exploreCopy.testIds.avatar,
           search: exploreCopy.testIds.search,

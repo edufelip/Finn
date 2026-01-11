@@ -19,6 +19,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { communityDetailCopy } from '../content/communityDetailCopy';
 import { formatMonthYear } from '../i18n/formatters';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 type RouteParams = {
   communityId: number;
@@ -28,7 +29,7 @@ export default function CommunityDetailScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute();
   const { communityId } = route.params as RouteParams;
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { communities: communityRepository, posts: postRepository } = useRepositories();
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -98,10 +99,7 @@ export default function CommunityDetailScreen() {
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert(
-        communityDetailCopy.alerts.signInRequired.title,
-        communityDetailCopy.alerts.signInRequired.message
-      );
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -155,10 +153,7 @@ export default function CommunityDetailScreen() {
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {
-      Alert.alert(
-        communityDetailCopy.alerts.signInRequired.title,
-        communityDetailCopy.alerts.signInRequired.message
-      );
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -192,10 +187,7 @@ export default function CommunityDetailScreen() {
 
   const handleToggleSubscription = async () => {
     if (!session?.user?.id) {
-      Alert.alert(
-        communityDetailCopy.alerts.signInRequired.title,
-        communityDetailCopy.alerts.signInRequired.message
-      );
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -275,14 +267,15 @@ export default function CommunityDetailScreen() {
         </View>
       </View>
       <Pressable
-        style={styles.subscribeButton}
-        onPress={handleToggleSubscription}
+        style={[styles.subscribeButton, isGuest && styles.subscribeButtonLocked]}
+        onPress={isGuest ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() }) : handleToggleSubscription}
         testID={communityDetailCopy.testIds.subscribe}
         accessibilityLabel={communityDetailCopy.testIds.subscribe}
       >
         <Text style={styles.subscribeText}>
           {subscription ? communityDetailCopy.unsubscribe : communityDetailCopy.subscribe}
         </Text>
+        {isGuest ? <MaterialIcons name="lock" size={12} color={theme.onSurfaceVariant} /> : null}
       </Pressable>
       <Text style={styles.title} testID={communityDetailCopy.testIds.title}>
         {community.title}
@@ -391,10 +384,15 @@ const createStyles = (theme: ThemeColors) =>
       backgroundColor: theme.surface,
       alignItems: 'center',
       justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 6,
     },
     subscribeText: {
       color: theme.primary,
       fontSize: 10,
+    },
+    subscribeButtonLocked: {
+      opacity: 0.7,
     },
     title: {
       marginTop: 12,

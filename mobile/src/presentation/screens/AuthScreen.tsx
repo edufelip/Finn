@@ -22,6 +22,7 @@ import Svg, { Path } from 'react-native-svg';
 import env from '../../config/env';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
+import { useAuth } from '../../app/providers/AuthProvider';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { palette } from '../theme/palette';
@@ -57,6 +58,7 @@ const GoogleLogo = ({ size = 20 }: { size?: number }) => {
 
 export default function AuthScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+  const { enterGuest } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -335,6 +337,19 @@ export default function AuthScreen() {
             <Text style={styles.signupLink}>{authCopy.signupAction}</Text>
           </Pressable>
         </View>
+        <View style={styles.guestRow}>
+          <Pressable
+            style={({ pressed }) => [styles.guestButton, pressed && styles.guestButtonPressed]}
+            onPress={() => {
+              void enterGuest();
+            }}
+            testID={authCopy.testIds.guest}
+            accessibilityLabel={authCopy.testIds.guest}
+          >
+            <Text style={styles.guestText}>{authCopy.guestCta}</Text>
+          </Pressable>
+          <Text style={styles.guestHint}>{authCopy.guestHint}</Text>
+        </View>
       </View>
       {loading ? (
         <View style={styles.loadingOverlay} pointerEvents="auto">
@@ -501,6 +516,32 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 14,
       fontWeight: '700',
       color: theme.primary,
+    },
+    guestRow: {
+      marginTop: 16,
+      alignItems: 'center',
+      gap: 8,
+    },
+    guestButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.outline,
+      backgroundColor: theme.surface,
+    },
+    guestButtonPressed: {
+      opacity: 0.85,
+    },
+    guestText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: theme.onSurface,
+    },
+    guestHint: {
+      fontSize: 12,
+      textAlign: 'center',
+      color: theme.onSurfaceVariant,
     },
     loadingOverlay: {
       ...StyleSheet.absoluteFillObject,

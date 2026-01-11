@@ -15,10 +15,12 @@ import TopBar from '../components/TopBar';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { savedPostsCopy } from '../content/savedPostsCopy';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
 
 export default function SavedPostsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { posts: postRepository } = useRepositories();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,16 @@ export default function SavedPostsScreen() {
       loadSaved();
     }, [loadSaved])
   );
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.savedPosts)}
+        body={guestCopy.restricted.body(guestCopy.features.savedPosts)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
 
   const handleToggleSave = async (post: Post) => {
     if (!session?.user?.id) {

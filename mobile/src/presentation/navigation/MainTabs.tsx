@@ -14,6 +14,8 @@ import type { MainStackParamList } from './MainStack';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { tabCopy } from '../content/tabCopy';
+import { useAuth } from '../../app/providers/AuthProvider';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 export type MainTabParamList = {
   Home: undefined;
@@ -29,6 +31,7 @@ const EmptyScreen = () => <View />;
 
 export default function MainTabs() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
+  const { isGuest, exitGuest } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
@@ -75,13 +78,23 @@ export default function MainTabs() {
             tabBarButton: (props) => (
               <Pressable
                 accessibilityRole="button"
-                onPress={openCreate}
+                onPress={() => {
+                  if (isGuest) {
+                    showGuestGateAlert({ onSignIn: () => void exitGuest() });
+                    return;
+                  }
+                  openCreate();
+                }}
                 style={[styles.tabButton, props.style]}
                 testID={tabCopy.testIds.add}
                 accessibilityLabel={tabCopy.testIds.add}
               >
                 <View style={styles.fab}>
-                  <MaterialIcons name="add" size={26} color={theme.onPrimary} />
+                  <MaterialIcons
+                    name={isGuest ? 'lock' : 'add'}
+                    size={26}
+                    color={theme.onPrimary}
+                  />
                 </View>
                 <Text style={[styles.tabLabel, styles.tabLabelInactive]}>{tabCopy.add}</Text>
               </Pressable>
@@ -115,6 +128,8 @@ export default function MainTabs() {
       <CreateBottomSheet
         visible={createOpen}
         onClose={closeCreate}
+        isGuest={isGuest}
+        onGuestGate={() => showGuestGateAlert({ onSignIn: () => void exitGuest() })}
         onCreateCommunity={() => {
           closeCreate();
           navigation.navigate('CreateCommunity');

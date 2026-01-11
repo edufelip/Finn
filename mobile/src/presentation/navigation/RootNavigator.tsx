@@ -7,7 +7,7 @@ import MainStack from './MainStack';
 import LoadingScreen from '../screens/LoadingScreen';
 
 export default function RootNavigator() {
-  const { session, initializing } = useAuth();
+  const { session, initializing, isGuest } = useAuth();
 
   if (initializing) {
     return <LoadingScreen />;
@@ -15,7 +15,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {session ? <MainStack /> : <AuthStack />}
+      {session || isGuest ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

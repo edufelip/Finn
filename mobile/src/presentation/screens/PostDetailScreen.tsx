@@ -17,6 +17,7 @@ import Divider from '../components/Divider';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { postDetailCopy } from '../content/postDetailCopy';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 type RouteParams = {
   post: Post;
@@ -26,7 +27,7 @@ export default function PostDetailScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute();
   const { post: initialPost } = route.params as RouteParams;
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { posts: postRepository, comments: commentsRepository } = useRepositories();
   const [post, setPost] = useState<Post>(initialPost);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -48,7 +49,7 @@ export default function PostDetailScreen() {
 
   const handleToggleLike = async () => {
     if (!session?.user?.id) {
-      Alert.alert(postDetailCopy.alerts.signInRequired.title, postDetailCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -90,7 +91,7 @@ export default function PostDetailScreen() {
 
   const handleToggleSave = async () => {
     if (!session?.user?.id) {
-      Alert.alert(postDetailCopy.alerts.signInRequired.title, postDetailCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
 
@@ -134,7 +135,7 @@ export default function PostDetailScreen() {
 
   const submitComment = async () => {
     if (!session?.user?.id) {
-      Alert.alert(postDetailCopy.alerts.signInRequired.title, postDetailCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
     if (!content.trim()) {
@@ -245,17 +246,18 @@ export default function PostDetailScreen() {
           value={content}
           onChangeText={setContent}
           placeholderTextColor={theme.onSurfaceVariant}
+          editable={!isGuest}
           testID={postDetailCopy.testIds.input}
           accessibilityLabel={postDetailCopy.testIds.input}
         />
         <Pressable
-          style={styles.commentButton}
-          onPress={submitComment}
+          style={[styles.commentButton, isGuest && styles.commentButtonLocked]}
+          onPress={isGuest ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() }) : submitComment}
           disabled={loading}
           testID={postDetailCopy.testIds.submit}
           accessibilityLabel={postDetailCopy.testIds.submit}
         >
-          <MaterialIcons name="add" size={24} color={theme.onPrimary} />
+          <MaterialIcons name={isGuest ? 'lock' : 'add'} size={24} color={theme.onPrimary} />
         </Pressable>
       </View>
     </View>
@@ -362,5 +364,8 @@ const createStyles = (theme: ThemeColors) =>
       backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    commentButtonLocked: {
+      opacity: 0.7,
     },
   });

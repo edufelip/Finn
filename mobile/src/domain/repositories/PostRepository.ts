@@ -2,6 +2,7 @@ import type { Post } from '../models/post';
 
 export interface PostRepository {
   getUserFeed(userId: string, page: number): Promise<Post[]>;
+  getPublicFeed(page: number): Promise<Post[]>;
   getPostsFromCommunity(communityId: number, page: number): Promise<Post[]>;
   getPostsFromUser(userId: string, page: number): Promise<Post[]>;
   getSavedPosts(userId: string, page: number): Promise<Post[]>;

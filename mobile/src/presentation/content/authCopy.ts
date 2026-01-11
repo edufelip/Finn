@@ -13,6 +13,8 @@ export const authCopy = {
   apple: t('auth.apple'),
   signupPrompt: t('auth.signupPrompt'),
   signupAction: t('auth.signupAction'),
+  guestCta: t('auth.guestCta'),
+  guestHint: t('auth.guestHint'),
   alerts: {
     emailRequired: {
       title: t('auth.alert.emailRequired.title'),
@@ -53,5 +55,6 @@ export const authCopy = {
     forgot: 'auth-forgot',
     register: 'auth-register',
     togglePassword: 'toggle-password',
+    guest: 'auth-guest',
   },
 };

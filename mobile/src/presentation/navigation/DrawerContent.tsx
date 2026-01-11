@@ -16,13 +16,14 @@ import type { ThemeColors } from '../theme/colors';
 import { drawerCopy } from '../content/drawerCopy';
 import { commonCopy } from '../content/commonCopy';
 import { links } from '../../config/links';
+import { guestCopy } from '../content/guestCopy';
 
 const iconSize = 20;
 
 export default function DrawerContent(props: DrawerContentComponentProps) {
   const { navigation } = props;
   const insets = useSafeAreaInsets();
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository, posts: postRepository } = useRepositories();
   const { isOnline, isOnlineVisible } = usePresence();
   const { toggleTheme, isDark } = useTheme();
@@ -73,8 +74,8 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
     };
   }, [session?.user?.id, postRepository]);
 
-  const displayName = user?.name ?? session?.user?.email ?? commonCopy.userFallback;
-  const email = session?.user?.email ?? commonCopy.emptyDash;
+  const displayName = isGuest ? guestCopy.userLabel : user?.name ?? session?.user?.email ?? commonCopy.userFallback;
+  const email = isGuest ? guestCopy.banner.title : session?.user?.email ?? commonCopy.emptyDash;
   const photo = user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png');
   const statusColor = isOnline && isOnlineVisible ? theme.secondary : theme.outlineVariant;
   const savedBadge = savedCount && savedCount > 0 ? String(savedCount) : null;
@@ -128,6 +129,19 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             </Text>
           </View>
         </View>
+        {isGuest ? (
+          <View style={styles.guestCtaRow}>
+            <Pressable
+              style={({ pressed }) => [styles.guestCta, pressed && styles.guestCtaPressed]}
+              onPress={() => {
+                navigation.closeDrawer();
+                void exitGuest();
+              }}
+            >
+              <Text style={styles.guestCtaText}>{guestCopy.restricted.cta}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{drawerCopy.sections.main}</Text>
@@ -184,8 +198,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
           </Pressable>
         </View>
       </DrawerContentScrollView>
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}
-      >
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.toggleRow}>
           <View style={styles.toggleLeft}>
             <MaterialIcons name="dark-mode" size={18} color={theme.onSurfaceVariant} />
@@ -202,25 +215,27 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
             accessibilityLabel={drawerCopy.testIds.darkMode}
           />
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutPressed]}
-          onPress={() => {
-            Alert.alert(drawerCopy.alerts.logout.title, drawerCopy.alerts.logout.message, [
-              { text: drawerCopy.alerts.logout.cancel, style: 'cancel' },
-              {
-                text: drawerCopy.alerts.logout.confirm,
-                style: 'destructive',
-                onPress: () => {
-                  supabase.auth.signOut();
+        {isGuest ? null : (
+          <Pressable
+            style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutPressed]}
+            onPress={() => {
+              Alert.alert(drawerCopy.alerts.logout.title, drawerCopy.alerts.logout.message, [
+                { text: drawerCopy.alerts.logout.cancel, style: 'cancel' },
+                {
+                  text: drawerCopy.alerts.logout.confirm,
+                  style: 'destructive',
+                  onPress: () => {
+                    supabase.auth.signOut();
+                  },
                 },
-              },
-            ]);
-          }}
-          testID={drawerCopy.testIds.logout}
-        >
-          <MaterialIcons name="logout" size={18} color={theme.error} />
-          <Text style={styles.logoutText}>{drawerCopy.logout}</Text>
-        </Pressable>
+              ]);
+            }}
+            testID={drawerCopy.testIds.logout}
+          >
+            <MaterialIcons name="logout" size={18} color={theme.error} />
+            <Text style={styles.logoutText}>{drawerCopy.logout}</Text>
+          </Pressable>
+        )}
         <Text style={styles.version}>{versionLabel}</Text>
       </View>
     </View>
@@ -281,6 +296,26 @@ const createStyles = (theme: ThemeColors) =>
     section: {
       paddingHorizontal: 12,
       paddingTop: 20,
+    },
+    guestCtaRow: {
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 4,
+    },
+    guestCta: {
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    guestCtaPressed: {
+      opacity: 0.9,
+    },
+    guestCtaText: {
+      color: theme.onPrimary,
+      fontSize: 12,
+      fontWeight: '700',
     },
     sectionTitle: {
       paddingHorizontal: 8,

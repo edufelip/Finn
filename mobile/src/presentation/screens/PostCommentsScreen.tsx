@@ -12,6 +12,7 @@ import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { postCommentsCopy } from '../content/postCommentsCopy';
+import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 type RouteParams = {
   postId: number;
@@ -20,7 +21,7 @@ type RouteParams = {
 export default function PostCommentsScreen() {
   const route = useRoute();
   const { postId } = route.params as RouteParams;
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { comments: commentsRepository } = useRepositories();
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState('');
@@ -41,7 +42,7 @@ export default function PostCommentsScreen() {
 
   const submit = async () => {
     if (!session?.user?.id) {
-      Alert.alert(postCommentsCopy.alerts.signInRequired.title, postCommentsCopy.alerts.signInRequired.message);
+      showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
     }
     if (!content.trim()) {
@@ -116,12 +117,13 @@ export default function PostCommentsScreen() {
           placeholderTextColor={theme.onSurfaceVariant}
           value={content}
           onChangeText={setContent}
+          editable={!isGuest}
           testID={postCommentsCopy.testIds.input}
           accessibilityLabel={postCommentsCopy.testIds.input}
         />
         <Button
           title={loading ? postCommentsCopy.submitLoading : postCommentsCopy.submit}
-          onPress={submit}
+          onPress={isGuest ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() }) : submit}
           disabled={loading}
           testID={postCommentsCopy.testIds.submit}
           accessibilityLabel={postCommentsCopy.testIds.submit}
