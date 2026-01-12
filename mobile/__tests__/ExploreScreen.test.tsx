@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import ExploreScreen from '../src/presentation/screens/ExploreScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
@@ -67,11 +67,10 @@ describe('ExploreScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(communitiesRepo.getCommunities).toHaveBeenCalled());
-    await new Promise((resolve) => setTimeout(resolve, 400));
-
-    const titles = getAllByTestId(exploreCopy.testIds.trendingTitle);
-    expect(titles[0].props.children).toBe('Big');
+    await waitFor(() => {
+      const titles = getAllByTestId(exploreCopy.testIds.trendingTitle);
+      expect(titles[0].props.children).toBe('Big');
+    });
   });
 
   it('navigates to search results from see all', async () => {
@@ -98,8 +97,15 @@ describe('ExploreScreen', () => {
       </RepositoryProvider>
     );
 
-    await waitFor(() => expect(communitiesRepo.getCommunities).toHaveBeenCalled());
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await waitFor(() => {
+      expect(getByTestId(exploreCopy.testIds.seeAll)).toBeTruthy();
+    });
+
+    // Wait for the initial loading skeleton delay to finish
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    });
+
     fireEvent.press(getByTestId(exploreCopy.testIds.seeAll));
     expect(mockNavigate).toHaveBeenCalledWith('SearchResults', { focus: true });
   });
