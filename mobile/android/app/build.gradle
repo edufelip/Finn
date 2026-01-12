@@ -86,6 +86,8 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+project.ext.set("hermesEnabled", (findProperty('hermesEnabled') ?: "true").toBoolean())
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -188,7 +190,7 @@ dependencies {
         }
     }
 
-    if ((findProperty('hermesEnabled') ?: "true").toBoolean()) {
+    if (rootProject.ext.hermesEnabled) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
