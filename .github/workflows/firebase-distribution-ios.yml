@@ -87,7 +87,7 @@ jobs:
           security import "$CERTIFICATE_PATH" \
             -P "$CERT_PASSWORD" \
             -A \
-            -t cert \
+            -t agg \
             -f pkcs12 \
             -k "$KEYCHAIN_PATH"
 
