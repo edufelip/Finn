@@ -221,12 +221,13 @@ export class SupabaseUserRepository implements UserRepository {
     await setCache(CacheKey.user(id), { ...toDomain(data), ...counts }, CACHE_TTL_MS.profiles);
   }
 
-  async savePushToken(id: string, token: string, platform: string): Promise<void> {
+  async savePushToken(id: string, token: string, platform: string, env: 'dev' | 'prod'): Promise<void> {
     const { error } = await supabase.from(TABLES.pushTokens).upsert(
       {
         user_id: id,
         token,
         platform,
+        env,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'token' }

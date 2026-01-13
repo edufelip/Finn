@@ -33,7 +33,7 @@ export class MockUserRepository implements UserRepository {
     mockUser.notificationsEnabled = enabled;
   }
 
-  async savePushToken(_id: string, _token: string, _platform: string): Promise<void> {
+  async savePushToken(_id: string, _token: string, _platform: string, _env: 'dev' | 'prod'): Promise<void> {
     return;
   }
 
