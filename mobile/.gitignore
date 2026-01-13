@@ -11,3 +11,4 @@ android/app/build/
 .env.production
 !.env.example
 .npm-cache/
+.temp/
