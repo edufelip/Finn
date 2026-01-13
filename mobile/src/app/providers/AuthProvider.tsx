@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isMockMode } from '../../config/appConfig';
+import env from '../../config/env';
 import { supabase } from '../../data/supabase/client';
 import { processQueuedWrite } from '../../data/offline/processor';
 import { syncQueuedWrites } from '../../data/offline/syncManager';
@@ -151,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session || isMockMode()) return;
     const registerToken = async () => {
       try {
-        await registerPushToken(repositories.users, session.user.id);
+        await registerPushToken(repositories.users, session.user.id, env.appEnv);
       } catch {
         // Ignore registration failures for now.
       }

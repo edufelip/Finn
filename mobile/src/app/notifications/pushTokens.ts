@@ -23,7 +23,7 @@ export const setNotificationGatePreference = (enabled: boolean) => {
   }
 };
 
-export const registerPushToken = async (userRepository: UserRepository, userId: string) => {
+export const registerPushToken = async (userRepository: UserRepository, userId: string, env: 'dev' | 'prod') => {
   const permission = await Notifications.getPermissionsAsync();
   if (permission.status !== 'granted') {
     return;
@@ -39,6 +39,6 @@ export const registerPushToken = async (userRepository: UserRepository, userId: 
   const tokenResponse = await Notifications.getExpoPushTokenAsync();
 
   if (tokenResponse?.data) {
-    await userRepository.savePushToken(userId, tokenResponse.data, Platform.OS);
+    await userRepository.savePushToken(userId, tokenResponse.data, Platform.OS, env);
   }
 };

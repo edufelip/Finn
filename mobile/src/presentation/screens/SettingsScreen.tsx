@@ -23,6 +23,7 @@ import { useAuth } from '../../app/providers/AuthProvider';
 import { usePresence } from '../../app/providers/PresenceProvider';
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import env from '../../config/env';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { links } from '../../config/links';
@@ -234,7 +235,7 @@ export default function SettingsScreen() {
         ]);
       } else if (session?.user?.id) {
         try {
-          await registerPushToken(userRepository, session.user.id);
+          await registerPushToken(userRepository, session.user.id, env.appEnv);
         } catch {
           // Ignore token registration failures.
         }
