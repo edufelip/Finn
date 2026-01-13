@@ -7,7 +7,7 @@ export interface UserRepository {
   deleteUser(id: string): Promise<void>;
   setOnlineVisibility(id: string, visible: boolean): Promise<void>;
   setNotificationsEnabled(id: string, enabled: boolean): Promise<void>;
-  savePushToken(id: string, token: string, platform: string): Promise<void>;
+  savePushToken(id: string, token: string, platform: string, env: 'dev' | 'prod'): Promise<void>;
   updateLastSeenAt(id: string, timestamp: string): Promise<void>;
   getNotifications(userId: string): Promise<Notification[]>;
   markNotificationRead(notificationId: number): Promise<void>;
