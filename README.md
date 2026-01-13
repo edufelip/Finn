@@ -30,6 +30,126 @@ npm install
 npm run ios
 ```
 
+## Environments: Dev vs Prod
+
+Finn supports separate development and production environments with complete isolation:
+- Different app identifiers (separate installs on device)
+- Different Supabase projects (isolated databases)
+- Different push notification endpoints (no cross-environment notifications)
+
+### Setup
+
+#### 1. Configure Environment Files
+
+Create two environment files in `mobile/`:
+
+**`.env.production`** (already contains your prod credentials):
+```
+EXPO_PUBLIC_SUPABASE_URL=https://your-prod-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-prod-anon-key
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-android-client-id
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id
+EXPO_PUBLIC_APP_ENV=prod
+```
+
+**`.env.development`** (create a separate Supabase project for dev):
+```
+EXPO_PUBLIC_SUPABASE_URL=https://your-dev-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-dev-anon-key
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-android-client-id
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id
+EXPO_PUBLIC_APP_ENV=dev
+```
+
+#### 2. Run Database Migration
+
+Run the migration on **both** your dev and prod Supabase projects:
+
+```sql
+-- Add env column to push_tokens table
+ALTER TABLE push_tokens
+ADD COLUMN IF NOT EXISTS env TEXT NOT NULL DEFAULT 'prod';
+
+CREATE INDEX IF NOT EXISTS idx_push_tokens_env ON push_tokens(env);
+CREATE INDEX IF NOT EXISTS idx_push_tokens_user_env ON push_tokens(user_id, env);
+```
+
+The migration file is available at: `mobile/supabase/migrations/add_env_to_push_tokens.sql`
+
+#### 3. Install Dependencies
+
+```bash
+cd mobile
+npm install
+```
+
+### Running Each Environment
+
+**Development:**
+```bash
+npm run start:dev       # Start dev Expo server
+npm run ios:dev         # Run iOS dev build
+npm run android:dev     # Run Android dev build
+```
+
+**Production:**
+```bash
+npm run start:prod      # Start prod Expo server
+npm run ios:prod        # Run iOS prod build
+npm run android:prod    # Run Android prod build
+```
+
+**Default (uses current .env):**
+```bash
+npm start               # Start Expo server
+npm run ios             # Run iOS build
+npm run android         # Run Android build
+```
+
+### App Identifiers
+
+Each environment has distinct identifiers so they install as separate apps:
+
+| Environment | Android Package | iOS Bundle ID | App Name |
+|-------------|----------------|---------------|----------|
+| Production  | `com.edufelip.finn` | `com.edufelip.finn` | Finn |
+| Development | `com.edufelip.finn.dev` | `com.edufelip.finn.dev` | Finn Dev |
+
+### Testing Push Notifications
+
+1. **Register for notifications** in each environment separately
+2. **Verify tokens are stored with correct env**:
+   ```sql
+   SELECT user_id, platform, env, token FROM push_tokens;
+   ```
+3. **Send test notification** from Supabase (or your backend):
+   - Filter tokens by `env = 'dev'` for dev notifications
+   - Filter tokens by `env = 'prod'` for prod notifications
+4. **Verify isolation**: Notifications sent to dev should only reach dev app installs
+
+### Backend Push Notification Sending
+
+When sending push notifications from your backend/edge functions, always filter by environment:
+
+```typescript
+// Example: Fetch push tokens for a specific environment
+const { data: tokens } = await supabase
+  .from('push_tokens')
+  .select('token')
+  .eq('user_id', userId)
+  .eq('env', 'dev'); // or 'prod'
+
+// Send notifications using Expo Push API
+```
+
+### Troubleshooting
+
+- **Wrong Supabase connection**: Check that `EXPO_PUBLIC_SUPABASE_URL` matches your intended environment
+- **Push tokens mixing**: Verify the migration was run and tokens have the `env` column
+- **App not installing separately**: Rebuild with `expo run:ios:dev` or `expo run:android:dev` to apply new bundle/package IDs
+
 ## This project uses
 * MVVM Architecture and LiveData
 * Retrofit
