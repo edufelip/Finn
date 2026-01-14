@@ -16,6 +16,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,16 +29,17 @@ import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { links } from '../../config/links';
 import type { ThemeColors } from '../theme/colors';
+import type { MainStackParamList } from '../navigation/MainStack';
 import { settingsCopy } from '../content/settingsCopy';
 import { commonCopy } from '../content/commonCopy';
 import { maskEmail } from '../i18n/formatters';
-import type { MainStackParamList } from '../navigation/MainStack';
 import { registerPushToken, setNotificationGatePreference } from '../../app/notifications/pushTokens';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
+import { useUserStore } from '../../app/store/userStore';
 
 export default function SettingsScreen() {
-  const navigation = useNavigation<NavigationProp<MainStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository } = useRepositories();
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
@@ -58,29 +60,13 @@ export default function SettingsScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!session?.user?.id) return;
-    let active = true;
-    userRepository
-      .getUser(session.user.id)
-      .then((profile) => {
-        if (active && mountedRef.current) {
-          const enabled = profile?.notificationsEnabled ?? true;
-          setNotificationsEnabled(enabled);
-          setNotificationGatePreference(enabled);
-        }
-      })
-      .catch(() => {
-        if (active && mountedRef.current) {
-          setNotificationsEnabled(true);
-          setNotificationGatePreference(true);
-        }
-      });
+  const currentUser = useUserStore((state) => state.currentUser);
+  const userNotificationsEnabled = currentUser?.notificationsEnabled ?? true;
 
-    return () => {
-      active = false;
-    };
-  }, [session?.user?.id, userRepository]);
+  useEffect(() => {
+    setNotificationsEnabled(userNotificationsEnabled);
+    setNotificationGatePreference(userNotificationsEnabled);
+  }, [userNotificationsEnabled]);
 
   const showUnavailable = () => {
     Alert.alert(settingsCopy.alerts.unavailable.title, settingsCopy.alerts.unavailable.message);
@@ -244,6 +230,7 @@ export default function SettingsScreen() {
 
     try {
       await userRepository.setNotificationsEnabled(session.user.id, valueToSave);
+      useUserStore.getState().updateUser({ notificationsEnabled: valueToSave });
     } catch {
       if (mountedRef.current) {
         setNotificationsEnabled(previous);
@@ -336,8 +323,24 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionLabel}>{settingsCopy.sections.account}</Text>
         <View style={styles.card}>
+          {/* Edit Profile */}
           <Pressable
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            onPress={() => navigation.navigate('EditProfile')}
+            testID="settings-edit-profile"
+            accessibilityLabel="settings-edit-profile"
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="edit" size={20} color={theme.onSurfaceVariant} />
+              </View>
+              <Text style={styles.rowText}>Edit Profile</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
+          </Pressable>
+          {/* Logout */}
+          <Pressable
+            style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
             onPress={handleLogout}
             testID={settingsCopy.testIds.logout}
             accessibilityLabel={settingsCopy.testIds.logout}

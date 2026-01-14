@@ -10,6 +10,7 @@ import { processQueuedWrite } from '../../data/offline/processor';
 import { syncQueuedWrites } from '../../data/offline/syncManager';
 import { useRepositories } from './RepositoryProvider';
 import { registerPushToken, setNotificationGatePreference } from '../notifications/pushTokens';
+import { useUserStore } from '../store/userStore';
 
 type AuthContextValue = {
   session: Session | null;
@@ -85,6 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (newSession) {
         setIsGuest(false);
         AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
+      } else {
+        useUserStore.getState().clearUser();
       }
     });
 
@@ -125,6 +128,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [session, repositories.users]);
+
+  // Load user profile into Zustand store
+  useEffect(() => {
+    if (!session?.user?.id || isMockMode()) return;
+
+    let active = true;
+    const loadUser = async () => {
+      try {
+        useUserStore.getState().setLoading(true);
+        const profile = await repositories.users.getUser(session.user.id);
+        if (active && profile) {
+          useUserStore.getState().setUser(profile);
+        }
+      } catch (error) {
+        if (active) {
+          useUserStore.getState().setError(
+            error instanceof Error ? error.message : 'Failed to load user'
+          );
+        }
+      } finally {
+        if (active) {
+          useUserStore.getState().setLoading(false);
+        }
+      }
+    };
+
+    loadUser();
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id, repositories.users]);
 
   useEffect(() => {
     if (!session || isMockMode()) return;

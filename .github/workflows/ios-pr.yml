@@ -3,6 +3,9 @@ name: iOS PR Checks
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
 
 jobs:
   build:

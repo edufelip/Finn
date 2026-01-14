@@ -33,12 +33,13 @@ import { palette } from '../theme/palette';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
+import { useUserStore } from '../../app/store/userStore';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository, posts: postRepository } = useRepositories();
-  const [user, setUser] = useState<User | null>(null);
+  const currentUser = useUserStore((state) => state.currentUser);
   const [posts, setPosts] = useState<Post[]>([]);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
@@ -69,11 +70,7 @@ export default function ProfileScreen() {
     setLoadingPosts(true);
     setPostsError(null);
     try {
-      const [profile, postData] = await Promise.all([
-        userRepository.getUser(session.user.id),
-        postRepository.getPostsFromUser(session.user.id, 0),
-      ]);
-      setUser(profile);
+      const postData = await postRepository.getPostsFromUser(session.user.id, 0);
       let nextPosts = postData ?? [];
       if (nextPosts.length) {
         const likes = await Promise.all(
@@ -92,7 +89,7 @@ export default function ProfileScreen() {
     } finally {
       setLoadingPosts(false);
     }
-  }, [postRepository, session?.user?.id, userRepository]);
+  }, [postRepository, session?.user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -233,14 +230,14 @@ export default function ProfileScreen() {
     }
   };
 
-  const joinedDate = user?.createdAt ? formatMonthYear(user.createdAt) : '';
+  const joinedDate = currentUser?.createdAt ? formatMonthYear(currentUser.createdAt) : '';
   const joinedLabel = joinedDate ? profileCopy.memberSince(joinedDate) : null;
 
-  const displayName = user?.name ?? session?.user?.email ?? commonCopy.userFallback;
+  const displayName = currentUser?.name ?? session?.user?.email ?? commonCopy.userFallback;
   const displayEmail = session?.user?.email ?? commonCopy.emptyDash;
   const postsCount = posts.length;
-  const followersCount = user?.followersCount ?? 0;
-  const followingCount = user?.followingCount ?? 0;
+  const followersCount = currentUser?.followersCount ?? 0;
+  const followingCount = currentUser?.followingCount ?? 0;
 
   const currentPosts = activeTab === 'posts' ? posts : savedPosts;
   const currentLoading = activeTab === 'posts' ? loadingPosts : loadingSaved;
@@ -354,7 +351,7 @@ export default function ProfileScreen() {
                 <View style={styles.avatarGroup}>
                   <View style={styles.avatarOuter}>
                     <Image
-                      source={user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png')}
+                      source={currentUser?.photoUrl ? { uri: currentUser.photoUrl } : require('../../../assets/user_icon.png')}
                       style={styles.avatar}
                     />
                   </View>
@@ -476,32 +473,34 @@ export default function ProfileScreen() {
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <View style={styles.emptyIconWrapper}>
-                  <View style={styles.emptyIconInner}>
-                    <MaterialIcons name="add" size={28} color={theme.onSurfaceVariant} />
+                <View style={styles.emptyContent}>
+                  <View style={styles.emptyIconWrapper}>
+                    <View style={styles.emptyIconInner}>
+                      <MaterialIcons name="add" size={28} color={theme.onSurfaceVariant} />
+                    </View>
                   </View>
-                </View>
-                <Text
-                  style={styles.emptyTitle}
-                  testID={
-                    activeTab === 'posts'
-                      ? profileCopy.testIds.emptyTitle
-                      : profileCopy.testIds.savedEmptyTitle
-                  }
-                >
-                  {emptyCopy.title}
-                </Text>
-                <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
-                {activeTab === 'posts' ? (
-                  <Pressable
-                    style={styles.emptyCta}
-                    onPress={() => navigation.navigate('CreatePost')}
-                    testID={profileCopy.testIds.createPost}
+                  <Text
+                    style={styles.emptyTitle}
+                    testID={
+                      activeTab === 'posts'
+                        ? profileCopy.testIds.emptyTitle
+                        : profileCopy.testIds.savedEmptyTitle
+                    }
                   >
-                    <MaterialIcons name="add-circle" size={18} color={theme.onPrimary} />
-                    <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
-                  </Pressable>
-                ) : null}
+                    {emptyCopy.title}
+                  </Text>
+                  <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
+                  {activeTab === 'posts' ? (
+                    <Pressable
+                      style={styles.emptyCta}
+                      onPress={() => navigation.navigate('CreatePost')}
+                      testID={profileCopy.testIds.createPost}
+                    >
+                      <MaterialIcons name="add-circle" size={18} color={theme.onPrimary} />
+                      <Text style={styles.emptyCtaText}>{profileCopy.empty.cta}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
             )
           }
@@ -553,6 +552,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     listContent: {
       paddingBottom: 32,
+      flexGrow: 1,
     },
     profileHeader: {
       paddingHorizontal: 20,
@@ -709,8 +709,12 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.onSurfaceVariant,
     },
     emptyState: {
-      paddingVertical: 40,
+      flex: 1,
       paddingHorizontal: 32,
+    },
+    emptyContent: {
+      flex: 1,
+      justifyContent: 'center',
       alignItems: 'center',
     },
     emptyIconWrapper: {

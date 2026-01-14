@@ -8,4 +8,6 @@ export type User = {
   onlineVisible?: boolean;
   notificationsEnabled?: boolean;
   lastSeenAt?: string | null;
+  bio?: string | null;
+  location?: string | null;
 };

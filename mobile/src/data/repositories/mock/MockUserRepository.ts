@@ -5,6 +5,8 @@ const mockUser: User = {
   id: 'mock-user',
   name: 'Mock User',
   photoUrl: null,
+  bio: null,
+  location: null,
   onlineVisible: true,
   notificationsEnabled: true,
   lastSeenAt: new Date().toISOString(),
@@ -43,6 +45,16 @@ export class MockUserRepository implements UserRepository {
 
   async updateProfilePhoto(_userId: string, imageUri: string): Promise<User> {
     mockUser.photoUrl = imageUri;
+    return mockUser;
+  }
+
+  async updateProfile(
+    _userId: string,
+    updates: { name?: string; bio?: string | null; location?: string | null }
+  ): Promise<User> {
+    if (updates.name !== undefined) mockUser.name = updates.name;
+    if (updates.bio !== undefined) mockUser.bio = updates.bio;
+    if (updates.location !== undefined) mockUser.location = updates.location;
     return mockUser;
   }
 

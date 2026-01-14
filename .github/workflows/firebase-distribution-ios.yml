@@ -3,6 +3,9 @@ name: iOS Firebase Distribution
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
 
 jobs:
   firebase-distribution:
@@ -10,7 +13,7 @@ jobs:
 
     env:
       KEYCHAIN_PASSWORD: ${{ secrets.IOS_ADHOC_KEYCHAIN_PASSWORD }}
-      IOS_PROFILE_NAME: finn-ad-hoc
+      IOS_PROFILE_NAME: ${{ secrets.IOS_ADHOC_PROFILE_NAME }}
 
     steps:
       - name: Checkout
@@ -36,6 +39,40 @@ jobs:
           echo "EXPO_PUBLIC_USE_DEV_API=true" >> "$GITHUB_ENV"
         working-directory: mobile
 
+      - name: Set Expo environment
+        run: |
+          echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
+        working-directory: mobile
+
+      - name: Validate Expo environment
+        run: |
+          if [ "$EXPO_PUBLIC_ENV" != "dev" ]; then
+            echo "EXPO_PUBLIC_ENV must be 'dev' (got '$EXPO_PUBLIC_ENV')" >&2
+            exit 1
+          fi
+          echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
+        working-directory: mobile
+
+      - name: Validate Firebase secrets
+        env:
+          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV }}
+          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS_DEV }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICE_INFO_PLIST_BASE64" ]; then
+            echo "GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV is not set" >&2
+            exit 1
+          fi
+          if [ -z "$FIREBASE_APP_ID_IOS" ]; then
+            echo "FIREBASE_APP_ID_IOS_DEV is not set" >&2
+            exit 1
+          fi
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_JSON is not set" >&2
+            exit 1
+          fi
+        working-directory: mobile
+
       - name: Bump iOS build number
         run: |
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" mobile/ios/Finn/Info.plist
@@ -59,13 +96,62 @@ jobs:
           cd mobile/ios
           pod install --silent
 
-      - name: Write GoogleService-Info.plist
+      - name: Write GoogleService-Info-Dev.plist
         working-directory: mobile/ios
         env:
-          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV }}
         run: |
           mkdir -p Finn
-          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -D > Finn/GoogleService-Info.plist
+          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 --decode -o Finn/GoogleService-Info-Dev.plist
+          cp Finn/GoogleService-Info-Dev.plist Finn/GoogleService-Info.plist
+
+      - name: Sync Google Sign-In scheme (dev)
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          import sys
+
+          info_path = "mobile/ios/Finn/Info.plist"
+          gservice_path = "mobile/ios/Finn/GoogleService-Info-Dev.plist"
+
+          with open(gservice_path, "rb") as f:
+            gservice = plistlib.load(f)
+          scheme = gservice.get("REVERSED_CLIENT_ID")
+          if not scheme:
+            print("REVERSED_CLIENT_ID missing in GoogleService-Info.plist", file=sys.stderr)
+            sys.exit(1)
+
+          with open(info_path, "rb") as f:
+            info = plistlib.load(f)
+
+          url_types = info.get("CFBundleURLTypes", [])
+          google_entry = None
+          for entry in url_types:
+            schemes = entry.get("CFBundleURLSchemes", [])
+            if any(s.startswith("com.googleusercontent.apps.") for s in schemes):
+              google_entry = entry
+              break
+
+          if google_entry is None:
+            url_types.append({"CFBundleURLSchemes": [scheme]})
+          else:
+            google_entry["CFBundleURLSchemes"] = [scheme]
+
+          info["CFBundleURLTypes"] = url_types
+
+          with open(info_path, "wb") as f:
+            plistlib.dump(info, f)
+
+          print(f"Updated Google Sign-In scheme to {scheme}")
+          PY
+
+      - name: Validate Google Sign-In scheme
+        run: |
+          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" mobile/ios/Finn/GoogleService-Info-Dev.plist)
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" mobile/ios/Finn/Info.plist | grep -Fq "$PLIST_REVERSED"; then
+            echo "Google Sign-In mismatch: Info.plist missing REVERSED_CLIENT_ID scheme ($PLIST_REVERSED)" >&2
+            exit 1
+          fi
 
       - name: Set up keychain and certificates
         env:
@@ -76,9 +162,10 @@ jobs:
           KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
           CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
           PROFILE_PATH="$RUNNER_TEMP/build_profile.mobileprovision"
+          PROFILE_DEST="$HOME/Library/MobileDevice/Provisioning Profiles/finn-dev.mobileprovision"
 
-          echo "$CERT_P12_BASE64" | base64 -D > "$CERTIFICATE_PATH"
-          echo "$PROFILE_BASE64" | base64 -D > "$PROFILE_PATH"
+          echo -n "$CERT_P12_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          echo -n "$PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
@@ -87,7 +174,7 @@ jobs:
           security import "$CERTIFICATE_PATH" \
             -P "$CERT_PASSWORD" \
             -A \
-            -t agg \
+            -t cert \
             -f pkcs12 \
             -k "$KEYCHAIN_PATH"
 
@@ -95,9 +182,27 @@ jobs:
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/finn-ad-hoc.mobileprovision"
+          cp "$PROFILE_PATH" "$PROFILE_DEST"
 
-      - name: Build archive (Ad Hoc)
+      - name: Validate provisioning profile entitlements (push)
+        run: |
+          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles/finn-dev.mobileprovision"
+          if [ ! -f "$PROFILE_PATH" ]; then
+            echo "Provisioning profile not found at $PROFILE_PATH" >&2
+            exit 1
+          fi
+
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          APS_ENV=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:aps-environment" "$RUNNER_TEMP/profile.plist" 2>/dev/null || true)
+
+          if [ -z "$APS_ENV" ]; then
+            echo "Provisioning profile missing Push Notifications entitlement (aps-environment)." >&2
+            exit 1
+          fi
+
+          echo "Detected aps-environment: $APS_ENV"
+
+      - name: Build archive (Release)
         env:
           KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
@@ -107,30 +212,32 @@ jobs:
             -scheme Finn \
             -configuration Release \
             -destination "generic/platform=iOS" \
-            -archivePath "$PWD/build/FinnAdHoc.xcarchive" \
+            -archivePath "$PWD/build/FinnDev.xcarchive" \
             archive \
             CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_IDENTITY="Apple Development" \
             DEVELOPMENT_TEAM=${{ secrets.IOS_TEAM_ID }} \
             PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            CODE_SIGN_ENTITLEMENTS="Finn/Finn.entitlements" \
+            PRODUCT_BUNDLE_IDENTIFIER="com.edufelip.finn.dev" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
-      - name: Export IPA (ad-hoc)
+      - name: Export IPA (development)
         env:
           KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
-          cat <<EOF > mobile/ios/ExportOptionsAdHoc.plist
+          cat <<EOF > mobile/ios/ExportOptionsDevelopment.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
-            <key>method</key><string>ad-hoc</string>
+            <key>method</key><string>development</string>
             <key>signingStyle</key><string>manual</string>
             <key>compileBitcode</key><false/>
             <key>stripSwiftSymbols</key><true/>
               <key>provisioningProfiles</key>
               <dict>
-              <key>com.edufelip.finn</key><string>${IOS_PROFILE_NAME}</string>
+              <key>com.edufelip.finn.dev</key><string>${IOS_PROFILE_NAME}</string>
               </dict>
           </dict>
           </plist>
@@ -138,8 +245,8 @@ jobs:
 
           cd mobile/ios
           xcodebuild -exportArchive \
-            -archivePath "$PWD/build/FinnAdHoc.xcarchive" \
-            -exportOptionsPlist ExportOptionsAdHoc.plist \
+            -archivePath "$PWD/build/FinnDev.xcarchive" \
+            -exportOptionsPlist ExportOptionsDevelopment.plist \
             -exportPath "$PWD/build" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
@@ -167,7 +274,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: |
           npx --yes firebase-tools@latest appdistribution:distribute "$IPA_PATH" \
-            --app "${{ secrets.FIREBASE_IOS_APP_ID }}" \
+            --app "${{ secrets.FIREBASE_APP_ID_IOS_DEV }}" \
             --groups "base-group" \
             --release-notes "$RELEASE_NOTES"
 

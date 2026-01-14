@@ -3,6 +3,9 @@ name: Android Firebase Distribution
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
 
 jobs:
   firebase-distribution:
@@ -33,6 +36,40 @@ jobs:
           echo "EXPO_PUBLIC_USE_DEV_API=true" >> "$GITHUB_ENV"
         working-directory: mobile
 
+      - name: Set Expo environment
+        run: |
+          echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
+        working-directory: mobile
+
+      - name: Validate Expo environment
+        run: |
+          if [ "$EXPO_PUBLIC_ENV" != "dev" ]; then
+            echo "EXPO_PUBLIC_ENV must be 'dev' (got '$EXPO_PUBLIC_ENV')" >&2
+            exit 1
+          fi
+          echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
+        working-directory: mobile
+
+      - name: Validate Firebase secrets
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64_DEV }}
+          FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID_DEV }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "GOOGLE_SERVICES_JSON_BASE64_DEV is not set" >&2
+            exit 1
+          fi
+          if [ -z "$FIREBASE_APP_ID_ANDROID" ]; then
+            echo "FIREBASE_APP_ID_ANDROID_DEV is not set" >&2
+            exit 1
+          fi
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_JSON is not set" >&2
+            exit 1
+          fi
+        working-directory: mobile
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -54,7 +91,7 @@ jobs:
       - name: Write google-services.json
         run: |
           mkdir -p app
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64_DEV }}" | base64 -d > app/google-services.json
 
       - name: Build debug APK
         uses: gradle/gradle-build-action@v2
@@ -81,7 +118,7 @@ jobs:
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
-          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          appId: ${{ secrets.FIREBASE_APP_ID_ANDROID_DEV }}
           serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
           groups: base-group
           file: mobile/android/app/build/outputs/apk/debug/app-debug.apk

@@ -18,6 +18,8 @@ type UserRow = {
   online_visible?: boolean | null;
   notifications_enabled?: boolean | null;
   last_seen_at?: string | null;
+  bio?: string | null;
+  location?: string | null;
 };
 
 type NotificationActorRow = {
@@ -86,6 +88,8 @@ function toDomain(row: UserRow): User {
     onlineVisible: row.online_visible ?? true,
     notificationsEnabled: row.notifications_enabled ?? true,
     lastSeenAt: row.last_seen_at ?? null,
+    bio: row.bio ?? null,
+    location: row.location ?? null,
   };
 }
 
@@ -266,6 +270,39 @@ export class SupabaseUserRepository implements UserRepository {
     if (error) {
       throw error;
     }
+    const counts = await fetchFollowCounts(userId);
+    const payload = { ...toDomain(data), ...counts };
+    await setCache(CacheKey.user(userId), payload, CACHE_TTL_MS.profiles);
+    return payload;
+  }
+
+  async updateProfile(
+    userId: string,
+    updates: { name?: string; bio?: string | null; location?: string | null }
+  ): Promise<User> {
+    const updateData: Partial<{ name: string; bio: string | null; location: string | null }> = {};
+
+    if (updates.name !== undefined) {
+      updateData.name = updates.name;
+    }
+    if (updates.bio !== undefined) {
+      updateData.bio = updates.bio;
+    }
+    if (updates.location !== undefined) {
+      updateData.location = updates.location;
+    }
+
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .update(updateData)
+      .eq('id', userId)
+      .select('*')
+      .single<UserRow>();
+
+    if (error) {
+      throw error;
+    }
+
     const counts = await fetchFollowCounts(userId);
     const payload = { ...toDomain(data), ...counts };
     await setCache(CacheKey.user(userId), payload, CACHE_TTL_MS.profiles);

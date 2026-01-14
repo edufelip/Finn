@@ -7,6 +7,7 @@ import CreateCommunityScreen from '../screens/CreateCommunityScreen';
 import CommunityDetailScreen from '../screens/CommunityDetailScreen';
 import SavedPostsScreen from '../screens/SavedPostsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -21,6 +22,7 @@ export type MainStackParamList = {
   CommunityDetail: { communityId: number };
   SavedPosts: undefined;
   Settings: undefined;
+  EditProfile: undefined;
   PostDetail: { post: Post };
   Profile: undefined;
   Notifications: undefined;
@@ -39,6 +41,7 @@ export default function MainStack() {
       <Stack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
       <Stack.Screen name="SavedPosts" component={SavedPostsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="SearchResults" component={SearchScreen} />
