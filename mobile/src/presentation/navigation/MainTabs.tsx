@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -28,6 +28,9 @@ export type MainTabParamList = {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const EmptyScreen = () => <View />;
+
+// Helper to detect iPad
+const isPad = Platform.OS === 'ios' && Platform.isPad;
 
 export default function MainTabs() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -96,7 +99,7 @@ export default function MainTabs() {
                     color={theme.onPrimary}
                   />
                 </View>
-                <Text style={[styles.tabLabel, styles.tabLabelInactive]}>{tabCopy.add}</Text>
+                {!isPad && <Text style={[styles.tabLabel, styles.tabLabelInactive]}>{tabCopy.add}</Text>}
               </Pressable>
             ),
           }}
