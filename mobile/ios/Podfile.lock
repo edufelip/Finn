@@ -2099,11 +2099,11 @@ DEPENDENCIES:
   - Expo (from `../node_modules/expo`)
   - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
-  - ExpoCrypto (from `../node_modules/expo-auth-session/node_modules/expo-crypto/ios`)
+  - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
-  - ExpoKeepAwake (from `../node_modules/expo/node_modules/expo-keep-awake/ios`)
+  - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
   - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
@@ -2205,7 +2205,7 @@ EXTERNAL SOURCES:
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
   ExpoCrypto:
-    :path: "../node_modules/expo-auth-session/node_modules/expo-crypto/ios"
+    :path: "../node_modules/expo-crypto/ios"
   ExpoFileSystem:
     :path: "../node_modules/expo-file-system/ios"
   ExpoFont:
@@ -2213,7 +2213,7 @@ EXTERNAL SOURCES:
   ExpoImagePicker:
     :path: "../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
-    :path: "../node_modules/expo/node_modules/expo-keep-awake/ios"
+    :path: "../node_modules/expo-keep-awake/ios"
   ExpoLinearGradient:
     :path: "../node_modules/expo-linear-gradient/ios"
   ExpoLinking:
