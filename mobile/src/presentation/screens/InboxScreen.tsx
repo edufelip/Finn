@@ -8,7 +8,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, {
   interpolateColor,
@@ -38,7 +39,7 @@ export default function InboxScreen() {
   const { isGuest, exitGuest } = useAuth();
   const theme = useThemeColors();
   const { isDark } = useTheme();
-  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const reduceMotion = useReducedMotion();
   const indicatorCenter = useSharedValue(0);
@@ -157,7 +158,7 @@ export default function InboxScreen() {
   const showEmpty = messages.length === 0;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar backgroundColor={theme.surface} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.body}>
         <View style={styles.header}>
@@ -262,7 +263,7 @@ export default function InboxScreen() {
             data={sections}
             keyExtractor={(item) => item.key}
             renderItem={({ item }) => renderSection(item)}
-            contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 24 }]}
+            contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight }]}
             ListEmptyComponent={
               showEmpty ? (
                 <View style={styles.emptyState}>

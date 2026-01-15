@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Network from 'expo-network';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
   const { users: userRepository, posts: postRepository } = useRepositories();
   const currentUser = useUserStore((state) => state.currentUser);
   const hasProfileLoaded = currentUser !== null;
+  const tabBarHeight = useBottomTabBarHeight();
   const [posts, setPosts] = useState<Post[]>([]);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
@@ -344,7 +346,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.topBar}>
           <View style={styles.iconSpacer} />
           <Text
@@ -367,7 +369,7 @@ export default function ProfileScreen() {
           testID={profileCopy.testIds.list}
           data={currentPosts}
           keyExtractor={(item) => `${activeTab}-${item.id}`}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight }]}
           ListHeaderComponent={
             <View>
               <View style={styles.profileHeader}>
@@ -575,7 +577,6 @@ const createStyles = (theme: ThemeColors) =>
       height: 40,
     },
     listContent: {
-      paddingBottom: 32,
       flexGrow: 1,
     },
     profileHeader: {

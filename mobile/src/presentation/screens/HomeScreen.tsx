@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import * as Network from 'expo-network';
 
 import PostCard from '../components/PostCard';
@@ -41,6 +42,7 @@ export default function HomeScreen() {
   const { posts: repository, users: userRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const tabBarHeight = useBottomTabBarHeight();
 
   useFocusEffect(
     useCallback(() => {
@@ -244,7 +246,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeExploreHeader
         profilePhoto={profilePhoto}
         placeholder={homeCopy.searchPlaceholder}
@@ -299,7 +301,7 @@ export default function HomeScreen() {
             ) : null
           }
           style={styles.list}
-          contentContainerStyle={posts.length === 0 ? styles.emptyContainer : undefined}
+          contentContainerStyle={posts.length === 0 ? styles.emptyContainer : { paddingBottom: tabBarHeight }}
         />
       </ScreenFade>
     </SafeAreaView>

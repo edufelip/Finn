@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -38,6 +39,7 @@ export default function ExploreScreen() {
   const { communities: communityRepository, users: userRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const tabBarHeight = useBottomTabBarHeight();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [trending, setTrending] = useState<Community[]>([]);
   const [feedItems, setFeedItems] = useState<Community[]>([]);
@@ -269,7 +271,7 @@ export default function ExploreScreen() {
   const showFeedSection = !loading && feedItems.length > 0;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeExploreHeader
         profilePhoto={profilePhoto}
         placeholder={exploreCopy.searchPlaceholder}
@@ -294,7 +296,7 @@ export default function ExploreScreen() {
             style={[styles.scrollLayer, contentStyle]}
             pointerEvents={loading ? 'none' : 'auto'}
           >
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight }]} showsVerticalScrollIndicator={false}>
               {showTrendingSection ? (
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}>
@@ -382,7 +384,7 @@ export default function ExploreScreen() {
             pointerEvents={loading ? 'auto' : 'none'}
           >
             <ScrollView
-              contentContainerStyle={styles.content}
+              contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight }]}
               showsVerticalScrollIndicator={false}
               scrollEnabled={loading}
             >
@@ -419,7 +421,6 @@ const createStyles = (theme: ThemeColors) =>
     },
     content: {
       paddingHorizontal: 16,
-      paddingBottom: 120,
     },
     scrollStack: {
       flex: 1,
