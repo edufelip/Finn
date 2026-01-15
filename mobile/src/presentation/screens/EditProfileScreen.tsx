@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -53,6 +53,7 @@ export default function EditProfileScreen() {
     location: '',
     photoUri: null as string | null,
   });
+  const skipDiscardPromptRef = useRef(false);
 
   const bioMaxLength = 300;
   const bioCount = editProfileCopy.bioCount(bio.length, bioMaxLength);
@@ -110,6 +111,9 @@ export default function EditProfileScreen() {
   // Navigation blocker for unsaved changes
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (skipDiscardPromptRef.current) {
+        return;
+      }
       if (!changesExist) {
         return;
       }
@@ -236,9 +240,12 @@ export default function EditProfileScreen() {
     }
 
     try {
+      let nextPhotoUrl = originalPhotoUrl;
       if (photoUri && photoUri !== originalPhotoUrl) {
         const updatedUser = await userRepository.updateProfilePhoto(session.user.id, photoUri);
         useUserStore.getState().setUser(updatedUser);
+        nextPhotoUrl = updatedUser.photoUrl ?? null;
+        setPhotoUri(updatedUser.photoUrl ?? null);
       }
 
       const profileChanges: { name?: string; bio?: string | null; location?: string | null } = {};
@@ -249,13 +256,28 @@ export default function EditProfileScreen() {
       if (Object.keys(profileChanges).length > 0) {
         const updatedUser = await userRepository.updateProfile(session.user.id, profileChanges);
         useUserStore.getState().setUser(updatedUser);
+        if (!nextPhotoUrl) {
+          nextPhotoUrl = updatedUser.photoUrl ?? null;
+          setPhotoUri(updatedUser.photoUrl ?? null);
+        }
       }
 
+      const normalizedName = name.trim();
+      const normalizedBio = bio.trim() || '';
+      const normalizedLocation = location.trim() || '';
+      setOriginalPhotoUrl(nextPhotoUrl);
+      setOriginalValues({
+        name: normalizedName,
+        bio: normalizedBio,
+        location: normalizedLocation,
+        photoUri: nextPhotoUrl,
+      });
+      skipDiscardPromptRef.current = true;
       navigation.goBack();
-    } catch (error) {
-      if (error instanceof Error) {
-        Alert.alert(editProfileCopy.alerts.failed.title, error.message);
-      }
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : (error?.message || 'An unexpected error occurred');
+      Alert.alert(editProfileCopy.alerts.failed.title, message);
+      return;
     } finally {
       setLoading(false);
     }
