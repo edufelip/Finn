@@ -15,6 +15,10 @@ jest.mock('@react-navigation/native', () => ({
   useIsFocused: () => true,
 }));
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 80,
+}));
+
 jest.mock('../src/app/providers/AuthProvider', () => ({
   useAuth: () => ({
     session: { user: { id: 'user-1', email: 'user@example.com' } },

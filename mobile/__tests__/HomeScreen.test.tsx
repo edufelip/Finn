@@ -32,6 +32,10 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 80,
+}));
+
 describe('HomeScreen', () => {
   beforeEach(() => {
     mockUseAuth.mockReturnValue({

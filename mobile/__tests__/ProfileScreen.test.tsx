@@ -26,6 +26,10 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
   }),
 }));
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 80,
+}));
+
 jest.mock('expo-network', () => ({
   getNetworkStateAsync: jest.fn(),
 }));
