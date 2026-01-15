@@ -12,6 +12,28 @@ import { useRepositories } from './RepositoryProvider';
 import { registerPushToken, setNotificationGatePreference } from '../notifications/pushTokens';
 import { useUserStore } from '../store/userStore';
 
+const resolveProfileName = (session: Session): string => {
+  const metadata = session.user.user_metadata as { name?: string } | null | undefined;
+  const metadataName = typeof metadata?.name === 'string' ? metadata.name.trim() : '';
+  if (metadataName) {
+    return metadataName;
+  }
+  const email = session.user.email ?? '';
+  const emailName = email.split('@')[0]?.trim() ?? '';
+  return emailName || session.user.id.slice(0, 8);
+};
+
+const resolveProfilePhotoUrl = (session: Session): string | null => {
+  const metadata = session.user.user_metadata as { avatar_url?: string; picture?: string } | null | undefined;
+  if (typeof metadata?.avatar_url === 'string' && metadata.avatar_url.trim()) {
+    return metadata.avatar_url.trim();
+  }
+  if (typeof metadata?.picture === 'string' && metadata.picture.trim()) {
+    return metadata.picture.trim();
+  }
+  return null;
+};
+
 type AuthContextValue = {
   session: Session | null;
   initializing: boolean;
@@ -129,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [session, repositories.users]);
 
-  // Load user profile into Zustand store
+  // Load (or create) user profile into Zustand store
   useEffect(() => {
     if (!session?.user?.id || isMockMode()) return;
 
@@ -140,6 +162,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profile = await repositories.users.getUser(session.user.id);
         if (active && profile) {
           useUserStore.getState().setUser(profile);
+          return;
+        }
+        const created = await repositories.users.createUser({
+          id: session.user.id,
+          name: resolveProfileName(session),
+          photoUrl: resolveProfilePhotoUrl(session),
+        });
+        if (active) {
+          useUserStore.getState().setUser(created);
         }
       } catch (error) {
         if (active) {
