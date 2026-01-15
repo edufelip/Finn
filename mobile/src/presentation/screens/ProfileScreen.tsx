@@ -40,6 +40,7 @@ export default function ProfileScreen() {
   const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository, posts: postRepository } = useRepositories();
   const currentUser = useUserStore((state) => state.currentUser);
+  const hasProfileLoaded = currentUser !== null;
   const [posts, setPosts] = useState<Post[]>([]);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
@@ -90,6 +91,29 @@ export default function ProfileScreen() {
       setLoadingPosts(false);
     }
   }, [postRepository, session?.user?.id]);
+
+  useEffect(() => {
+    if (!session?.user?.id || hasProfileLoaded) {
+      return;
+    }
+
+    let active = true;
+    const loadStoredUser = async () => {
+      try {
+        const profile = await userRepository.getUser(session.user.id);
+        if (active && profile) {
+          useUserStore.getState().setUser(profile);
+        }
+      } catch {
+        // Swallow errors; fallback to auth email remains.
+      }
+    };
+
+    loadStoredUser();
+    return () => {
+      active = false;
+    };
+  }, [hasProfileLoaded, session?.user?.id, userRepository]);
 
   useFocusEffect(
     useCallback(() => {
