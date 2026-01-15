@@ -22,7 +22,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Finn/Info.plist; sourceTree = "<group>"; };
 		3DD3D411DC952D156FEF4D93 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Finn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		3FD74B1FE0AF228C5F820815 /* Pods-Finn.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Finn.release.xcconfig"; path = "Target Support Files/Pods-Finn/Pods-Finn.release.xcconfig"; sourceTree = "<group>"; };
-		4DF93B3EBB5290A864BB216B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Finn/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		4DF93B3EBB5290A864BB216B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Finn/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		724E21B8DAE2D8751B40CB39 /* Pods-Finn.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Finn.debug.xcconfig"; path = "Target Support Files/Pods-Finn/Pods-Finn.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Finn/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
@@ -81,7 +81,6 @@
 				724E21B8DAE2D8751B40CB39 /* Pods-Finn.debug.xcconfig */,
 				3FD74B1FE0AF228C5F820815 /* Pods-Finn.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -368,7 +367,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.edufelip.finn;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edufelip.finn.dev;
 				PRODUCT_NAME = Finn;
 				SWIFT_OBJC_BRIDGING_HEADER = "Finn/Finn-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
