@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,23 +23,35 @@ export default function ImageSourceSheet({
   const theme = useThemeColors();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const translateY = useMemo(() => new Animated.Value(0), []);
+  const { height: screenHeight } = Dimensions.get('window');
+  
+  // Start off-screen by default
+  const translateY = useMemo(() => new Animated.Value(screenHeight), [screenHeight]);
   const [sheetHeight, setSheetHeight] = useState(0);
 
   useEffect(() => {
     if (visible) {
-      translateY.setValue(0);
+      // Reset to off-screen to prevent flash
+      translateY.setValue(screenHeight);
+      
+      // Animate in
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 4,
+        speed: 12,
+      }).start();
     }
-  }, [translateY, visible]);
+  }, [visible, screenHeight, translateY]);
 
   const animateClose = useCallback(() => {
-    const target = sheetHeight > 0 ? sheetHeight : 320;
+    const target = sheetHeight > 0 ? sheetHeight : screenHeight;
     Animated.timing(translateY, {
       toValue: target,
       duration: 200,
       useNativeDriver: true,
     }).start(() => onClose());
-  }, [onClose, sheetHeight, translateY]);
+  }, [onClose, sheetHeight, screenHeight, translateY]);
 
   const handleDismiss = () => {
     if (!visible) return;
@@ -49,27 +61,41 @@ export default function ImageSourceSheet({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_evt, gestureState) => gestureState.dy > 6,
+        onMoveShouldSetPanResponder: (_evt, gestureState) => gestureState.dy > 5,
         onPanResponderMove: (_evt, gestureState) => {
-          translateY.setValue(Math.max(0, gestureState.dy));
+           // Only allow dragging down
+           if (gestureState.dy > 0) {
+             translateY.setValue(gestureState.dy);
+           }
         },
         onPanResponderRelease: (_evt, gestureState) => {
-          const shouldClose = gestureState.dy > sheetHeight * 0.25 || gestureState.vy > 1.2;
-          if (shouldClose) {
+          const dragDistance = gestureState.dy;
+          const dragVelocity = gestureState.vy;
+          const closeThreshold = (sheetHeight || 200) * 0.25;
+          
+          if (dragDistance > closeThreshold || dragVelocity > 0.5) {
             animateClose();
-            return;
+          } else {
+            // Spring back to open
+            Animated.spring(translateY, {
+              toValue: 0,
+              useNativeDriver: true,
+              bounciness: 4,
+            }).start();
           }
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
         },
       }),
     [animateClose, sheetHeight, translateY]
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleDismiss}>
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={handleDismiss}
+      statusBarTranslucent
+    >
       <Pressable style={styles.backdrop} onPress={handleDismiss} />
       <Animated.View
         style={[
