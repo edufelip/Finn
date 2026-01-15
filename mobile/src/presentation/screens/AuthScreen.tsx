@@ -518,7 +518,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.primary,
     },
     guestRow: {
-      marginTop: 16,
+      marginTop: 24,
       alignItems: 'center',
       gap: 8,
     },
