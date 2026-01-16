@@ -19,7 +19,6 @@ import Animated, {
 import PostCard from '../components/PostCard';
 import ScreenFade from '../components/ScreenFade';
 import type { Post } from '../../domain/models/post';
-import type { User } from '../../domain/models/user';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -383,9 +382,6 @@ export default function ProfileScreen() {
                       style={styles.avatar}
                     />
                   </View>
-                  <Pressable style={styles.editBadge}>
-                    <MaterialIcons name="edit" size={16} color={theme.primary} />
-                  </Pressable>
                 </View>
                 <View style={styles.nameBlock}>
                   <Text
@@ -619,21 +615,6 @@ const createStyles = (theme: ThemeColors) =>
       height: 118,
       borderRadius: 59,
     },
-    editBadge: {
-      position: 'absolute',
-      bottom: 4,
-      right: 4,
-      backgroundColor: theme.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: theme.outline,
-      padding: 6,
-      shadowColor: theme.shadow,
-      shadowOpacity: 1,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 6,
-      elevation: 3,
-    },
     nameBlock: {
       marginTop: 16,
       alignItems: 'center',
@@ -738,6 +719,7 @@ const createStyles = (theme: ThemeColors) =>
     emptyState: {
       flex: 1,
       paddingHorizontal: 32,
+      marginTop: 24,
     },
     emptyContent: {
       flex: 1,
