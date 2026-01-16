@@ -24,6 +24,16 @@ jest.mock('expo-web-browser', () => ({
   maybeCompleteAuthSession: jest.fn(),
 }));
 
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      scheme: 'finn',
+      version: '1.0.0',
+    },
+  },
+}));
+
 jest.mock('expo-apple-authentication', () => ({
   isAvailableAsync: jest.fn().mockResolvedValue(false),
   AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },

@@ -14,6 +14,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as Network from 'expo-network';
+import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
@@ -66,12 +67,17 @@ export default function AuthScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+
+  // Use dynamic scheme from Expo config to support both dev (finn-dev) and prod (finn) environments
+  const configScheme = Constants.expoConfig?.scheme;
+  const appScheme = Array.isArray(configScheme) ? configScheme[0] : configScheme ?? 'finn';
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: env.googleIosClientId || undefined,
     androidClientId: env.googleAndroidClientId || undefined,
     webClientId: env.googleWebClientId || undefined,
     redirectUri: makeRedirectUri({
-      scheme: 'finn',
+      scheme: appScheme,
       path: 'auth/callback',
     }),
   });
