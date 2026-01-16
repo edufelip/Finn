@@ -117,12 +117,14 @@ const fetchFollowCounts = async (userId: string) => {
   const [followers, following] = await Promise.all([
     supabase
       .from(TABLES.userFollows)
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', userId),
+      .select('*', { count: 'exact', head: false })
+      .eq('following_id', userId)
+      .limit(0),
     supabase
       .from(TABLES.userFollows)
-      .select('*', { count: 'exact', head: true })
-      .eq('follower_id', userId),
+      .select('*', { count: 'exact', head: false })
+      .eq('follower_id', userId)
+      .limit(0),
   ]);
 
   if (followers.error) {
