@@ -1,4 +1,4 @@
-package com.edufelip.finn
+package com.edufelip.finn.dev
 
 import android.app.Application
 import android.content.res.Configuration

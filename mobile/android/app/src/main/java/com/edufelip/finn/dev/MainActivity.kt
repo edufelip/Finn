@@ -1,4 +1,4 @@
-package com.edufelip.finn
+package com.edufelip.finn.dev
 
 import android.os.Build
 import android.os.Bundle

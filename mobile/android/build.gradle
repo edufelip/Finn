@@ -22,8 +22,3 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
-
-ext {
-    hermesEnabled = (findProperty('hermesEnabled') ?: 'true').toBoolean()
-    newArchEnabled = (findProperty('newArchEnabled') ?: 'false').toBoolean()
-}
