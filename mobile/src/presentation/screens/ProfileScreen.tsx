@@ -328,12 +328,14 @@ export default function ProfileScreen() {
 
   if (isGuest) {
     return (
-      <GuestGateScreen
-        title={guestCopy.profile.title}
-        body={guestCopy.profile.body}
-        onSignIn={() => void exitGuest()}
-        ctaLabel={guestCopy.profile.cta}
-      />
+      <ScreenFade onlyOnTabSwitch>
+        <GuestGateScreen
+          title={guestCopy.profile.title}
+          body={guestCopy.profile.body}
+          onSignIn={() => void exitGuest()}
+          ctaLabel={guestCopy.profile.cta}
+        />
+      </ScreenFade>
     );
   }
 

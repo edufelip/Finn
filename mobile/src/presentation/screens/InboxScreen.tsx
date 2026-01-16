@@ -114,11 +114,13 @@ export default function InboxScreen() {
 
   if (isGuest) {
     return (
-      <GuestGateScreen
-        title={guestCopy.restricted.title(guestCopy.features.inbox)}
-        body={guestCopy.restricted.body(guestCopy.features.inbox)}
-        onSignIn={() => void exitGuest()}
-      />
+      <ScreenFade onlyOnTabSwitch>
+        <GuestGateScreen
+          title={guestCopy.restricted.title(guestCopy.features.inbox)}
+          body={guestCopy.restricted.body(guestCopy.features.inbox)}
+          onSignIn={() => void exitGuest()}
+        />
+      </ScreenFade>
     );
   }
 
@@ -159,7 +161,7 @@ export default function InboxScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar backgroundColor={theme.surface} barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar backgroundColor={theme.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.body}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -292,14 +294,14 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
     },
     body: {
       flex: 1,
       backgroundColor: theme.background,
     },
     header: {
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
       borderBottomWidth: 1,
       borderBottomColor: theme.outlineVariant,
     },
@@ -349,7 +351,7 @@ const createStyles = (theme: ThemeColors) =>
     tabButton: {
       paddingBottom: 8,
       borderBottomWidth: 2,
-      borderBottomColor: theme.surface,
+      borderBottomColor: theme.background,
     },
     tabLabel: {
       fontSize: 13,
