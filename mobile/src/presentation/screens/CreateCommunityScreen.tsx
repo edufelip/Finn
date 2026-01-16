@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as Network from 'expo-network';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -51,6 +52,24 @@ export default function CreateCommunityScreen() {
     [theme.background]
   );
 
+  const processImage = async (uri: string, width: number) => {
+    // If image is already small enough, we still run it through manipulator
+    // to ensure consistent JPEG format and compression.
+    // If width < 1080, we don't need to resize down, but we can just normalize.
+    // However, simplest logic is:
+    const targetWidth = Math.min(width, 1080);
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: targetWidth } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      return result.uri;
+    } catch {
+      return uri;
+    }
+  };
+
   if (isGuest) {
     return (
       <GuestGateScreen
@@ -74,13 +93,14 @@ export default function CreateCommunityScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
+      quality: 0.8, // Initial quality from picker
       allowsMultipleSelection: false,
       selectionLimit: 1,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
+      const processed = await processImage(result.assets[0].uri, result.assets[0].width);
+      setImageUri(processed);
     }
   };
 
@@ -102,7 +122,8 @@ export default function CreateCommunityScreen() {
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
-        setImageUri(result.assets[0].uri);
+        const processed = await processImage(result.assets[0].uri, result.assets[0].width);
+        setImageUri(processed);
       }
     } catch {
       Alert.alert(

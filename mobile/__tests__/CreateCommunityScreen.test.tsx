@@ -32,6 +32,11 @@ jest.mock('expo-image-picker', () => ({
   MediaTypeOptions: { Images: 'Images' },
 }));
 
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest.fn().mockResolvedValue({ uri: 'file://processed.jpg' }),
+  SaveFormat: { JPEG: 'jpeg' },
+}));
+
 jest.mock('../src/data/offline/queueStore', () => ({
   enqueueWrite: jest.fn(),
 }));
@@ -173,7 +178,10 @@ describe('CreateCommunityScreen', () => {
           },
         })
       );
-      expect(persistOfflineImage).toHaveBeenCalledWith('file://community.jpg');
+      // We expect the persisted image to be the result of persistOfflineImage
+      // But persistOfflineImage is called with the imageUri from state
+      // Which comes from processImage -> manipulateAsync -> 'file://processed.jpg'
+      expect(persistOfflineImage).toHaveBeenCalledWith('file://processed.jpg');
     });
   });
 

@@ -41,6 +41,7 @@
     "expo-auth-session": "^7.0.10",
     "expo-crypto": "~15.0.8",
     "expo-file-system": "~17.0.1",
+    "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~16.0.4",
     "expo-linear-gradient": "~15.0.8",
     "expo-network": "~8.0.8",
