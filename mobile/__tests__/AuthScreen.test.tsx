@@ -40,6 +40,11 @@ jest.mock('expo-apple-authentication', () => ({
   signInAsync: jest.fn(),
 }));
 
+jest.mock('expo-crypto', () => ({
+  digestStringAsync: jest.fn().mockResolvedValue('hashed-nonce'),
+  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+}));
+
 jest.mock('expo-network', () => ({
   getNetworkStateAsync: jest.fn(),
 }));
@@ -205,6 +210,42 @@ describe('AuthScreen', () => {
         authCopy.alerts.appleFailed.title,
         authCopy.alerts.appleFailed.missingToken
       );
+    });
+  });
+
+  it('shows apple sign-in failed alert when supabase rejects token', async () => {
+    appleAuth.isAvailableAsync.mockResolvedValue(true);
+    appleAuth.signInAsync.mockResolvedValue({ identityToken: 'valid-token' });
+    supabase.auth.signInWithIdToken.mockResolvedValue({
+      data: null,
+      error: { message: 'Invalid ID token' },
+    });
+
+    const { getByText } = render(<AuthScreen />);
+
+    await waitFor(() => {
+      expect(getByText(authCopy.apple)).toBeTruthy();
+    });
+    fireEvent.press(getByText(authCopy.apple));
+
+    await waitFor(() => {
+      // Verify nonce is passed to Apple
+      expect(appleAuth.signInAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nonce: 'hashed-nonce',
+        })
+      );
+      // Verify raw nonce is passed to Supabase (we can't easily check the random string value without mocking Math.random, 
+      // but we can check that a nonce property exists and is not the hashed one if we really wanted, 
+      // but for now verifying the call happens is good improvement).
+      expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'apple',
+          token: 'valid-token',
+          nonce: expect.any(String),
+        })
+      );
+      expect(Alert.alert).toHaveBeenCalledWith(authCopy.alerts.appleFailed.title, 'Invalid ID token');
     });
   });
 
