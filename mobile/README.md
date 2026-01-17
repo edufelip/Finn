@@ -24,6 +24,25 @@ Manage native projects directly going forward; avoid re-running prebuild unless 
 npm test
 ```
 
+## Remote Supabase Init (CLI)
+Requires Supabase CLI and an authenticated session.
+```bash
+supabase login
+./scripts/supabase-remote-init.sh
+```
+Applies `supabase/migrations/*` to the linked remote project. Use `supabase/remote_init.sql`
+only for manual SQL editor runs.
+
+## Remote Supabase Seed (CLI)
+Run only against dev/staging, not production.
+```bash
+supabase login
+export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+./scripts/supabase-remote-seed.sh
+```
+Uses Supabase Admin API via `scripts/seed-remote.js` to create users and data.
+Will refuse to seed if the linked project matches the prod ref; set `SUPABASE_ALLOW_PROD_SEED=true` to override.
+
 ## E2E (Maestro)
 Run with mock mode for deterministic data:
 ```bash
