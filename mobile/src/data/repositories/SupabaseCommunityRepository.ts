@@ -77,6 +77,13 @@ type UploadResult = {
   wasUploaded: boolean;
 };
 
+function isBucketNotFoundError(error: unknown): boolean {
+  if (error instanceof Error) {
+    return error.message.toLowerCase().includes('bucket') && error.message.toLowerCase().includes('not found');
+  }
+  return false;
+}
+
 async function uploadCommunityImage(imageUri: string, ownerId: string): Promise<UploadResult> {
   if (!isLocalFile(imageUri)) {
     return { path: imageUri, wasUploaded: false };
@@ -214,9 +221,17 @@ export class SupabaseCommunityRepository implements CommunityRepository {
     let resolvedImageUrl = community.imageUrl ?? null;
     let uploadedPath: string | null = null;
     if (imageUri) {
-      const upload = await uploadCommunityImage(imageUri, community.ownerId);
-      resolvedImageUrl = upload.path;
-      uploadedPath = upload.wasUploaded ? upload.path : null;
+      try {
+        const upload = await uploadCommunityImage(imageUri, community.ownerId);
+        resolvedImageUrl = upload.path;
+        uploadedPath = upload.wasUploaded ? upload.path : null;
+      } catch (error) {
+        if (!isBucketNotFoundError(error)) {
+          throw error;
+        }
+        resolvedImageUrl = null;
+        uploadedPath = null;
+      }
     }
 
     const payload = {

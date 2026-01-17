@@ -246,6 +246,8 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'createCommunity.alert.titleRequired.message': 'Provide a community title.',
     'createCommunity.alert.descriptionRequired.title': 'Description required',
     'createCommunity.alert.descriptionRequired.message': 'Provide a community description.',
+    'createCommunity.alert.imageRequired.title': 'Image required',
+    'createCommunity.alert.imageRequired.message': 'Add a community image before creating.',
     'createCommunity.alert.offline.title': 'Offline',
     'createCommunity.alert.offline.message': 'Your community will be created when you are back online.',
     'createCommunity.alert.created.title': 'Community created',

@@ -29,6 +29,10 @@ export const createCommunityCopy = {
       title: t('createCommunity.alert.descriptionRequired.title'),
       message: t('createCommunity.alert.descriptionRequired.message'),
     },
+    imageRequired: {
+      title: t('createCommunity.alert.imageRequired.title'),
+      message: t('createCommunity.alert.imageRequired.message'),
+    },
     offline: {
       title: t('createCommunity.alert.offline.title'),
       message: t('createCommunity.alert.offline.message'),
@@ -46,6 +50,7 @@ export const createCommunityCopy = {
     description: 'create-community-description',
     image: 'create-community-image',
     imagePreview: 'create-community-image-preview',
+    imageError: 'create-community-image-error',
     submit: 'create-community-submit',
   },
 };

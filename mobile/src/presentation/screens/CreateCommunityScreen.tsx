@@ -39,6 +39,7 @@ export default function CreateCommunityScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [imageSourceOpen, setImageSourceOpen] = useState(false);
   const insets = useSafeAreaInsets();
@@ -101,6 +102,7 @@ export default function CreateCommunityScreen() {
     if (!result.canceled && result.assets?.[0]?.uri) {
       const processed = await processImage(result.assets[0].uri, result.assets[0].width);
       setImageUri(processed);
+      setImageError(null);
     }
   };
 
@@ -124,6 +126,7 @@ export default function CreateCommunityScreen() {
       if (!result.canceled && result.assets?.[0]?.uri) {
         const processed = await processImage(result.assets[0].uri, result.assets[0].width);
         setImageUri(processed);
+        setImageError(null);
       }
     } catch {
       Alert.alert(
@@ -153,6 +156,12 @@ export default function CreateCommunityScreen() {
         createCommunityCopy.alerts.descriptionRequired.title,
         createCommunityCopy.alerts.descriptionRequired.message
       );
+      return;
+    }
+    if (!imageUri) {
+      const message = createCommunityCopy.alerts.imageRequired.message;
+      setImageError(message);
+      Alert.alert(createCommunityCopy.alerts.imageRequired.title, message);
       return;
     }
 
@@ -278,6 +287,15 @@ export default function CreateCommunityScreen() {
                 </View>
               </Pressable>
               <Text style={styles.iconHelper}>{createCommunityCopy.iconHelper}</Text>
+              {imageError ? (
+                <Text
+                  style={styles.imageError}
+                  testID={createCommunityCopy.testIds.imageError}
+                  accessibilityLabel={createCommunityCopy.testIds.imageError}
+                >
+                  {imageError}
+                </Text>
+              ) : null}
             </View>
           </View>
         </ScrollView>
@@ -293,7 +311,7 @@ export default function CreateCommunityScreen() {
               style={({ pressed }) => [
                 styles.createButton,
                 pressed && styles.createButtonPressed,
-                loading && styles.createButtonDisabled,
+                (loading || !imageUri) && styles.createButtonDisabled,
               ]}
               onPress={submit}
               disabled={loading}
@@ -431,6 +449,11 @@ const createStyles = (theme: ThemeColors) =>
       textAlign: 'center',
       maxWidth: 220,
       lineHeight: 16,
+    },
+    imageError: {
+      fontSize: 12,
+      color: theme.error,
+      textAlign: 'center',
     },
     ctaContainer: {
       position: 'absolute',
