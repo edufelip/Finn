@@ -69,6 +69,11 @@ describe('CreateCommunityScreen', () => {
 
   it('creates a community when online', async () => {
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    imagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true });
+    imagePicker.launchImageLibraryAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://community.jpg' }],
+    });
     const communitiesRepo = {
       saveCommunity: jest.fn().mockResolvedValue({ id: 1 }),
     };
@@ -81,6 +86,9 @@ describe('CreateCommunityScreen', () => {
 
     fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'New Community');
     fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Community details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
+    await waitFor(() => expect(getByTestId(createCommunityCopy.testIds.imagePreview)).toBeTruthy());
     fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
 
     await waitFor(() => {
@@ -91,7 +99,7 @@ describe('CreateCommunityScreen', () => {
           description: 'Community details',
           ownerId: 'user-1',
         },
-        null
+        'file://processed.jpg'
       );
       expect(Alert.alert).toHaveBeenCalledWith(
         createCommunityCopy.alerts.created.title,
@@ -103,6 +111,11 @@ describe('CreateCommunityScreen', () => {
 
   it('queues a community when offline', async () => {
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: false });
+    imagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true });
+    imagePicker.launchImageLibraryAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://community.jpg' }],
+    });
     const communitiesRepo = {
       saveCommunity: jest.fn(),
     };
@@ -115,6 +128,9 @@ describe('CreateCommunityScreen', () => {
 
     fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'Offline Community');
     fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Offline details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
+    await waitFor(() => expect(getByTestId(createCommunityCopy.testIds.imagePreview)).toBeTruthy());
     fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
 
     await waitFor(() => {
@@ -125,7 +141,7 @@ describe('CreateCommunityScreen', () => {
             title: 'Offline Community',
             description: 'Offline details',
             ownerId: 'user-1',
-            imageUri: null,
+            imageUri: 'file://persisted/community.jpg',
           },
         })
       );
@@ -222,5 +238,57 @@ describe('CreateCommunityScreen', () => {
     expect(getByPlaceholderText(createCommunityCopy.descriptionPlaceholder)).toBeTruthy();
     expect(getByText(createCommunityCopy.iconLabel)).toBeTruthy();
     expect(getByTestId(createCommunityCopy.testIds.submit)).toBeTruthy();
+  });
+
+  it('shows error when image is missing', async () => {
+    network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    const communitiesRepo = {
+      saveCommunity: jest.fn(),
+    };
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ communities: communitiesRepo }}>
+        <CreateCommunityScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'New Community');
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Community details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
+
+    await waitFor(() => {
+      expect(communitiesRepo.saveCommunity).not.toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        createCommunityCopy.alerts.imageRequired.title,
+        createCommunityCopy.alerts.imageRequired.message
+      );
+      expect(getByTestId(createCommunityCopy.testIds.imageError)).toBeTruthy();
+    });
+  });
+
+  it('clears image error after selecting an image', async () => {
+    network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    imagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true });
+    imagePicker.launchImageLibraryAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://community.jpg' }],
+    });
+
+    const { getByTestId, queryByTestId } = render(
+      <RepositoryProvider overrides={{ communities: { saveCommunity: jest.fn() } }}>
+        <CreateCommunityScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.title), 'New Community');
+    fireEvent.changeText(getByTestId(createCommunityCopy.testIds.description), 'Community details');
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.submit));
+
+    await waitFor(() => expect(getByTestId(createCommunityCopy.testIds.imageError)).toBeTruthy());
+
+    fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
+    fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
+
+    await waitFor(() => expect(queryByTestId(createCommunityCopy.testIds.imageError)).toBeNull());
   });
 });
