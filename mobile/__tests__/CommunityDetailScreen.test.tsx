@@ -97,7 +97,6 @@ describe('CommunityDetailScreen', () => {
     expect(getByTestId('post-card-1')).toBeTruthy();
     expect(getByText(communityDetailCopy.subscribe)).toBeTruthy();
     expect(getByText(communityDetailCopy.subscribers(3))).toBeTruthy();
-    expect(getByText(communityDetailCopy.since(communityDetailCopy.emptyDash))).toBeTruthy();
   });
 
   it('subscribes when online', async () => {

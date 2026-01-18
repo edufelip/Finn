@@ -111,6 +111,7 @@ describe('CreateCommunityScreen', () => {
 
   it('queues a community when offline', async () => {
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: false });
+    persistOfflineImage.mockResolvedValue('file://persisted/community.jpg');
     imagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true });
     imagePicker.launchImageLibraryAsync.mockResolvedValue({
       canceled: false,
