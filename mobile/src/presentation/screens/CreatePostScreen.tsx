@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import * as Network from 'expo-network';
 import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,16 +32,23 @@ import type { ThemeColors } from '../theme/colors';
 import { palette } from '../theme/palette';
 import { createPostCopy } from '../content/createPostCopy';
 import { imagePickerCopy } from '../content/imagePickerCopy';
+import type { MainStackParamList } from '../navigation/MainStack';
 import ImageSourceSheet from '../components/ImageSourceSheet';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 
+type CreatePostRouteProp = RouteProp<MainStackParamList, 'CreatePost'>;
+
 export default function CreatePostScreen() {
   const navigation = useNavigation();
+  const route = useRoute<CreatePostRouteProp>();
+  const initialCommunityId = route.params?.communityId;
   const { session, isGuest, exitGuest } = useAuth();
   const [content, setContent] = useState('');
   const [communities, setCommunities] = useState<Community[]>([]);
-  const [selectedCommunityId, setSelectedCommunityId] = useState<number | null>(null);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<number | null>(
+    initialCommunityId ?? null
+  );
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -76,6 +83,9 @@ export default function CreatePostScreen() {
           if (current && data.some((community) => community.id === current)) {
             return current;
           }
+          if (initialCommunityId && data.some((community) => community.id === initialCommunityId)) {
+            return initialCommunityId;
+          }
           return data[0]?.id ?? null;
         });
       } catch (error) {
@@ -90,7 +100,7 @@ export default function CreatePostScreen() {
     return () => {
       cancelled = true;
     };
-  }, [communityRepository, session?.user?.id]);
+  }, [communityRepository, session?.user?.id, initialCommunityId]);
 
   if (isGuest) {
     return (

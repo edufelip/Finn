@@ -17,7 +17,7 @@ import type { Post } from '../../domain/models/post';
 
 export type MainStackParamList = {
   DrawerRoot: undefined;
-  CreatePost: undefined;
+  CreatePost: { communityId?: number } | undefined;
   CreateCommunity: undefined;
   CommunityDetail: { communityId: number };
   SavedPosts: undefined;

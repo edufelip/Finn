@@ -11,6 +11,7 @@ const mockGoBack = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ goBack: mockGoBack }),
+  useRoute: () => ({ params: {} }),
 }));
 
 jest.mock('../src/app/providers/AuthProvider', () => ({
