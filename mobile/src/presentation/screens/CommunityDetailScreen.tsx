@@ -36,7 +36,7 @@ export default function CommunityDetailScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [subscription, setSubscription] = useState<CommunitySubscription | null>(null);
   const [subscribersCount, setSubscribersCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -347,7 +347,7 @@ export default function CommunityDetailScreen() {
     </View>
   ) : null;
 
-  const EmptyState = !loading ? (
+  const EmptyState = !loading && !error ? (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
         <View style={styles.emptyCircle1} />
