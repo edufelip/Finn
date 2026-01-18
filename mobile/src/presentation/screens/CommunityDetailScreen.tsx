@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Network from 'expo-network';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import PostCard from '../components/PostCard';
 import type { Community } from '../../domain/models/community';
@@ -14,16 +15,16 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import type { MainStackParamList } from '../navigation/MainStack';
-import Divider from '../components/Divider';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { communityDetailCopy } from '../content/communityDetailCopy';
-import { formatMonthYear } from '../i18n/formatters';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 type RouteParams = {
   communityId: number;
 };
+
+const BANNER_HEIGHT = 224;
 
 export default function CommunityDetailScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -247,51 +248,102 @@ export default function CommunityDetailScreen() {
     }
   };
 
-  const header = community ? (
-    <View>
-      <View style={styles.toolbar}>
+  const ListHeader = community ? (
+    <View style={styles.headerContainer}>
+      <View style={styles.bannerContainer}>
+        <Image
+          source={
+            community.imageUrl
+              ? { uri: community.imageUrl }
+              : require('../../../assets/user_icon.png')
+          }
+          style={styles.bannerImage}
+          blurRadius={community.imageUrl ? 10 : 0}
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.4)', 'transparent', theme.background]}
+          style={styles.gradientOverlay}
+        />
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onPrimary} />
+          <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+        </Pressable>
+        <Pressable style={styles.moreButton}>
+          <MaterialIcons name="more-horiz" size={24} color="#FFFFFF" />
         </Pressable>
       </View>
-      <View style={styles.blueStrip} />
-      <View style={styles.imageSpacer} />
-      <View style={styles.imageWrapper}>
-        <View style={styles.imageOuter}>
-          <Image
-            source={community.imageUrl ? { uri: community.imageUrl } : require('../../../assets/user_icon.png')}
-            style={styles.communityImage}
-            testID={communityDetailCopy.testIds.image}
-            accessibilityLabel={communityDetailCopy.testIds.image}
-          />
+
+      <View style={styles.contentContainer}>
+        <View style={styles.topRow}>
+          <View style={styles.iconContainer}>
+            <View style={styles.iconWrapper}>
+              <Image
+                source={
+                  community.imageUrl
+                    ? { uri: community.imageUrl }
+                    : require('../../../assets/user_icon.png')
+                }
+                style={styles.communityIcon}
+                testID={communityDetailCopy.testIds.image}
+                accessibilityLabel={communityDetailCopy.testIds.image}
+              />
+            </View>
+            {/* Online Indicator Mock */}
+            <View style={styles.onlineIndicator} />
+          </View>
+
+          <Pressable
+            style={[
+              styles.joinButton,
+              subscription && styles.joinedButton,
+              isGuest && styles.lockedButton,
+            ]}
+            onPress={
+              isGuest
+                ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() })
+                : handleToggleSubscription
+            }
+            testID={communityDetailCopy.testIds.subscribe}
+            accessibilityLabel={communityDetailCopy.testIds.subscribe}
+          >
+            <Text style={[styles.joinButtonText, subscription && styles.joinedButtonText]}>
+              {subscription ? communityDetailCopy.unsubscribe : communityDetailCopy.subscribe}
+            </Text>
+          </Pressable>
         </View>
-      </View>
-      <Pressable
-        style={[styles.subscribeButton, isGuest && styles.subscribeButtonLocked]}
-        onPress={isGuest ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() }) : handleToggleSubscription}
-        testID={communityDetailCopy.testIds.subscribe}
-        accessibilityLabel={communityDetailCopy.testIds.subscribe}
-      >
-        <Text style={styles.subscribeText}>
-          {subscription ? communityDetailCopy.unsubscribe : communityDetailCopy.subscribe}
+
+        <View style={styles.infoSection}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} testID={communityDetailCopy.testIds.title}>
+              {community.title}
+            </Text>
+            <MaterialIcons name="verified" size={20} color={theme.primary} />
+          </View>
+
+          <View style={styles.statsRow}>
+            <Text style={styles.memberCount}>
+              {communityDetailCopy.subscribers(subscribersCount)}
+            </Text>
+            <View style={styles.dotSeparator} />
+            <View style={styles.onlineWrapper}>
+              <View style={styles.onlineDot} />
+              <Text style={styles.onlineText}>842 Online</Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.description} testID={communityDetailCopy.testIds.description}>
+          {community.description}
         </Text>
-        {isGuest ? <MaterialIcons name="lock" size={12} color={theme.onSurfaceVariant} /> : null}
-      </Pressable>
-      <Text style={styles.title} testID={communityDetailCopy.testIds.title}>
-        {community.title}
-      </Text>
-      <Text style={styles.description} testID={communityDetailCopy.testIds.description}>
-        {community.description}
-      </Text>
-      <View style={styles.subInfo}>
-        <Text style={styles.subCount}>{communityDetailCopy.subscribers(subscribersCount)}</Text>
-        <Text style={styles.sinceValue}>
-          {communityDetailCopy.since(
-            (community.createdAt ? formatMonthYear(community.createdAt) : '') || communityDetailCopy.emptyDash
-          )}
-        </Text>
       </View>
-      <Divider />
+
+      <View style={styles.feedHeader}>
+        <Text style={styles.feedTitle}>Latest Discussions</Text>
+        <Pressable style={styles.sortButton}>
+          <MaterialIcons name="sort" size={14} color={theme.primary} />
+          <Text style={styles.sortButtonText}>Sort: Newest</Text>
+        </Pressable>
+      </View>
     </View>
   ) : null;
 
@@ -303,6 +355,7 @@ export default function CommunityDetailScreen() {
         </View>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      
       <FlatList
         testID={communityDetailCopy.testIds.list}
         data={posts}
@@ -315,7 +368,7 @@ export default function CommunityDetailScreen() {
             onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
           />
         )}
-        ListHeaderComponent={header}
+        ListHeaderComponent={ListHeader}
         ListEmptyComponent={!loading ? <Text style={styles.empty}>{communityDetailCopy.empty}</Text> : null}
         ListFooterComponent={
           loading && posts.length > 0 ? (
@@ -324,7 +377,9 @@ export default function CommunityDetailScreen() {
             </View>
           ) : null
         }
+        contentContainerStyle={styles.listContent}
         style={styles.list}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -336,93 +391,198 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
       backgroundColor: theme.background,
     },
-    toolbar: {
-      height: 56,
-      backgroundColor: theme.primary,
-      justifyContent: 'center',
+    headerContainer: {
+      marginBottom: 24,
+    },
+    bannerContainer: {
+      height: BANNER_HEIGHT,
+      width: '100%',
+      position: 'relative',
+    },
+    bannerImage: {
+      width: '100%',
+      height: '100%',
+    },
+    gradientOverlay: {
+      ...StyleSheet.absoluteFillObject,
     },
     backButton: {
-      padding: 8,
-      marginLeft: 16,
-    },
-    blueStrip: {
-      height: 72,
-      backgroundColor: theme.primary,
-    },
-    imageSpacer: {
-      height: 76,
-    },
-    imageWrapper: {
       position: 'absolute',
-      left: 32,
-      top: 56 + 12,
-    },
-    imageOuter: {
-      width: 76,
-      height: 76,
-      borderRadius: 38,
-      backgroundColor: theme.surface,
+      top: 50,
+      left: 20,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
       alignItems: 'center',
       justifyContent: 'center',
+      // backdropFilter: 'blur(10px)' - Note: simplified for RN
+    },
+    moreButton: {
+      position: 'absolute',
+      top: 50,
+      right: 20,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    contentContainer: {
+      paddingHorizontal: 20,
+      marginTop: -48, // Negative margin to overlap
+      position: 'relative',
+      zIndex: 10,
+    },
+    topRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    iconContainer: {
+      position: 'relative',
+    },
+    iconWrapper: {
+      width: 96,
+      height: 96,
+      borderRadius: 24,
+      backgroundColor: theme.surface,
+      padding: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 5,
+    },
+    communityIcon: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 20,
+      backgroundColor: theme.primary,
+    },
+    onlineIndicator: {
+      position: 'absolute',
+      bottom: -4,
+      right: -4,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: '#22C55E', // green-500
+      borderWidth: 4,
+      borderColor: theme.background,
+    },
+    joinButton: {
+      marginBottom: 8,
+      paddingHorizontal: 32,
+      paddingVertical: 10,
+      backgroundColor: theme.primary,
+      borderRadius: 9999,
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    joinedButton: {
+      backgroundColor: theme.surface,
       borderWidth: 1,
       borderColor: theme.outline,
     },
-    communityImage: {
-      width: 68,
-      height: 68,
-      borderRadius: 34,
+    lockedButton: {
+      opacity: 0.8,
     },
-    subscribeButton: {
-      position: 'absolute',
-      right: 20,
-      top: 56 + 72 + 12,
-      height: 32,
-      width: 128,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: theme.primary,
-      backgroundColor: theme.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
-      gap: 6,
+    joinButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '700',
+      fontSize: 16,
     },
-    subscribeText: {
+    joinedButtonText: {
       color: theme.primary,
-      fontSize: 10,
     },
-    subscribeButtonLocked: {
-      opacity: 0.7,
+    infoSection: {
+      marginBottom: 16,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 4,
     },
     title: {
-      marginTop: 12,
-      marginLeft: 24,
-      fontSize: 20,
+      fontSize: 24,
+      fontWeight: '900',
+      letterSpacing: -0.5,
       color: theme.onBackground,
     },
-    description: {
-      marginTop: 4,
-      marginHorizontal: 24,
+    statsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    memberCount: {
+      fontSize: 14,
+      fontWeight: '500',
       color: theme.onSurfaceVariant,
     },
-    subInfo: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginTop: 12,
-      marginBottom: 16,
-      gap: 4,
-      paddingHorizontal: 24,
+    dotSeparator: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.onSurfaceVariant,
+      opacity: 0.5,
     },
-    subCount: {
+    onlineWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    onlineDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#22C55E',
+    },
+    onlineText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.onSurfaceVariant,
+    },
+    description: {
+      fontSize: 14,
+      lineHeight: 22,
+      color: theme.onSurfaceVariant,
+      maxWidth: '90%',
+    },
+    feedHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      marginTop: 32,
+      marginBottom: 24,
+    },
+    feedTitle: {
+      fontSize: 18,
       fontWeight: '700',
       color: theme.onBackground,
     },
-    sinceValue: {
-      marginLeft: 4,
-      color: theme.onSurfaceVariant,
+    sortButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    sortButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.primary,
     },
     list: {
       backgroundColor: theme.background,
+    },
+    listContent: {
+      paddingBottom: 100, // Space for bottom nav if needed
     },
     empty: {
       marginTop: 32,
