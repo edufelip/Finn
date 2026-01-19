@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -28,6 +27,9 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { editCommunityCopy } from '../content/editCommunityCopy';
 import ImageSourceSheet from '../components/ImageSourceSheet';
+import CommunityImageUpload from '../components/CommunityImageUpload';
+import PostPermissionSelector from '../components/PostPermissionSelector';
+import ModerationNavSection from '../components/ModerationNavSection';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'EditCommunity'>;
 type Route = RouteProp<MainStackParamList, 'EditCommunity'>;
@@ -261,90 +263,17 @@ export default function EditCommunityScreen() {
         </View>
 
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{editCommunityCopy.coverImageLabel}</Text>
-            <Pressable
-              style={styles.coverImageContainer}
-              onPress={() => setImageSourceOpen(true)}
-              testID={editCommunityCopy.testIds.coverImageButton}
-            >
-              {imageUri ? (
-                <Image source={{ uri: imageUri }} style={styles.coverImage} />
-              ) : (
-                <View style={styles.coverImagePlaceholder}>
-                  <MaterialIcons name="add-photo-alternate" size={48} color={theme.onSurfaceVariant} />
-                </View>
-              )}
-              <View style={styles.coverImageOverlay}>
-                <MaterialIcons name="photo-camera" size={24} color="#fff" />
-                <Text style={styles.coverImageText}>{editCommunityCopy.changeCoverImage}</Text>
-              </View>
-            </Pressable>
-          </View>
+          <CommunityImageUpload
+            imageUri={imageUri}
+            onPress={() => setImageSourceOpen(true)}
+          />
 
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{editCommunityCopy.postPermissionLabel}</Text>
-            <View style={styles.radioGroup}>
-              <RadioOption
-                selected={postPermission === 'anyone_follows'}
-                onPress={() => setPostPermission('anyone_follows')}
-                label={editCommunityCopy.postPermissionOptions.anyone_follows.label}
-                description={editCommunityCopy.postPermissionOptions.anyone_follows.description}
-                testID={editCommunityCopy.testIds.postPermissionAnyoneFollows}
-                theme={theme}
-              />
-              <RadioOption
-                selected={postPermission === 'moderated'}
-                onPress={() => setPostPermission('moderated')}
-                label={editCommunityCopy.postPermissionOptions.moderated.label}
-                description={editCommunityCopy.postPermissionOptions.moderated.description}
-                testID={editCommunityCopy.testIds.postPermissionModerated}
-                theme={theme}
-              />
-              <RadioOption
-                selected={postPermission === 'private'}
-                onPress={() => setPostPermission('private')}
-                label={editCommunityCopy.postPermissionOptions.private.label}
-                description={editCommunityCopy.postPermissionOptions.private.description}
-                testID={editCommunityCopy.testIds.postPermissionPrivate}
-                theme={theme}
-              />
-            </View>
-          </View>
+          <PostPermissionSelector
+            selected={postPermission}
+            onSelect={setPostPermission}
+          />
 
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{editCommunityCopy.moderationSection}</Text>
-            <View style={styles.moderationButtons}>
-              <ModerationButton
-                icon="pending-actions"
-                label={editCommunityCopy.pendingContentButton}
-                onPress={() => handleNavigateToModeration('PendingContent')}
-                testID={editCommunityCopy.testIds.pendingContentButton}
-                theme={theme}
-              />
-              <ModerationButton
-                icon="flag"
-                label={editCommunityCopy.reportedContentButton}
-                onPress={() => handleNavigateToModeration('ReportedContent')}
-                testID={editCommunityCopy.testIds.reportedContentButton}
-                theme={theme}
-              />
-              <ModerationButton
-                icon="history"
-                label={editCommunityCopy.moderationLogsButton}
-                onPress={() => handleNavigateToModeration('ModerationLogs')}
-                testID={editCommunityCopy.testIds.moderationLogsButton}
-                theme={theme}
-              />
-              <ModerationButton
-                icon="manage-accounts"
-                label={editCommunityCopy.manageModeratorsButton}
-                onPress={() => handleNavigateToModeration('ManageModerators')}
-                testID={editCommunityCopy.testIds.manageModeratorsButton}
-                theme={theme}
-              />
-            </View>
-          </View>
+          <ModerationNavSection onNavigate={handleNavigateToModeration} />
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -380,61 +309,6 @@ export default function EditCommunityScreen() {
     </SafeAreaView>
   );
 }
-
-type RadioOptionProps = {
-  selected: boolean;
-  onPress: () => void;
-  label: string;
-  description: string;
-  testID: string;
-  theme: ThemeColors;
-};
-
-const RadioOption = React.memo<RadioOptionProps>(
-  ({ selected, onPress, label, description, testID, theme }) => {
-    const styles = useMemo(() => createRadioStyles(theme), [theme]);
-
-    return (
-      <Pressable
-        style={[styles.radioOption, selected && styles.radioOptionSelected]}
-        onPress={onPress}
-        testID={testID}
-      >
-        <View style={styles.radioCircle}>
-          {selected && <View style={styles.radioCircleInner} />}
-        </View>
-        <View style={styles.radioContent}>
-          <Text style={styles.radioLabel}>{label}</Text>
-          <Text style={styles.radioDescription}>{description}</Text>
-        </View>
-      </Pressable>
-    );
-  }
-);
-
-type ModerationButtonProps = {
-  icon: keyof typeof MaterialIcons.glyphMap;
-  label: string;
-  onPress: () => void;
-  testID: string;
-  theme: ThemeColors;
-};
-
-const ModerationButton = React.memo<ModerationButtonProps>(
-  ({ icon, label, onPress, testID, theme }) => {
-    const styles = useMemo(() => createModerationButtonStyles(theme), [theme]);
-
-    return (
-      <Pressable style={styles.button} onPress={onPress} testID={testID}>
-        <View style={styles.iconWrapper}>
-          <MaterialIcons name={icon} size={24} color={theme.primary} />
-        </View>
-        <Text style={styles.label}>{label}</Text>
-        <MaterialIcons name="chevron-right" size={20} color={theme.onSurfaceVariant} />
-      </Pressable>
-    );
-  }
-);
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
@@ -481,60 +355,6 @@ const createStyles = (theme: ThemeColors) =>
     scrollContent: {
       paddingBottom: 24,
     },
-    section: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-    },
-    sectionLabel: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: theme.onBackground,
-      marginBottom: 12,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
-    },
-    coverImageContainer: {
-      width: '100%',
-      height: 180,
-      borderRadius: 16,
-      overflow: 'hidden',
-      backgroundColor: theme.surfaceVariant,
-      borderWidth: 1,
-      borderColor: theme.outline,
-    },
-    coverImage: {
-      width: '100%',
-      height: '100%',
-    },
-    coverImagePlaceholder: {
-      width: '100%',
-      height: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    coverImageOverlay: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      paddingVertical: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-    },
-    coverImageText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: '#fff',
-    },
-    radioGroup: {
-      gap: 12,
-    },
-    moderationButtons: {
-      gap: 12,
-    },
     bottomSpacer: {
       height: 100,
     },
@@ -571,82 +391,5 @@ const createStyles = (theme: ThemeColors) =>
     },
     saveButtonSpinner: {
       marginRight: 4,
-    },
-  });
-
-const createRadioStyles = (theme: ThemeColors) =>
-  StyleSheet.create({
-    radioOption: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      backgroundColor: theme.surface,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: theme.outline,
-      padding: 16,
-      gap: 12,
-    },
-    radioOptionSelected: {
-      borderColor: theme.primary,
-      backgroundColor: theme.primaryContainer,
-    },
-    radioCircle: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: theme.outline,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 2,
-    },
-    radioCircleInner: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: theme.primary,
-    },
-    radioContent: {
-      flex: 1,
-    },
-    radioLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: theme.onBackground,
-      marginBottom: 4,
-    },
-    radioDescription: {
-      fontSize: 13,
-      fontWeight: '400',
-      color: theme.onSurfaceVariant,
-      lineHeight: 18,
-    },
-  });
-
-const createModerationButtonStyles = (theme: ThemeColors) =>
-  StyleSheet.create({
-    button: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: theme.outline,
-      padding: 16,
-      gap: 12,
-    },
-    iconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: theme.primaryContainer,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    label: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '600',
-      color: theme.onBackground,
     },
   });
