@@ -296,7 +296,7 @@ export default function ProfileScreen() {
   const joinedLabel = joinedDate ? profileCopy.memberSince(joinedDate) : null;
 
   const displayName = currentUser?.name ?? session?.user?.email ?? commonCopy.userFallback;
-  const displayEmail = session?.user?.email ?? commonCopy.emptyDash;
+  const displayBio = currentUser?.bio ?? null;
   const postsCount = posts.length;
   const followersCount = currentUser?.followersCount ?? 0;
   const followingCount = currentUser?.followingCount ?? 0;
@@ -428,13 +428,16 @@ export default function ProfileScreen() {
                   >
                     {displayName}
                   </Text>
-                  <Text
-                    style={styles.email}
-                    testID={profileCopy.testIds.email}
-                    accessibilityLabel={profileCopy.testIds.email}
-                  >
-                    {displayEmail}
-                  </Text>
+                  {displayBio ? (
+                    <Text
+                      style={styles.bio}
+                      testID={profileCopy.testIds.bio}
+                      accessibilityLabel={profileCopy.testIds.bio}
+                      numberOfLines={3}
+                    >
+                      {displayBio}
+                    </Text>
+                  ) : null}
                   {joinedLabel ? (
                     <View style={styles.memberBadge}>
                       <Text
@@ -661,11 +664,14 @@ const createStyles = (theme: ThemeColors) =>
       fontWeight: '800',
       color: theme.onBackground,
     },
-    email: {
-      marginTop: 4,
+    bio: {
+      marginTop: 8,
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: '400',
       color: theme.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 20,
+      paddingHorizontal: 20,
     },
     memberBadge: {
       marginTop: 12,

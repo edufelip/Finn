@@ -41,7 +41,7 @@ export const profileCopy = {
   testIds: {
     title: 'profile-title',
     name: 'profile-name',
-    email: 'profile-email',
+    bio: 'profile-bio',
     memberSince: 'profile-member-since',
     statsPosts: 'profile-stats-posts',
     statsFollowers: 'profile-stats-followers',
