@@ -8,6 +8,7 @@ export type Post = {
   communityImageUrl?: string | null;
   userId: string;
   userName?: string;
+  userPhotoUrl?: string | null;
   likesCount?: number;
   commentsCount?: number;
   isLiked?: boolean;
