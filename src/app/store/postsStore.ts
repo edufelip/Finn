@@ -169,42 +169,38 @@ export const usePostsStore = create<PostsState>()(
   )
 );
 
-const selectPostsByIdsFromMap = (postsById: Record<number, Post>, ids: number[]) =>
-  ids.map((id) => postsById[id]).filter((post): post is Post => Boolean(post));
+const EMPTY_IDS: number[] = [];
 
 export const useHomePosts = () =>
-  usePostsList((state) => ({
-    ids: state.homeIds,
-    postsById: state.postsById,
-  }));
+  usePostsStore(
+    useShallow((state) =>
+      state.homeIds.map((id) => state.postsById[id]).filter((post): post is Post => Boolean(post))
+    )
+  );
 
 export const useCommunityPosts = (communityId: number) =>
-  usePostsList((state) => ({
-    ids: state.communityIds[communityId] ?? [],
-    postsById: state.postsById,
-  }));
+  usePostsStore(
+    useShallow((state) => {
+      const ids = state.communityIds[communityId] ?? EMPTY_IDS;
+      return ids.map((id) => state.postsById[id]).filter((post): post is Post => Boolean(post));
+    })
+  );
 
 export const useProfilePosts = (userId?: string) =>
-  usePostsList((state) => ({
-    ids: userId ? state.profileIds[userId] ?? [] : [],
-    postsById: state.postsById,
-  }));
+  usePostsStore(
+    useShallow((state) => {
+      const ids = userId ? state.profileIds[userId] ?? EMPTY_IDS : EMPTY_IDS;
+      return ids.map((id) => state.postsById[id]).filter((post): post is Post => Boolean(post));
+    })
+  );
 
 export const useSavedPosts = (userId?: string) =>
-  usePostsList((state) => ({
-    ids: userId ? state.savedIds[userId] ?? [] : [],
-    postsById: state.postsById,
-  }));
+  usePostsStore(
+    useShallow((state) => {
+      const ids = userId ? state.savedIds[userId] ?? EMPTY_IDS : EMPTY_IDS;
+      return ids.map((id) => state.postsById[id]).filter((post): post is Post => Boolean(post));
+    })
+  );
 
 export const usePostById = (postId: number) =>
   usePostsStore((state) => state.postsById[postId]);
-
-type PostsListSelector = (state: PostsState) => {
-  ids: number[];
-  postsById: Record<number, Post>;
-};
-
-const usePostsList = (selector: PostsListSelector) => {
-  const slice = usePostsStore(useShallow(selector));
-  return useMemo(() => selectPostsByIdsFromMap(slice.postsById, slice.ids), [slice]);
-};
