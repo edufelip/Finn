@@ -20,7 +20,7 @@ type SearchFiltersProps = {
 
 const TOPIC_PALETTE = {
   orange: {
-    icon: '#D97706',
+    icon: '#EF4444', // Red/Orange tone matching error color
   },
   green: {
     icon: '#059669',

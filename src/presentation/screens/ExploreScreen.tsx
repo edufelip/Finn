@@ -145,9 +145,9 @@ export default function ExploreScreen() {
   const topicPalette = useMemo(
     () => ({
       orange: {
-        background: theme.surfaceVariant,
-        border: theme.outlineVariant,
-        icon: theme.onSurfaceVariant,
+        background: theme.errorContainer,
+        border: theme.error,
+        icon: theme.onErrorContainer,
       },
       green: {
         background: theme.secondaryContainer,
