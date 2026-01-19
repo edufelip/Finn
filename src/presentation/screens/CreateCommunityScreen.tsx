@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import type { Topic } from '../../domain/models/topic';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isMockMode } from '../../config/appConfig';
 import { persistOfflineImage } from '../../data/offline/offlineImages';
@@ -29,6 +30,7 @@ import type { ThemeColors } from '../theme/colors';
 import { createCommunityCopy } from '../content/createCommunityCopy';
 import { imagePickerCopy } from '../content/imagePickerCopy';
 import ImageSourceSheet from '../components/ImageSourceSheet';
+import TopicSelectorModal from '../components/TopicSelectorModal';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 
@@ -40,8 +42,10 @@ export default function CreateCommunityScreen() {
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [loading, setLoading] = useState(false);
   const [imageSourceOpen, setImageSourceOpen] = useState(false);
+  const [topicSelectorOpen, setTopicSelectorOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -193,6 +197,7 @@ export default function CreateCommunityScreen() {
           title: title.trim(),
           description: description.trim(),
           ownerId: session.user.id,
+          topicId: selectedTopic?.id ?? null,
         },
         imageUri ?? null
       );
@@ -262,6 +267,30 @@ export default function CreateCommunityScreen() {
             <Text style={styles.counter}>{descriptionCount}</Text>
           </View>
           <View style={styles.field}>
+            <Text style={styles.label}>Topic (Optional)</Text>
+            <Pressable
+              style={styles.topicSelector}
+              onPress={() => setTopicSelectorOpen(true)}
+              testID="community-topic-selector"
+            >
+              {selectedTopic ? (
+                <View style={styles.topicSelected}>
+                  <View style={styles.topicIconContainer}>
+                    <MaterialIcons name={selectedTopic.icon as any} size={20} color={theme.onPrimaryContainer} />
+                  </View>
+                  <Text style={styles.topicSelectedText}>{selectedTopic.label}</Text>
+                  <MaterialIcons name="edit" size={18} color={theme.onSurfaceVariant} />
+                </View>
+              ) : (
+                <View style={styles.topicPlaceholder}>
+                  <MaterialIcons name="label-outline" size={20} color={theme.onSurfaceVariant} />
+                  <Text style={styles.topicPlaceholderText}>Select a topic</Text>
+                  <MaterialIcons name="chevron-right" size={20} color={theme.onSurfaceVariant} />
+                </View>
+              )}
+            </Pressable>
+          </View>
+          <View style={styles.field}>
             <Text style={styles.label}>{createCommunityCopy.iconLabel}</Text>
             <View style={styles.iconSection}>
               <Pressable
@@ -304,6 +333,12 @@ export default function CreateCommunityScreen() {
           onClose={() => setImageSourceOpen(false)}
           onSelectCamera={handlePickFromCamera}
           onSelectGallery={handlePickFromGallery}
+        />
+        <TopicSelectorModal
+          visible={topicSelectorOpen}
+          selectedTopicId={selectedTopic?.id}
+          onClose={() => setTopicSelectorOpen(false)}
+          onSelectTopic={setSelectedTopic}
         />
         <View style={styles.ctaContainer} pointerEvents="box-none">
           <LinearGradient colors={gradientColors} style={[styles.ctaGradient, { paddingBottom: insets.bottom + 16 }]}>
@@ -454,6 +489,48 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       color: theme.error,
       textAlign: 'center',
+    },
+    topicSelector: {
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant,
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 3,
+    },
+    topicSelected: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 14,
+    },
+    topicIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      backgroundColor: theme.primaryContainer,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    topicSelectedText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.onSurface,
+    },
+    topicPlaceholder: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 14,
+    },
+    topicPlaceholderText: {
+      flex: 1,
+      fontSize: 15,
+      color: theme.onSurfaceVariant,
     },
     ctaContainer: {
       position: 'absolute',
