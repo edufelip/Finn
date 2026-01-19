@@ -1,6 +1,6 @@
 import type { Community } from '../../domain/models/community';
 import type { Subscription } from '../../domain/models/subscription';
-import type { CommunityRepository } from '../../domain/repositories/CommunityRepository';
+import type { CommunityRepository, CommunitySortOrder } from '../../domain/repositories/CommunityRepository';
 import { CacheKey, CACHE_TTL_MS } from '../cache/cachePolicy';
 import { cacheFirst } from '../cache/cacheHelpers';
 import { clearCache, setCache } from '../cache/cacheStore';
@@ -16,6 +16,7 @@ type CommunityRow = {
   description: string;
   image_url?: string | null;
   owner_id: string;
+  topic_id?: number | null;
   created_at?: string;
 };
 
@@ -24,18 +25,6 @@ type SubscriptionRow = {
   user_id: string;
   community_id: number;
 };
-
-function toDomain(row: CommunityRow, subscribersCount?: number): Community {
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    imageUrl: row.image_url ?? null,
-    ownerId: row.owner_id,
-    createdAt: row.created_at,
-    subscribersCount,
-  };
-}
 
 function toSubscription(row: SubscriptionRow): Subscription {
   return {
@@ -115,24 +104,67 @@ async function toDomainWithImage(row: CommunityRow, subscribersCount?: number): 
     description: row.description,
     imageUrl: await resolveCommunityImageUrl(row.image_url ?? null),
     ownerId: row.owner_id,
+    topicId: row.topic_id ?? null,
     createdAt: row.created_at,
     subscribersCount,
   };
 }
 
 export class SupabaseCommunityRepository implements CommunityRepository {
-  async getCommunities(search?: string | null): Promise<Community[]> {
+  async getCommunities(search?: string | null, sort?: CommunitySortOrder, topicId?: number | null): Promise<Community[]> {
     const cacheKey = CacheKey.communities(search);
     const cached = await cacheFirst<Community[]>(cacheKey, CACHE_TTL_MS.communities, async () => {
-      let query = supabase.from(TABLES.communities).select('*');
+      let query = supabase.from(TABLES.communities).select('*, subscriptions(count)');
+      
+      // Apply search filter
       if (search) {
         query = query.ilike('title', `%${search}%`);
       }
+      
+      // Apply topic filter
+      if (topicId) {
+        query = query.eq('topic_id', topicId);
+      }
+
+      // Apply sorting
+      switch (sort) {
+        case 'mostFollowed':
+          // Will sort by subscribersCount in memory since aggregation needs post-processing
+          break;
+        case 'leastFollowed':
+          // Will sort by subscribersCount in memory
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        default:
+          // Default: most followed (will sort in memory)
+          break;
+      }
+      
       const { data, error } = await query;
       if (error) {
         throw error;
       }
-      return Promise.all((data ?? []).map((row) => toDomainWithImage(row as CommunityRow)));
+      
+      const communities = await Promise.all(
+        (data ?? []).map((row) => {
+          const count = (row.subscriptions as unknown as { count: number }[])?.[0]?.count ?? 0;
+          return toDomainWithImage(row as CommunityRow, count);
+        })
+      );
+
+      // Sort by followers count in memory if needed
+      if (sort === 'mostFollowed') {
+        return communities.sort((a, b) => (b.subscribersCount ?? 0) - (a.subscribersCount ?? 0));
+      } else if (sort === 'leastFollowed') {
+        return communities.sort((a, b) => (a.subscribersCount ?? 0) - (b.subscribersCount ?? 0));
+      }
+
+      return communities;
     });
 
     return cached ?? [];
@@ -239,6 +271,7 @@ export class SupabaseCommunityRepository implements CommunityRepository {
       description: community.description,
       image_url: resolvedImageUrl,
       owner_id: community.ownerId,
+      topic_id: community.topicId ?? null,
     };
     try {
       const { data, error } = await supabase

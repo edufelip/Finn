@@ -4,6 +4,8 @@ import type { CommentRepository } from '../../domain/repositories/CommentReposit
 import type { CommunityRepository } from '../../domain/repositories/CommunityRepository';
 import type { PostRepository } from '../../domain/repositories/PostRepository';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
+import type { PostReportRepository } from '../../domain/repositories/PostReportRepository';
+import type { TopicRepository } from '../../domain/repositories/TopicRepository';
 import { createRepositories } from '../../data/repositories/repositoryFactory';
 
 export type RepositoryContextValue = {
@@ -11,6 +13,8 @@ export type RepositoryContextValue = {
   communities: CommunityRepository;
   users: UserRepository;
   comments: CommentRepository;
+  postReports: PostReportRepository;
+  topics: TopicRepository;
 };
 
 const RepositoryContext = createContext<RepositoryContextValue | undefined>(undefined);
@@ -29,6 +33,8 @@ type RepositoryProviderProps = {
     communities?: Partial<CommunityRepository>;
     users?: Partial<UserRepository>;
     comments?: Partial<CommentRepository>;
+    postReports?: Partial<PostReportRepository>;
+    topics?: Partial<TopicRepository>;
   };
 };
 
@@ -40,6 +46,8 @@ export function RepositoryProvider({ children, overrides }: RepositoryProviderPr
       communities: applyOverrides(defaultRepositories.communities, overrides?.communities),
       users: applyOverrides(defaultRepositories.users, overrides?.users),
       comments: applyOverrides(defaultRepositories.comments, overrides?.comments),
+      postReports: applyOverrides(defaultRepositories.postReports, overrides?.postReports),
+      topics: applyOverrides(defaultRepositories.topics, overrides?.topics),
     }),
     [defaultRepositories, overrides]
   );

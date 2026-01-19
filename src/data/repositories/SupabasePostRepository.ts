@@ -9,10 +9,11 @@ import { TABLES } from '../supabase/tables';
 const PAGE_SIZE = 20;
 const COMMUNITY_IMAGE_BUCKET = 'community-images';
 const POST_IMAGE_BUCKET = 'post-images';
+const USER_AVATAR_BUCKET = 'user-avatars';
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
 const POST_SELECT_WITH_COUNTS =
-  '*, communities(title, image_url), profiles(name), likes(count), comments(count)';
-const POST_SELECT_BASE = '*, communities(title, image_url), profiles(name)';
+  '*, communities(title, image_url), profiles(name, photo_url), likes(count), comments(count)';
+const POST_SELECT_BASE = '*, communities(title, image_url), profiles(name, photo_url)';
 
 type PostRow = {
   id: number;
@@ -27,6 +28,7 @@ type PostRow = {
   } | null;
   profiles?: {
     name?: string;
+    photo_url?: string | null;
   } | null;
   likes?: { count: number }[] | null;
   comments?: { count: number }[] | null;
@@ -47,6 +49,7 @@ function toDomain(row: PostRow, extras?: Partial<Post>): Post {
     communityImageUrl: row.communities?.image_url ?? null,
     userId: row.user_id,
     userName: row.profiles?.name,
+    // userPhotoUrl is handled in toDomainWithImages
     likesCount: row.likes?.[0]?.count ?? 0,
     commentsCount: row.comments?.[0]?.count ?? 0,
     ...extras,
@@ -102,12 +105,24 @@ async function resolveCommunityImageUrl(imageUrl?: string | null): Promise<strin
   return data.signedUrl;
 }
 
+async function resolveUserPhotoUrl(photoUrl?: string | null): Promise<string | null> {
+  if (!photoUrl) {
+    return null;
+  }
+  if (isRemoteUrl(photoUrl)) {
+    return photoUrl;
+  }
+  const { data } = supabase.storage.from(USER_AVATAR_BUCKET).getPublicUrl(photoUrl);
+  return data?.publicUrl ?? null;
+}
+
 async function toDomainWithImages(row: PostRow, extras?: Partial<Post>): Promise<Post> {
-  const [communityImageUrl, postImageUrl] = await Promise.all([
+  const [communityImageUrl, postImageUrl, userPhotoUrl] = await Promise.all([
     resolveCommunityImageUrl(row.communities?.image_url ?? null),
     resolvePostImageUrl(row.image_url ?? null),
+    resolveUserPhotoUrl(row.profiles?.photo_url ?? null),
   ]);
-  return toDomain(row, { communityImageUrl, imageUrl: postImageUrl, ...extras });
+  return toDomain(row, { communityImageUrl, imageUrl: postImageUrl, userPhotoUrl, ...extras });
 }
 
 type UploadResult = {

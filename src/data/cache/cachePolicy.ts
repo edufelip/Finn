@@ -5,6 +5,7 @@ export const CACHE_TTL_MS = {
   communities: 10 * 60 * 1000,
   profiles: 10 * 60 * 1000,
   savedPosts: 2 * 60 * 1000,
+  topics: 30 * 60 * 1000,
 } as const;
 
 export const CacheKey = {
@@ -19,4 +20,6 @@ export const CacheKey = {
   postsByUser: (userId: string, page: number) => `posts:user:${userId}:page:${page}`,
   commentsByPost: (postId: number) => `comments:post:${postId}`,
   savedPostsByUser: (userId: string, page: number) => `saved_posts:user:${userId}:page:${page}`,
+  topics: () => 'topics:all',
+  topic: (id: number) => `topic:${id}`,
 } as const;

@@ -1,13 +1,52 @@
 import type { Community } from '../../../domain/models/community';
 import type { Subscription } from '../../../domain/models/subscription';
-import type { CommunityRepository } from '../../../domain/repositories/CommunityRepository';
+import type { CommunityRepository, CommunitySortOrder } from '../../../domain/repositories/CommunityRepository';
 import { mockCommunities, mockSubscriptions, nextCommunityId, nextSubscriptionId } from './mockData';
 
 export class MockCommunityRepository implements CommunityRepository {
-  async getCommunities(search?: string | null): Promise<Community[]> {
-    if (!search) return [...mockCommunities];
-    const query = search.toLowerCase();
-    return mockCommunities.filter((community) => community.title.toLowerCase().includes(query));
+  async getCommunities(search?: string | null, sort?: CommunitySortOrder, topicId?: number | null): Promise<Community[]> {
+    let results = [...mockCommunities];
+    
+    // Apply search filter
+    if (search) {
+      const query = search.toLowerCase();
+      results = results.filter((community) => community.title.toLowerCase().includes(query));
+    }
+    
+    // Apply topic filter
+    if (topicId) {
+      results = results.filter((community) => community.topicId === topicId);
+    }
+
+    // Apply sorting
+    switch (sort) {
+      case 'mostFollowed':
+        results.sort((a, b) => (b.subscribersCount ?? 0) - (a.subscribersCount ?? 0));
+        break;
+      case 'leastFollowed':
+        results.sort((a, b) => (a.subscribersCount ?? 0) - (b.subscribersCount ?? 0));
+        break;
+      case 'newest':
+        results.sort((a, b) => {
+          const dateA = new Date(a.createdAt ?? 0).getTime();
+          const dateB = new Date(b.createdAt ?? 0).getTime();
+          return dateB - dateA;
+        });
+        break;
+      case 'oldest':
+        results.sort((a, b) => {
+          const dateA = new Date(a.createdAt ?? 0).getTime();
+          const dateB = new Date(b.createdAt ?? 0).getTime();
+          return dateA - dateB;
+        });
+        break;
+      default:
+        // Default to most followed
+        results.sort((a, b) => (b.subscribersCount ?? 0) - (a.subscribersCount ?? 0));
+        break;
+    }
+
+    return results;
   }
 
   async getCommunity(id: number): Promise<Community | null> {

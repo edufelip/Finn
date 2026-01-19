@@ -2,11 +2,23 @@ import type { Comment } from '../../../domain/models/comment';
 import type { Community } from '../../../domain/models/community';
 import type { Post } from '../../../domain/models/post';
 import type { Subscription } from '../../../domain/models/subscription';
+import type { Topic } from '../../../domain/models/topic';
 
 type SavedPost = {
   postId: number;
   userId: string;
 };
+
+export const mockTopics: Topic[] = [
+  { id: 1, name: 'gaming', label: 'Gaming', icon: 'sports-esports', tone: 'orange' },
+  { id: 2, name: 'music', label: 'Music', icon: 'music-note', tone: 'green' },
+  { id: 3, name: 'movies', label: 'Movies & TV', icon: 'movie', tone: 'purple' },
+  { id: 4, name: 'science', label: 'Science', icon: 'science', tone: 'blue' },
+  { id: 5, name: 'technology', label: 'Technology', icon: 'computer', tone: 'orange' },
+  { id: 6, name: 'sports', label: 'Sports', icon: 'sports-soccer', tone: 'green' },
+  { id: 7, name: 'art', label: 'Art & Design', icon: 'palette', tone: 'purple' },
+  { id: 8, name: 'food', label: 'Food & Cooking', icon: 'restaurant', tone: 'blue' },
+];
 
 export const mockCommunities: Community[] = [
   {
@@ -14,12 +26,16 @@ export const mockCommunities: Community[] = [
     title: 'General',
     description: 'General discussions',
     ownerId: 'mock-user',
+    topicId: 1,
+    subscribersCount: 5,
   },
   {
     id: 2,
     title: 'Tech',
     description: 'Technology updates',
     ownerId: 'mock-user',
+    topicId: 5,
+    subscribersCount: 3,
   },
 ];
 
