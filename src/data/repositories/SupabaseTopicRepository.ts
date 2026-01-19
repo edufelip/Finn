@@ -69,6 +69,7 @@ export class SupabaseTopicRepository implements TopicRepository {
 
       if (error) {
         // Fallback to simple query if RPC doesn't exist yet
+        console.warn('[SupabaseTopicRepository] RPC get_popular_topics failed, using alphabetical fallback:', error.message);
         const fallback = await supabase
           .from(TABLES.topics)
           .select('*')

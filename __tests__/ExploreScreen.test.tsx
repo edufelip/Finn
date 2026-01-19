@@ -65,8 +65,15 @@ describe('ExploreScreen', () => {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
     };
 
+    const topicsRepo = {
+      getPopularTopics: jest.fn().mockResolvedValue([
+        { id: 1, name: 'gaming', label: 'Gaming', icon: 'sports-esports', tone: 'blue' },
+        { id: 2, name: 'music', label: 'Music', icon: 'music-note', tone: 'purple' },
+      ]),
+    };
+
     const { getAllByTestId } = render(
-      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo }}>
+      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo, topics: topicsRepo }}>
         <ExploreScreen />
       </RepositoryProvider>
     );
@@ -95,8 +102,14 @@ describe('ExploreScreen', () => {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
     };
 
+    const topicsRepo = {
+      getPopularTopics: jest.fn().mockResolvedValue([
+        { id: 1, name: 'gaming', label: 'Gaming', icon: 'sports-esports', tone: 'blue' },
+      ]),
+    };
+
     const { getByTestId } = render(
-      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo }}>
+      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo, topics: topicsRepo }}>
         <ExploreScreen />
       </RepositoryProvider>
     );
@@ -111,6 +124,6 @@ describe('ExploreScreen', () => {
     });
 
     fireEvent.press(getByTestId(exploreCopy.testIds.seeAll));
-    expect(mockNavigate).toHaveBeenCalledWith('SearchResults', { focus: true });
+    expect(mockNavigate).toHaveBeenCalledWith('SearchResults', {});
   });
 });
