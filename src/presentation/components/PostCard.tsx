@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
@@ -7,6 +7,11 @@ import type { Post } from '../../domain/models/post';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { postCardCopy } from '../content/postCardCopy';
+import PostOptionsModal from './PostOptionsModal';
+import ReportPostModal from './ReportPostModal';
+import { sharePost } from '../../utils/shareUtils';
+import { useAuth } from '../../app/providers/AuthProvider';
+import { useRepositories } from '../../app/providers/RepositoryProvider';
 
 type PostCardProps = {
   post: Post;
@@ -27,23 +32,29 @@ export default function PostCard({
   const styles = useMemo(() => createStyles(theme), [theme]);
   const likeScale = useSharedValue(1);
   const likeSpring = useMemo(() => ({ duration: 133, dampingRatio: 0.7 }), []);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const optionsButtonRef = useRef<View>(null);
+  const { session } = useAuth();
+  const { postReports } = useRepositories();
 
   const likeStyle = useAnimatedStyle(() => ({
     transform: [{ scale: likeScale.value }],
   }));
 
   const handleOptions = () => {
-    if (!onToggleSave) return;
-    Alert.alert(postCardCopy.optionsTitle, undefined, [
-      {
-        text: post.isSaved ? postCardCopy.unsave : postCardCopy.save,
-        onPress: onToggleSave,
-      },
-      { text: postCardCopy.cancel, style: 'cancel' },
-    ]);
+    // Use a small timeout to ensure the ref is ready
+    setTimeout(() => {
+      optionsButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+        setModalPosition({ x: pageX + width, y: pageY + height });
+        setModalVisible(true);
+      });
+    }, 0);
   };
 
   const handleLikePress = () => {
+    // eslint-disable-next-line react-hooks/immutability
     likeScale.value = withSequence(
       withSpring(1.15, likeSpring),
       withSpring(1, likeSpring)
@@ -51,37 +62,81 @@ export default function PostCard({
     onToggleLike?.();
   };
 
+  const handleShare = () => {
+    if (onShare) {
+      onShare();
+    } else {
+      void sharePost(post);
+    }
+  };
+
+  const handleReport = async (reason: string) => {
+    if (!session?.user?.id) {
+      Alert.alert('Error', 'You must be logged in to report a post');
+      throw new Error('User not logged in');
+    }
+
+    try {
+      await postReports.reportPost(post.id, session.user.id, reason);
+      Alert.alert('Report Submitted', 'Thank you for helping keep our community safe. We will review your report.');
+    } catch (error) {
+      console.error('Report post error:', error);
+      
+      // Handle different error types
+      let errorMessage = 'Failed to submit report. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase error objects
+        const supabaseError = error as { message?: string; hint?: string; details?: string };
+        if (supabaseError.message) {
+          errorMessage = supabaseError.message;
+          if (supabaseError.hint) {
+            errorMessage += `\n\nHint: ${supabaseError.hint}`;
+          }
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      Alert.alert('Report Failed', errorMessage);
+      throw error; // Re-throw to keep modal open
+    }
+  };
+
   return (
     <View style={styles.wrapper} testID={`post-card-${post.id}`}>
       <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.communityImageWrapper}>
-            {post.communityImageUrl ? (
+            {post.userPhotoUrl ? (
               <Image
-                source={{ uri: post.communityImageUrl }}
+                source={{ uri: post.userPhotoUrl }}
                 style={styles.communityImage}
-                testID={`post-community-image-${post.id}`}
-                accessibilityLabel={`post-community-image-${post.id}`}
+                testID={`post-user-image-${post.id}`}
+                accessibilityLabel={`post-user-image-${post.id}`}
               />
             ) : (
               <Image source={require('../../../assets/user_icon.png')} style={styles.communityImage} />
             )}
           </View>
           <View style={styles.headerText}>
-            <Text style={styles.community}>{post.communityTitle ?? postCardCopy.communityFallback}</Text>
+            <Text style={styles.community}>{post.userName ?? postCardCopy.authorFallback}</Text>
             <Text style={styles.author}>
-              {postCardCopy.postedBy(post.userName ?? postCardCopy.authorFallback)}
+              Posted in {post.communityTitle ?? postCardCopy.communityFallback}
             </Text>
           </View>
         </View>
-        <Pressable
-          onPress={handleOptions}
-          style={styles.optionsButton}
-          testID={`post-options-${post.id}`}
-          accessibilityLabel={`post-options-${post.id}`}
-        >
-          <MaterialIcons name="more-vert" size={20} color={theme.onSurfaceVariant} />
-        </Pressable>
+        <View ref={optionsButtonRef} collapsable={false} style={styles.optionsButton}>
+          <Pressable
+            onPress={handleOptions}
+            testID={`post-options-${post.id}`}
+            accessibilityLabel={`post-options-${post.id}`}
+          >
+            <MaterialIcons name="more-vert" size={20} color={theme.onSurfaceVariant} />
+          </Pressable>
+        </View>
         <Text style={styles.content}>{post.content}</Text>
         {post.imageUrl ? (
           <Image source={{ uri: post.imageUrl }} style={styles.postImage} testID={`post-image-${post.id}`} />
@@ -113,7 +168,7 @@ export default function PostCard({
           </Pressable>
           <Pressable
             style={styles.actionGroup}
-            onPress={onShare}
+            onPress={handleShare}
             testID={`post-share-${post.id}`}
             accessibilityLabel={`post-share-${post.id}`}
           >
@@ -122,6 +177,20 @@ export default function PostCard({
           </Pressable>
         </View>
       </View>
+      <PostOptionsModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSave={() => onToggleSave?.()}
+        onReport={() => setReportModalVisible(true)}
+        isSaved={post.isSaved ?? false}
+        position={modalPosition}
+      />
+      <ReportPostModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        onSubmit={handleReport}
+        postId={post.id}
+      />
     </View>
   );
 }
