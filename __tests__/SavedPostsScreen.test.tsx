@@ -88,13 +88,10 @@ describe('SavedPostsScreen', () => {
     await waitFor(() => expect(getByTestId('post-options-1')).toBeTruthy());
     fireEvent.press(getByTestId('post-options-1'));
 
+    await waitFor(() => expect(getByTestId('post-option-save')).toBeTruthy());
+    fireEvent.press(getByTestId('post-option-save'));
+
     await waitFor(() => expect(postsRepo.unbookmarkPost).toHaveBeenCalledWith(1, 'user-1'));
-    const alertArgs = alertSpy.mock.calls[0] ?? [];
-    const title = alertArgs[0];
-    const buttons = alertArgs[2];
-    expect(title).toBe(postCardCopy.optionsTitle);
-    expect(buttons?.[0]?.text).toBe(postCardCopy.unsave);
-    expect(buttons?.[1]?.text).toBe(postCardCopy.cancel);
     alertSpy.mockRestore();
   });
 
@@ -136,6 +133,9 @@ describe('SavedPostsScreen', () => {
 
     await waitFor(() => expect(getByTestId('post-options-2')).toBeTruthy());
     fireEvent.press(getByTestId('post-options-2'));
+
+    await waitFor(() => expect(getByTestId('post-option-save')).toBeTruthy());
+    fireEvent.press(getByTestId('post-option-save'));
 
     await waitFor(() =>
       expect(enqueueWrite).toHaveBeenCalledWith(

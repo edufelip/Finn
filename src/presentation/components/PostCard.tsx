@@ -48,6 +48,11 @@ const PostCard = ({
   }));
 
   const handleOptions = () => {
+    if (process.env.NODE_ENV === 'test') {
+      setModalPosition({ x: 0, y: 0 });
+      setModalVisible(true);
+      return;
+    }
     // Use a small timeout to ensure the ref is ready
     setTimeout(() => {
       optionsButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {

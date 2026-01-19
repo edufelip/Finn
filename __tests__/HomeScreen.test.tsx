@@ -268,6 +268,9 @@ describe('HomeScreen', () => {
     await waitFor(() => expect(getByTestId('post-options-6')).toBeTruthy());
     fireEvent.press(getByTestId('post-options-6'));
 
+    await waitFor(() => expect(getByTestId('post-option-save')).toBeTruthy());
+    fireEvent.press(getByTestId('post-option-save'));
+
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(homeCopy.alerts.savedFailed.title, 'save-error');
     });
@@ -363,6 +366,9 @@ describe('HomeScreen', () => {
 
     await waitFor(() => expect(getByTestId('post-options-3')).toBeTruthy());
     fireEvent.press(getByTestId('post-options-3'));
+
+    await waitFor(() => expect(getByTestId('post-option-save')).toBeTruthy());
+    fireEvent.press(getByTestId('post-option-save'));
 
     await waitFor(() => expect(postsRepo.bookmarkPost).toHaveBeenCalledWith(3, 'user-1'));
     await waitForHomeEffects(postsRepo, usersRepo);
