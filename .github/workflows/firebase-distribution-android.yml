@@ -1,18 +1,28 @@
 name: Android Firebase Distribution
 
 on:
+  workflow_dispatch: {}
   push:
-    branches: [main]
+    branches: [develop]
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
+  pull_request:
+    branches:
+      - develop
+      - release/**
+      - hotfix/**
     paths-ignore:
       - "supabase/**"
       - "docs/**"
 
 jobs:
   firebase-distribution:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mobile/android
+        working-directory: android
     steps:
       - uses: actions/checkout@v4
 
@@ -21,7 +31,7 @@ jobs:
           cat <<'ENVEOF' > .env
           ${{ secrets.ENV_FILE }}
           ENVEOF
-        working-directory: mobile
+        working-directory: .
 
       - name: Export env vars
         run: |
@@ -29,17 +39,17 @@ jobs:
           source .env
           set +a
           env | grep '^EXPO_PUBLIC_' >> "$GITHUB_ENV" || true
-        working-directory: mobile
+        working-directory: .
 
       - name: Set debug API flag
         run: |
           echo "EXPO_PUBLIC_USE_DEV_API=true" >> "$GITHUB_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Validate Expo environment
         run: |
@@ -48,7 +58,7 @@ jobs:
             exit 1
           fi
           echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Validate Firebase secrets
         env:
@@ -68,17 +78,17 @@ jobs:
             echo "FIREBASE_SERVICE_ACCOUNT_JSON is not set" >&2
             exit 1
           fi
-        working-directory: mobile
+        working-directory: .
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
+        working-directory: .
 
       - uses: actions/setup-java@v4
         with:
@@ -97,10 +107,11 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: wrapper
-          build-root-directory: mobile/android
+          build-root-directory: android
           arguments: |
             clean
             assembleDebug
+            -PCI_VERSION_CODE=$CI_VERSION_CODE
 
       - name: Release notes
         run: |
@@ -108,12 +119,12 @@ jobs:
           echo "RELEASE_NOTES<<EOF" >> "$GITHUB_ENV"
           echo "$NOTES" >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Write Firebase service account
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > "$RUNNER_TEMP/firebase-service-account.json"
-        working-directory: mobile
+        working-directory: .
 
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -121,5 +132,5 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID_ANDROID_DEV }}
           serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
           groups: base-group
-          file: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          file: android/app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: ${{ env.RELEASE_NOTES }}

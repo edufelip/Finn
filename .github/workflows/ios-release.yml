@@ -1,8 +1,11 @@
 name: iOS Release
 
 on:
+  workflow_dispatch: {}
   push:
-    branches: [main]
+    branches:
+      - release/**
+      - hotfix/**
     paths-ignore:
       - "supabase/**"
       - "docs/**"
@@ -23,19 +26,16 @@ jobs:
           cat <<'EOF' > .env
           ${{ secrets.ENV_FILE }}
           EOF
-        working-directory: mobile
 
       - name: Export env vars
         run: |
           tr -d '\r' < .env | \
             awk '/^[[:space:]]*(export[[:space:]]+)?EXPO_PUBLIC_[A-Za-z0-9_]+=/ { sub(/^[[:space:]]*export[[:space:]]+/, "", $0); print $0; }' \
             >> "$GITHUB_ENV"
-        working-directory: mobile
 
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=prod" >> "$GITHUB_ENV"
-        working-directory: mobile
 
       - name: Validate Expo environment
         run: |
@@ -44,7 +44,6 @@ jobs:
             exit 1
           fi
           echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
-        working-directory: mobile
 
       - name: Validate Firebase secrets
         env:
@@ -54,64 +53,65 @@ jobs:
             echo "GOOGLE_SERVICE_INFO_PLIST_BASE64 is not set" >&2
             exit 1
           fi
-        working-directory: mobile
 
       - name: Bump iOS build number
         run: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" mobile/ios/Finn/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" ios/FinnDev/Info.plist
 
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
+        with: 
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
+        working-directory: .
 
       - name: Install pods
         env:
           COCOAPODS_CACHE_DIR: ${{ runner.temp }}/.cocoapods-cache
         run: |
           mkdir -p "$COCOAPODS_CACHE_DIR"
-          cd mobile/ios
+          cd ios
           pod install --silent
-
       - name: Write GoogleService-Info.plist
-        working-directory: mobile/ios
+        working-directory: ios
         env:
           GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
         run: |
-          mkdir -p Finn
-          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 --decode -o Finn/GoogleService-Info.plist
+          mkdir -p FinnDev
+          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > FinnDev/GoogleService-Info.plist
 
       - name: Validate Google Sign-In scheme
         run: |
-          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" mobile/ios/Finn/GoogleService-Info.plist)
-          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" mobile/ios/Finn/Info.plist | grep -Fq "$PLIST_REVERSED"; then
+          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/FinnDev/GoogleService-Info.plist)
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" ios/FinnDev/Info.plist | grep -Fq "$PLIST_REVERSED"; then
             echo "Google Sign-In mismatch: Info.plist missing REVERSED_CLIENT_ID scheme ($PLIST_REVERSED)" >&2
             exit 1
           fi
-
       - name: Set up keychain and certificates
         env:
           CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
           CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
         run: |
+          # Paths
           KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
           CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
           PROFILE_PATH="$RUNNER_TEMP/build_profile.mobileprovision"
 
+          # Decode certificate and profile
           echo -n "$CERT_P12_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
           echo -n "$PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
 
+          # Create and unlock keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
+          # Import certificate
           security import "$CERTIFICATE_PATH" \
             -P "$CERT_PASSWORD" \
             -A \
@@ -119,9 +119,13 @@ jobs:
             -f pkcs12 \
             -k "$KEYCHAIN_PATH"
 
+          # Allow Xcode tools to use the key without UI
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Use this keychain for the build
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
+          # Install provisioning profile
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/FinnProfile.mobileprovision"
 
@@ -151,12 +155,12 @@ jobs:
           IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
           KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
-          cd mobile/ios
+          cd ios
           xcodebuild \
-            -workspace Finn.xcworkspace \
-            -scheme Finn \
+            -workspace FinnDev.xcworkspace \
+            -scheme FinnDev \
             -configuration Release \
-            -archivePath "$PWD/build/Finn.xcarchive" \
+            -archivePath "$PWD/build/FinnDev.xcarchive" \
             archive \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
@@ -169,7 +173,7 @@ jobs:
           IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
           KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
-          cat <<EOF > mobile/ios/ExportOptions.plist
+          cat <<EOF > ios/ExportOptions.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -186,9 +190,9 @@ jobs:
           </plist>
           EOF
 
-          cd mobile/ios
+          cd ios
           xcodebuild -exportArchive \
-            -archivePath "$PWD/build/Finn.xcarchive" \
+            -archivePath "$PWD/build/FinnDev.xcarchive" \
             -exportOptionsPlist ExportOptions.plist \
             -exportPath "$PWD/build" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
@@ -202,11 +206,11 @@ jobs:
           mkdir -p "$HOME/.private_keys"
           KEY_FILE="$HOME/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
           echo "$APP_STORE_CONNECT_API_KEY_CONTENT" | base64 -d > "$KEY_FILE"
-          ls -l mobile/ios/build
+          ls -l ios/build
 
-          IPA_PATH=$(ls mobile/ios/build/*.ipa | head -n 1)
+          IPA_PATH=$(ls ios/build/*.ipa | head -n 1)
           if [ -z "$IPA_PATH" ]; then
-            echo "IPA not found in mobile/ios/build" && exit 1
+            echo "IPA not found in ios/build" && exit 1
           fi
 
           xcrun altool --upload-app -f "$IPA_PATH" -t ios \
@@ -217,7 +221,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Finn.ipa
-          path: mobile/ios/build/Finn.ipa
+          path: ios/build/Finn.ipa
 
       - name: Clean keychain and profiles
         if: always()

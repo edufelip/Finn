@@ -1,14 +1,24 @@
 name: iOS Firebase Distribution
 
 on:
+  workflow_dispatch: {}
   push:
-    branches: [main]
+    branches: [develop]
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
+  pull_request:
+    branches:
+      - develop
+      - release/**
+      - hotfix/**
     paths-ignore:
       - "supabase/**"
       - "docs/**"
 
 jobs:
   firebase-distribution:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: macos-latest
 
     env:
@@ -24,7 +34,6 @@ jobs:
           cat <<'ENVEOF' > .env
           ${{ secrets.ENV_FILE }}
           ENVEOF
-        working-directory: mobile
 
       - name: Export env vars
         run: |
@@ -32,17 +41,18 @@ jobs:
           source .env
           set +a
           env | grep '^EXPO_PUBLIC_' >> "$GITHUB_ENV" || true
-        working-directory: mobile
 
       - name: Set debug API flag
         run: |
           echo "EXPO_PUBLIC_USE_DEV_API=true" >> "$GITHUB_ENV"
-        working-directory: mobile
 
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
-        working-directory: mobile
+
+      - name: Set Finn environment
+        run: |
+          echo "FINN_ENV=dev" >> "$GITHUB_ENV"
 
       - name: Validate Expo environment
         run: |
@@ -51,7 +61,6 @@ jobs:
             exit 1
           fi
           echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
-        working-directory: mobile
 
       - name: Validate Firebase secrets
         env:
@@ -71,39 +80,42 @@ jobs:
             echo "FIREBASE_SERVICE_ACCOUNT_JSON is not set" >&2
             exit 1
           fi
-        working-directory: mobile
 
       - name: Bump iOS build number
         run: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" mobile/ios/Finn/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" ios/FinnDev/Info.plist
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
+        working-directory: .
 
       - name: Install pods
         env:
           COCOAPODS_CACHE_DIR: ${{ runner.temp }}/.cocoapods-cache
         run: |
           mkdir -p "$COCOAPODS_CACHE_DIR"
-          cd mobile/ios
+          cd ios
           pod install --silent
 
       - name: Write GoogleService-Info-Dev.plist
-        working-directory: mobile/ios
+        working-directory: ios
         env:
           GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV }}
         run: |
-          mkdir -p Finn
-          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 --decode -o Finn/GoogleService-Info-Dev.plist
-          cp Finn/GoogleService-Info-Dev.plist Finn/GoogleService-Info.plist
+          mkdir -p FinnDev
+          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > FinnDev/GoogleService-Info-Dev.plist
+
+      - name: Ensure GoogleService-Info.plist exists
+        working-directory: ios
+        run: |
+          cp -f FinnDev/GoogleService-Info-Dev.plist FinnDev/GoogleService-Info.plist
 
       - name: Sync Google Sign-In scheme (dev)
         run: |
@@ -111,8 +123,8 @@ jobs:
           import plistlib
           import sys
 
-          info_path = "mobile/ios/Finn/Info.plist"
-          gservice_path = "mobile/ios/Finn/GoogleService-Info-Dev.plist"
+          info_path = "ios/FinnDev/Info.plist"
+          gservice_path = "ios/FinnDev/GoogleService-Info-Dev.plist"
 
           with open(gservice_path, "rb") as f:
             gservice = plistlib.load(f)
@@ -147,8 +159,8 @@ jobs:
 
       - name: Validate Google Sign-In scheme
         run: |
-          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" mobile/ios/Finn/GoogleService-Info-Dev.plist)
-          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" mobile/ios/Finn/Info.plist | grep -Fq "$PLIST_REVERSED"; then
+          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/FinnDev/GoogleService-Info-Dev.plist)
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" ios/FinnDev/Info.plist | grep -Fq "$PLIST_REVERSED"; then
             echo "Google Sign-In mismatch: Info.plist missing REVERSED_CLIENT_ID scheme ($PLIST_REVERSED)" >&2
             exit 1
           fi
@@ -206,10 +218,10 @@ jobs:
         env:
           KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
-          cd mobile/ios
+          cd ios
           xcodebuild \
-            -workspace Finn.xcworkspace \
-            -scheme Finn \
+            -workspace FinnDev.xcworkspace \
+            -scheme FinnDev \
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$PWD/build/FinnDev.xcarchive" \
@@ -218,7 +230,7 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Development" \
             DEVELOPMENT_TEAM=${{ secrets.IOS_TEAM_ID }} \
             PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
-            CODE_SIGN_ENTITLEMENTS="Finn/Finn.entitlements" \
+            CODE_SIGN_ENTITLEMENTS="FinnDev/FinnDev.entitlements" \
             PRODUCT_BUNDLE_IDENTIFIER="com.edufelip.finn.dev" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
@@ -226,7 +238,7 @@ jobs:
         env:
           KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
-          cat <<EOF > mobile/ios/ExportOptionsDevelopment.plist
+          cat <<EOF > ios/ExportOptionsDevelopment.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -243,7 +255,7 @@ jobs:
           </plist>
           EOF
 
-          cd mobile/ios
+          cd ios
           xcodebuild -exportArchive \
             -archivePath "$PWD/build/FinnDev.xcarchive" \
             -exportOptionsPlist ExportOptionsDevelopment.plist \
@@ -252,9 +264,9 @@ jobs:
 
       - name: Resolve IPA path
         run: |
-          IPA_PATH=$(ls mobile/ios/build/*.ipa | head -n 1)
+          IPA_PATH=$(ls ios/build/*.ipa | head -n 1)
           if [ -z "$IPA_PATH" ]; then
-            echo "IPA not found in mobile/ios/build" && exit 1
+            echo "IPA not found in ios/build" && exit 1
           fi
           echo "IPA_PATH=$IPA_PATH" >> "$GITHUB_ENV"
 

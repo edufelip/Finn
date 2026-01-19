@@ -17,25 +17,25 @@ jobs:
           ${{ secrets.ENV_FILE }}
           ENVEOF
           echo "EXPO_PUBLIC_APP_MODE=mock" >> .env
-        working-directory: mobile
+        working-directory: .
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
+        working-directory: .
 
       - name: Install pods
         env:
           COCOAPODS_CACHE_DIR: ${{ runner.temp }}/.cocoapods-cache
         run: |
           mkdir -p "$COCOAPODS_CACHE_DIR"
-          cd mobile/ios
+          cd ios
           pod install --silent
 
       - name: Install Maestro
@@ -52,7 +52,7 @@ jobs:
       - name: Build and run app
         run: |
           EXPO_PUBLIC_APP_MODE=mock npx expo run:ios --device "iPhone 15" --no-interactive
-        working-directory: mobile
+        working-directory: .
 
       - name: Run Maestro tests
         run: maestro test e2e/maestro

@@ -2,56 +2,59 @@ name: iOS PR Checks
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - develop
+      - release/**
+      - hotfix/**
     paths-ignore:
       - "supabase/**"
       - "docs/**"
 
 jobs:
   build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Write .env
         run: |
           cat <<'EOF' > .env
           ${{ secrets.ENV_FILE }}
           EOF
-        working-directory: mobile
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
+          cache-dependency-path: package-lock.json
+      - name: Ensure firebase secrets exist
+        run: |
+          if [ -z "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV }}" ]; then
+            echo "GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV is not set" >&2
+            exit 1
+          fi
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
-
+        working-directory: .
       - name: Install pods
         env:
           COCOAPODS_CACHE_DIR: ${{ runner.temp }}/.cocoapods-cache
         run: |
           mkdir -p "$COCOAPODS_CACHE_DIR"
-          cd mobile/ios
+          cd ios
           pod install --silent
-
       - name: Write GoogleService-Info.plist
         env:
-          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV }}
         run: |
           if [ -n "$GOOGLE_SERVICE_INFO_PLIST_BASE64" ]; then
-            echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > mobile/ios/Finn/GoogleService-Info.plist
+            echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > ios/FinnDev/GoogleService-Info-Dev.plist
           fi
-
       - name: Build (simulator debug)
         run: |
-          cd mobile/ios
+          cd ios
           xcodebuild \
-            -workspace Finn.xcworkspace \
-            -scheme Finn \
+            -workspace FinnDev.xcworkspace \
+            -scheme FinnDev \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 15' \

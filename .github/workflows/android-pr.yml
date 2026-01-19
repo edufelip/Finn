@@ -2,64 +2,74 @@ name: Android PR Checks
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - develop
+      - release/**
+      - hotfix/**
     paths-ignore:
       - "supabase/**"
       - "docs/**"
 
 jobs:
   lint-test-build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mobile/android
+        working-directory: android
     steps:
       - uses: actions/checkout@v4
-
       - name: Write .env
         run: |
           cat <<'EOF' > .env
           ${{ secrets.ENV_FILE }}
           EOF
-        working-directory: mobile
-
+        working-directory: .
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
+          cache-dependency-path: package-lock.json
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
-
+        working-directory: .
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
+      - name: Ensure firebase secrets exist
+        run: |
+          if [ -z "${{ secrets.GOOGLE_SERVICES_JSON_BASE64_DEV }}" ]; then
+            echo "GOOGLE_SERVICES_JSON_BASE64_DEV is not set" >&2
+            exit 1
+          fi
+          if [ -z "${{ secrets.FIREBASE_APP_ID_ANDROID_DEV }}" ]; then
+            echo "FIREBASE_APP_ID_ANDROID_DEV is not set" >&2
+            exit 1
+          fi
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_JSON is not set" >&2
+            exit 1
+          fi
       - name: Set CI version code
         run: echo "CI_VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
-
       - name: Write google-services.json
         run: |
           mkdir -p app
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
-
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64_DEV }}" | base64 -d > app/google-services.json
       - uses: gradle/gradle-build-action@v2
         with:
           gradle-version: wrapper
-          build-root-directory: mobile/android
+          build-root-directory: android
           arguments: |
             lint
             test
             assembleDebug
-
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-reports
           path: |
-            mobile/android/app/build/reports
-            mobile/android/app/build/outputs/apk/debug/*.apk
+            android/app/build/reports
+            android/app/build/outputs/apk/debug/*.apk

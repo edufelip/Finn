@@ -1,8 +1,11 @@
 name: Android Release
 
 on:
+  workflow_dispatch: {}
   push:
-    branches: [main]
+    branches:
+      - release/**
+      - hotfix/**
     paths-ignore:
       - "supabase/**"
       - "docs/**"
@@ -12,28 +15,26 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mobile/android
+        working-directory: android
     steps:
       - uses: actions/checkout@v4
-
       - name: Write .env
         run: |
           cat <<'EOF' > .env
           ${{ secrets.ENV_FILE }}
           EOF
-        working-directory: mobile
-
+        working-directory: .
       - name: Export env vars
         run: |
           tr -d '\r' < .env | \
             awk '/^[[:space:]]*(export[[:space:]]+)?EXPO_PUBLIC_[A-Za-z0-9_]+=/ { sub(/^[[:space:]]*export[[:space:]]+/, "", $0); print $0; }' \
             >> "$GITHUB_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=prod" >> "$GITHUB_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Validate Expo environment
         run: |
@@ -42,7 +43,7 @@ jobs:
             exit 1
           fi
           echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
-        working-directory: mobile
+        working-directory: .
 
       - name: Validate Firebase secrets
         env:
@@ -52,23 +53,19 @@ jobs:
             echo "GOOGLE_SERVICES_JSON_BASE64 is not set" >&2
             exit 1
           fi
-        working-directory: mobile
-
+        working-directory: .
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
+          cache-dependency-path: package-lock.json
       - name: Install JS deps
         run: npm ci
-        working-directory: mobile
-
+        working-directory: .
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
       - name: Set CI version code
         run: echo "CI_VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
 
@@ -94,10 +91,11 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: wrapper
-          build-root-directory: mobile/android
+          build-root-directory: android
           arguments: |
             clean
             bundleRelease
+            -PCI_VERSION_CODE=${{ env.CI_VERSION_CODE }}
 
       - name: Sign bundle with jarsigner
         env:
@@ -115,13 +113,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
-          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload to Play (internal track)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.edufelip.finn
-          releaseFiles: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           track: internal
           status: draft
+          # status: completed
