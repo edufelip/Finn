@@ -60,4 +60,29 @@ export class SupabaseTopicRepository implements TopicRepository {
 
     return cached ?? null;
   }
+
+  async getPopularTopics(limit: number): Promise<Topic[]> {
+    const cacheKey = CacheKey.popularTopics(limit);
+    const cached = await cacheFirst<Topic[]>(cacheKey, CACHE_TTL_MS.topics, async () => {
+      // Use RPC function to get topics with community counts
+      const { data, error } = await supabase.rpc('get_popular_topics', { limit_count: limit });
+
+      if (error) {
+        // Fallback to simple query if RPC doesn't exist yet
+        const fallback = await supabase
+          .from(TABLES.topics)
+          .select('*')
+          .order('label', { ascending: true })
+          .limit(limit);
+        
+        if (fallback.error) {
+          throw fallback.error;
+        }
+        return (fallback.data ?? []).map(toDomain);
+      }
+      return (data ?? []).map((row: TopicRow) => toDomain(row));
+    });
+
+    return cached ?? [];
+  }
 }

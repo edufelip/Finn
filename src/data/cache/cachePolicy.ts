@@ -22,4 +22,5 @@ export const CacheKey = {
   savedPostsByUser: (userId: string, page: number) => `saved_posts:user:${userId}:page:${page}`,
   topics: () => 'topics:all',
   topic: (id: number) => `topic:${id}`,
+  popularTopics: (limit: number) => `topics:popular:${limit}`,
 } as const;

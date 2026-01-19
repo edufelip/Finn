@@ -86,7 +86,7 @@ export default function ExploreScreen() {
     try {
       const [communitiesData, topicsData] = await Promise.all([
         communityRepository.getCommunities(),
-        topicRepository.getTopics(),
+        topicRepository.getPopularTopics(8), // Get top 8 topics by community count
       ]);
       
       const sorted = [...communitiesData].sort(
@@ -100,7 +100,7 @@ export default function ExploreScreen() {
       if (isMounted.current && loadToken.current === token) {
         setTrending(trendingItems);
         setFeedItems(feedCandidates);
-        setTopics(topicsData.slice(0, 8)); // Show first 8 topics
+        setTopics(topicsData); // Already limited to 8 from repository
       }
     } catch (err) {
       if (err instanceof Error && isMounted.current && loadToken.current === token) {
