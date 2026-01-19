@@ -587,7 +587,7 @@ export default function ProfileScreen() {
               {currentError ? <Text style={styles.error}>{currentError}</Text> : null}
               {activeTab === 'communities' && !currentLoading ? (
                 communities.length > 0 ? (
-                  <View testID={profileCopy.testIds.communityList}>
+                  <View testID={profileCopy.testIds.communityList} style={styles.communityList}>
                     {communities.map((community) => (
                       <ManagedCommunityCard
                         key={community.id}
@@ -619,7 +619,24 @@ export default function ProfileScreen() {
                 </Text>
                 <Text style={styles.loadingBody}>{profileCopy.loading.body}</Text>
               </View>
-            ) : (
+            ) : activeTab === 'communities' && communities.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyContent}>
+                  <View style={styles.emptyIconWrapper}>
+                    <View style={styles.emptyIconInner}>
+                      <MaterialIcons name="add" size={28} color={theme.onSurfaceVariant} />
+                    </View>
+                  </View>
+                  <Text
+                    style={styles.emptyTitle}
+                    testID={profileCopy.testIds.communitiesEmptyTitle}
+                  >
+                    {emptyCopy.title}
+                  </Text>
+                  <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
+                </View>
+              </View>
+            ) : activeTab !== 'communities' ? (
               <View style={styles.emptyState}>
                 <View style={styles.emptyContent}>
                   <View style={styles.emptyIconWrapper}>
@@ -632,9 +649,7 @@ export default function ProfileScreen() {
                     testID={
                       activeTab === 'posts'
                         ? profileCopy.testIds.emptyTitle
-                        : activeTab === 'saved'
-                        ? profileCopy.testIds.savedEmptyTitle
-                        : profileCopy.testIds.communitiesEmptyTitle
+                        : profileCopy.testIds.savedEmptyTitle
                     }
                   >
                     {emptyCopy.title}
@@ -652,7 +667,7 @@ export default function ProfileScreen() {
                   ) : null}
                 </View>
               </View>
-            )
+            ) : null
           }
           ListFooterComponent={
             currentLoading && currentPosts.length > 0 ? (
@@ -944,5 +959,8 @@ const createStyles = (theme: ThemeColors) =>
     footer: {
       paddingVertical: 16,
       alignItems: 'center',
+    },
+    communityList: {
+      paddingTop: 8,
     },
   });
