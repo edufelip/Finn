@@ -390,7 +390,9 @@ export default function ExploreScreen() {
                         <View style={[styles.topicIconWrap, { backgroundColor: tonePalette.border }]}>
                           <MaterialIcons name={topic.icon as any} size={18} color={tonePalette.icon} />
                         </View>
-                        <Text style={styles.topicLabel}>{topic.label}</Text>
+                        <Text style={styles.topicLabel} numberOfLines={1} ellipsizeMode="tail">
+                          {topic.label}
+                        </Text>
                       </Pressable>
                     );
                   })}
@@ -618,6 +620,7 @@ const createStyles = (theme: ThemeColors) =>
       justifyContent: 'center',
     },
     topicLabel: {
+      flex: 1,
       fontSize: 13,
       fontWeight: '600',
       color: theme.onSurface,
