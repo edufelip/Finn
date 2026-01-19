@@ -19,6 +19,8 @@ type PostCardProps = {
   onOpenComments?: () => void;
   onToggleSave?: () => void;
   onShare?: () => void;
+  onMarkForReview?: () => void;
+  canModerate?: boolean;
 };
 
 export default function PostCard({
@@ -27,6 +29,8 @@ export default function PostCard({
   onOpenComments,
   onToggleSave,
   onShare,
+  onMarkForReview,
+  canModerate = false,
 }: PostCardProps) {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -182,7 +186,9 @@ export default function PostCard({
         onClose={() => setModalVisible(false)}
         onSave={() => onToggleSave?.()}
         onReport={() => setReportModalVisible(true)}
+        onMarkForReview={onMarkForReview}
         isSaved={post.isSaved ?? false}
+        canModerate={canModerate}
         position={modalPosition}
       />
       <ReportPostModal

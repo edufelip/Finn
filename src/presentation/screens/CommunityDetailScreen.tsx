@@ -38,7 +38,12 @@ export default function CommunityDetailScreen() {
   const { communityId: communityIdParam, initialCommunity } = route.params as RouteParams;
   const communityId = Number(communityIdParam);
   const { session, isGuest, exitGuest } = useAuth();
-  const { communities: communityRepository, posts: postRepository } = useRepositories();
+  const { 
+    communities: communityRepository, 
+    posts: postRepository,
+    communityModerators: moderatorRepository,
+    moderationLogs: logRepository,
+  } = useRepositories();
   const [community, setCommunity] = useState<Community | null>(initialCommunity ?? null);
   const posts = useCommunityPosts(communityId);
   const setCommunityPosts = usePostsStore((state) => state.setCommunityPosts);
@@ -48,6 +53,7 @@ export default function CommunityDetailScreen() {
   const [subscribersCount, setSubscribersCount] = useState(initialCommunity?.subscribersCount ?? 0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canModerate, setCanModerate] = useState(false);
   const likeInFlightRef = useRef<Set<number>>(new Set());
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -134,6 +140,37 @@ export default function CommunityDetailScreen() {
     };
   }, [communityId, communityRepository, postRepository, session?.user?.id, setCommunityPosts, setSubscription, initialCommunity]);
 
+  // Check if user can moderate
+  useEffect(() => {
+    let mounted = true;
+    const checkModeration = async () => {
+      if (!session?.user?.id || !community) {
+        setCanModerate(false);
+        return;
+      }
+
+      try {
+        // Check if user is owner
+        if (community.ownerId === session.user.id) {
+          if (mounted) setCanModerate(true);
+          return;
+        }
+
+        // Check if user is moderator
+        const isMod = await moderatorRepository.isModerator(communityId, session.user.id);
+        if (mounted) setCanModerate(isMod);
+      } catch (error) {
+        if (mounted) setCanModerate(false);
+      }
+    };
+
+    checkModeration();
+
+    return () => {
+      mounted = false;
+    };
+  }, [communityId, community, session?.user?.id, moderatorRepository]);
+
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
       showGuestGateAlert({ onSignIn: () => void exitGuest() });
@@ -213,6 +250,51 @@ export default function CommunityDetailScreen() {
         Alert.alert(communityDetailCopy.alerts.savedFailed.title, err.message);
       }
     }
+  };
+
+  const handleMarkForReview = async (post: Post) => {
+    if (!session?.user?.id) {
+      Alert.alert('Error', 'You must be logged in to mark posts for review');
+      return;
+    }
+
+    if (!canModerate) {
+      Alert.alert('Not Authorized', 'Only moderators and owners can mark posts for review');
+      return;
+    }
+
+    Alert.alert(
+      'Mark for Review',
+      'Are you sure you want to mark this post for review? This will notify other moderators.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Mark',
+          onPress: async () => {
+            const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+            if (!status.isConnected) {
+              Alert.alert('Offline', 'You must be online to mark posts for review');
+              return;
+            }
+
+            try {
+              await postRepository.markPostForReview(post.id);
+              await logRepository.createLog({
+                communityId,
+                moderatorId: session.user.id,
+                action: 'mark_for_review',
+                postId: post.id,
+              });
+              Alert.alert('Marked', 'This post has been marked for review');
+            } catch (err) {
+              if (err instanceof Error) {
+                Alert.alert('Failed', err.message);
+              }
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleToggleSubscription = async () => {
@@ -462,7 +544,9 @@ export default function CommunityDetailScreen() {
                   post={item as Post}
                   onToggleLike={() => handleToggleLike(item as Post)}
                   onToggleSave={() => handleToggleSave(item as Post)}
+                  onMarkForReview={() => handleMarkForReview(item as Post)}
                   onOpenComments={() => navigation.navigate('PostDetail', { post: item as Post })}
+                  canModerate={canModerate}
                 />
               )
             }

@@ -9,7 +9,9 @@ type PostOptionsModalProps = {
   onClose: () => void;
   onSave?: () => void;
   onReport?: () => void;
+  onMarkForReview?: () => void;
   isSaved: boolean;
+  canModerate?: boolean;
   position: { x: number; y: number };
 };
 
@@ -18,7 +20,9 @@ export default function PostOptionsModal({
   onClose,
   onSave,
   onReport,
+  onMarkForReview,
   isSaved,
+  canModerate = false,
   position,
 }: PostOptionsModalProps) {
   const theme = useThemeColors();
@@ -27,7 +31,8 @@ export default function PostOptionsModal({
 
   // Calculate position to ensure modal stays on screen
   const modalWidth = 180;
-  const modalHeight = 112; // Increased height for two options
+  const optionCount = canModerate ? 3 : 2;
+  const modalHeight = optionCount * 44 + 8; // ~44px per option + padding
   const padding = 16;
 
   let left = position.x - modalWidth; // Align right edge with button
@@ -73,6 +78,19 @@ export default function PostOptionsModal({
             />
             <Text style={styles.optionText}>{isSaved ? 'Unsave' : 'Save'}</Text>
           </Pressable>
+          {canModerate && onMarkForReview && (
+            <Pressable
+              style={styles.option}
+              onPress={() => {
+                onMarkForReview();
+                onClose();
+              }}
+              testID="post-option-mark-review"
+            >
+              <MaterialIcons name="flag" size={20} color={theme.tertiary} />
+              <Text style={[styles.optionText, { color: theme.tertiary }]}>Mark for Review</Text>
+            </Pressable>
+          )}
           <Pressable
             style={styles.option}
             onPress={() => {
@@ -81,7 +99,7 @@ export default function PostOptionsModal({
             }}
             testID="post-option-report"
           >
-            <MaterialIcons name="flag" size={20} color={theme.error} />
+            <MaterialIcons name="outlined-flag" size={20} color={theme.error} />
             <Text style={[styles.optionText, { color: theme.error }]}>Report</Text>
           </Pressable>
         </Pressable>
