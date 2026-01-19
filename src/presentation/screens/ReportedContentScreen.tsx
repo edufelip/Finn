@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -24,7 +23,7 @@ import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { reportedContentCopy } from '../content/reportedContentCopy';
-import { formatTimeAgo } from '../i18n/formatters';
+import ReportCard from '../components/ReportCard';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ReportedContent'>;
 type Route = RouteProp<MainStackParamList, 'ReportedContent'>;
@@ -225,83 +224,15 @@ export default function ReportedContentScreen() {
       const isProcessing = processingReportIds.has(item.id);
 
       return (
-        <View style={styles.reportCard}>
-          <View style={styles.reportHeader}>
-            <View style={styles.reporterInfo}>
-              {item.userPhotoUrl ? (
-                <Image source={{ uri: item.userPhotoUrl }} style={styles.reporterAvatar} />
-              ) : (
-                <View style={[styles.reporterAvatar, styles.reporterAvatarPlaceholder]}>
-                  <MaterialIcons name="person" size={16} color={theme.onSurfaceVariant} />
-                </View>
-              )}
-              <View style={styles.reporterText}>
-                <Text style={styles.reportedByText}>
-                  {reportedContentCopy.reportedBy(item.userName ?? 'Unknown User')}
-                </Text>
-                <Text style={styles.reportDate}>{formatTimeAgo(item.createdAt)}</Text>
-              </View>
-            </View>
-            <View style={styles.reportBadge}>
-              <MaterialIcons name="flag" size={16} color={theme.error} />
-            </View>
-          </View>
-
-          <View style={styles.reasonContainer}>
-            <Text style={styles.reasonLabel}>{reportedContentCopy.reason}</Text>
-            <Text style={styles.reasonText}>{item.reason}</Text>
-          </View>
-
-          {item.postContent || item.postImageUrl ? (
-            <View style={styles.postPreview}>
-              <Text style={styles.postPreviewLabel}>Reported Post:</Text>
-              {item.postContent ? (
-                <Text style={styles.postPreviewContent} numberOfLines={3}>
-                  {item.postContent}
-                </Text>
-              ) : null}
-              {item.postImageUrl ? (
-                <Image source={{ uri: item.postImageUrl }} style={styles.postPreviewImage} />
-              ) : null}
-            </View>
-          ) : null}
-
-          <View style={styles.actionsRow}>
-            <Pressable
-              style={[styles.deleteButton, isProcessing && styles.buttonDisabled]}
-              onPress={() => handleDelete(item)}
-              disabled={isProcessing}
-              testID={`${reportedContentCopy.testIds.deleteButton}-${item.id}`}
-            >
-              {isProcessing ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <MaterialIcons name="delete" size={20} color="#fff" />
-                  <Text style={styles.deleteButtonText}>{reportedContentCopy.deleteButton}</Text>
-                </>
-              )}
-            </Pressable>
-            <Pressable
-              style={[styles.markSafeButton, isProcessing && styles.buttonDisabled]}
-              onPress={() => handleMarkSafe(item)}
-              disabled={isProcessing}
-              testID={`${reportedContentCopy.testIds.markSafeButton}-${item.id}`}
-            >
-              {isProcessing ? (
-                <ActivityIndicator size="small" color={theme.primary} />
-              ) : (
-                <>
-                  <MaterialIcons name="check" size={20} color={theme.primary} />
-                  <Text style={styles.markSafeButtonText}>{reportedContentCopy.markSafeButton}</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
-        </View>
+        <ReportCard
+          report={item}
+          onDelete={handleDelete}
+          onMarkSafe={handleMarkSafe}
+          isProcessing={isProcessing}
+        />
       );
     },
-    [handleDelete, handleMarkSafe, processingReportIds, styles, theme]
+    [handleDelete, handleMarkSafe, processingReportIds]
   );
 
   return (
@@ -378,149 +309,6 @@ const createStyles = (theme: ThemeColors) =>
     listContent: {
       flexGrow: 1,
       paddingVertical: 16,
-      paddingHorizontal: 16,
-      gap: 16,
-    },
-    reportCard: {
-      backgroundColor: theme.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: theme.outline,
-      padding: 16,
-      shadowColor: theme.shadow,
-      shadowOpacity: 1,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 6,
-      elevation: 2,
-    },
-    reportHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-    },
-    reporterInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-      gap: 10,
-    },
-    reporterAvatar: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-    },
-    reporterAvatarPlaceholder: {
-      backgroundColor: theme.surfaceVariant,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    reporterText: {
-      flex: 1,
-    },
-    reportedByText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.onBackground,
-    },
-    reportDate: {
-      fontSize: 12,
-      fontWeight: '400',
-      color: theme.onSurfaceVariant,
-      marginTop: 2,
-    },
-    reportBadge: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: theme.errorContainer,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    reasonContainer: {
-      marginBottom: 12,
-    },
-    reasonLabel: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: theme.onSurfaceVariant,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
-      marginBottom: 6,
-    },
-    reasonText: {
-      fontSize: 14,
-      fontWeight: '400',
-      color: theme.onBackground,
-      lineHeight: 20,
-    },
-    postPreview: {
-      backgroundColor: theme.surfaceVariant,
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 12,
-    },
-    postPreviewLabel: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: theme.onSurfaceVariant,
-      marginBottom: 8,
-    },
-    postPreviewContent: {
-      fontSize: 13,
-      fontWeight: '400',
-      color: theme.onBackground,
-      lineHeight: 18,
-      marginBottom: 8,
-    },
-    postPreviewImage: {
-      width: '100%',
-      height: 120,
-      borderRadius: 8,
-    },
-    actionsRow: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    deleteButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.error,
-      borderRadius: 12,
-      paddingVertical: 12,
-      gap: 8,
-      shadowColor: theme.error,
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    deleteButtonText: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: '#fff',
-    },
-    markSafeButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.surface,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: theme.primary,
-      paddingVertical: 12,
-      gap: 8,
-    },
-    markSafeButtonText: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: theme.primary,
-    },
-    buttonDisabled: {
-      opacity: 0.5,
     },
     emptyState: {
       flex: 1,
