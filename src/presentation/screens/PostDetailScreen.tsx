@@ -20,6 +20,7 @@ import type { ThemeColors } from '../theme/colors';
 import { postDetailCopy } from '../content/postDetailCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { usePostsStore } from '../../app/store/postsStore';
+import { sharePost } from '../../utils/shareUtils';
 
 type RouteParams = {
   post: Post;
@@ -156,7 +157,7 @@ export default function PostDetailScreen() {
   };
 
   const handleShare = () => {
-    Alert.alert(postDetailCopy.alerts.shareUnavailable.title, postDetailCopy.alerts.shareUnavailable.message);
+    void sharePost(post);
   };
 
   const submitComment = async () => {

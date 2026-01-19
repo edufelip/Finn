@@ -7,6 +7,7 @@ import * as Network from 'expo-network';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import PostCard from '../components/PostCard';
+import PostSkeleton from '../components/PostSkeleton';
 import type { Community } from '../../domain/models/community';
 import type { Subscription as CommunitySubscription } from '../../domain/models/subscription';
 import type { Post } from '../../domain/models/post';
@@ -20,9 +21,12 @@ import type { ThemeColors } from '../theme/colors';
 import { communityDetailCopy } from '../content/communityDetailCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { useCommunityPosts, usePostsStore } from '../../app/store/postsStore';
+import { useCommunityStore } from '../../app/store/communityStore';
+import { getPlaceholderGradient } from '../theme/gradients';
 
 type RouteParams = {
   communityId: number;
+  initialCommunity?: Community;
 };
 
 const BANNER_HEIGHT = 224;
@@ -31,16 +35,17 @@ const BANNER_HEIGHT_EMPTY = 176;
 export default function CommunityDetailScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute();
-  const { communityId: communityIdParam } = route.params as RouteParams;
+  const { communityId: communityIdParam, initialCommunity } = route.params as RouteParams;
   const communityId = Number(communityIdParam);
   const { session, isGuest, exitGuest } = useAuth();
   const { communities: communityRepository, posts: postRepository } = useRepositories();
-  const [community, setCommunity] = useState<Community | null>(null);
+  const [community, setCommunity] = useState<Community | null>(initialCommunity ?? null);
   const posts = useCommunityPosts(communityId);
   const setCommunityPosts = usePostsStore((state) => state.setCommunityPosts);
   const updatePost = usePostsStore((state) => state.updatePost);
-  const [subscription, setSubscription] = useState<CommunitySubscription | null>(null);
-  const [subscribersCount, setSubscribersCount] = useState(0);
+  const { subscriptions, setSubscription } = useCommunityStore();
+  const subscription = subscriptions[communityId];
+  const [subscribersCount, setSubscribersCount] = useState(initialCommunity?.subscribersCount ?? 0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const likeInFlightRef = useRef<Set<number>>(new Set());
@@ -50,7 +55,10 @@ export default function CommunityDetailScreen() {
   useEffect(() => {
     let mounted = true;
     const load = async () => {
-      setLoading(true);
+      // Don't reset loading to true if we have initial data, just let skeleton show in list
+      if (!initialCommunity) {
+        setLoading(true);
+      }
       setError(null);
       try {
         if (!Number.isFinite(communityId)) {
@@ -71,16 +79,23 @@ export default function CommunityDetailScreen() {
         if (!mounted) return;
 
         if (communityResult.status !== 'fulfilled' || !communityResult.value) {
-          const message =
-            communityResult.status === 'rejected' && communityResult.reason instanceof Error
-              ? communityResult.reason.message
-              : communityDetailCopy.errorNotFound;
-          setError(message);
-          return;
+          // If we had initial data, we might want to keep showing it or show error?
+          // For now let's show error if remote fetch fails and we don't have local data
+          if (!community) {
+             const message =
+              communityResult.status === 'rejected' && communityResult.reason instanceof Error
+                ? communityResult.reason.message
+                : communityDetailCopy.errorNotFound;
+            setError(message);
+            return;
+          }
+        } else {
+            setCommunity(communityResult.value);
         }
 
-        setCommunity(communityResult.value);
-        setSubscribersCount(countResult.status === 'fulfilled' ? countResult.value ?? 0 : 0);
+        if (countResult.status === 'fulfilled') {
+            setSubscribersCount(countResult.value ?? 0);
+        }
 
         const savedPosts = savedResult.status === 'fulfilled' ? savedResult.value ?? [] : [];
         const savedSet = new Set(savedPosts.map((post) => post.id));
@@ -101,7 +116,7 @@ export default function CommunityDetailScreen() {
         }
 
         setCommunityPosts(communityId, mappedPosts);
-        setSubscription(subscriptionResult.status === 'fulfilled' ? subscriptionResult.value ?? null : null);
+        setSubscription(communityId, subscriptionResult.status === 'fulfilled' ? subscriptionResult.value ?? null : null);
       } catch (err) {
         if (err instanceof Error && mounted) {
           setError(err.message);
@@ -117,7 +132,7 @@ export default function CommunityDetailScreen() {
     return () => {
       mounted = false;
     };
-  }, [communityId, communityRepository, postRepository, session?.user?.id, setCommunityPosts]);
+  }, [communityId, communityRepository, postRepository, session?.user?.id, setCommunityPosts, setSubscription, initialCommunity]);
 
   const handleToggleLike = async (post: Post) => {
     if (!session?.user?.id) {
@@ -207,10 +222,33 @@ export default function CommunityDetailScreen() {
     }
 
     const current = subscription as CommunitySubscription | null;
-    const currentId = current?.id ?? 0;
     const nextSubscribed = !current;
+
+    if (!nextSubscribed) {
+      Alert.alert(
+        'Unsubscribe',
+        `Are you sure you want to leave ${community?.title}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Unsubscribe',
+            style: 'destructive',
+            onPress: () => performToggleSubscription(current, nextSubscribed),
+          },
+        ]
+      );
+    } else {
+      await performToggleSubscription(current, nextSubscribed);
+    }
+  };
+
+  const performToggleSubscription = async (current: CommunitySubscription | null, nextSubscribed: boolean) => {
+    if (!session?.user?.id) return;
+
+    const currentId = current?.id ?? 0;
     const previousCount = subscribersCount;
     setSubscription(
+      communityId,
       nextSubscribed
         ? {
             id: currentId,
@@ -244,17 +282,17 @@ export default function CommunityDetailScreen() {
           userId: session.user.id,
           communityId,
         });
-        setSubscription(created);
+        setSubscription(communityId, created);
       } else {
         await communityRepository.unsubscribe({
           id: current?.id ?? 0,
           userId: session.user.id,
           communityId,
         });
-        setSubscription(null);
+        setSubscription(communityId, null);
       }
     } catch (err) {
-      setSubscription(current ?? null);
+      setSubscription(communityId, current ?? null);
       setSubscribersCount(previousCount);
       if (err instanceof Error) {
         Alert.alert(communityDetailCopy.alerts.subscriptionFailed.title, err.message);
@@ -267,21 +305,19 @@ export default function CommunityDetailScreen() {
   const ListHeader = community ? (
     <View style={styles.headerContainer}>
       <View style={[styles.bannerContainer, hasNoPosts && styles.bannerContainerEmpty]}>
-        {hasNoPosts ? (
+        {!community.imageUrl ? (
           <LinearGradient
-            colors={['#1E293B', '#0F172A', '#000000']}
+            colors={getPlaceholderGradient(community.id)}
             style={styles.bannerImage}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           />
         ) : (
           <>
             <Image
-              source={
-                community.imageUrl
-                  ? { uri: community.imageUrl }
-                  : require('../../../assets/user_icon.png')
-              }
+              source={{ uri: community.imageUrl }}
               style={styles.bannerImage}
-              blurRadius={community.imageUrl ? 10 : 0}
+              blurRadius={10}
               resizeMode="cover"
             />
             <LinearGradient
@@ -302,16 +338,23 @@ export default function CommunityDetailScreen() {
         <View style={styles.topRow}>
           <View style={styles.iconContainer}>
             <View style={styles.iconWrapper}>
-              <Image
-                source={
-                  community.imageUrl
-                    ? { uri: community.imageUrl }
-                    : require('../../../assets/user_icon.png')
-                }
-                style={styles.communityIcon}
-                testID={communityDetailCopy.testIds.image}
-                accessibilityLabel={communityDetailCopy.testIds.image}
-              />
+              {community.imageUrl ? (
+                <Image
+                  source={{ uri: community.imageUrl }}
+                  style={styles.communityIcon}
+                  testID={communityDetailCopy.testIds.image}
+                  accessibilityLabel={communityDetailCopy.testIds.image}
+                />
+              ) : (
+                <LinearGradient
+                  colors={getPlaceholderGradient(community.id)}
+                  style={styles.communityIconPlaceholder}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <MaterialIcons name="groups" size={48} color="rgba(255,255,255,0.8)" />
+                </LinearGradient>
+              )}
             </View>
             {/* Online Indicator - only show in populated state */}
             {!hasNoPosts && <View style={styles.onlineIndicator} />}
@@ -409,18 +452,22 @@ export default function CommunityDetailScreen() {
           
           <FlatList
             testID={communityDetailCopy.testIds.list}
-            data={posts}
-            keyExtractor={(item) => `${item.id}`}
-            renderItem={({ item }) => (
-              <PostCard
-                post={item}
-                onToggleLike={() => handleToggleLike(item)}
-                onToggleSave={() => handleToggleSave(item)}
-                onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
-              />
-            )}
+            data={loading ? [1, 2, 3] : posts}
+            keyExtractor={(item) => (typeof item === 'number' ? `skeleton-${item}` : `${item.id}`)}
+            renderItem={({ item }) => 
+              typeof item === 'number' ? (
+                <PostSkeleton />
+              ) : (
+                <PostCard
+                  post={item as Post}
+                  onToggleLike={() => handleToggleLike(item as Post)}
+                  onToggleSave={() => handleToggleSave(item as Post)}
+                  onOpenComments={() => navigation.navigate('PostDetail', { post: item as Post })}
+                />
+              )
+            }
             ListHeaderComponent={ListHeader}
-            ListEmptyComponent={!loading ? EmptyState : null}
+            ListEmptyComponent={!loading && posts.length === 0 ? EmptyState : null}
             ListFooterComponent={
               loading && posts.length > 0 ? (
                 <View style={styles.footer}>
@@ -522,6 +569,13 @@ const createStyles = (theme: ThemeColors) =>
       height: '100%',
       borderRadius: 20,
       backgroundColor: theme.primary,
+    },
+    communityIconPlaceholder: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     onlineIndicator: {
       position: 'absolute',

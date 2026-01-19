@@ -13,6 +13,7 @@ import HomeExploreHeader from '../components/HomeExploreHeader';
 import ScreenFade from '../components/ScreenFade';
 import Shimmer from '../components/Shimmer';
 import type { Community } from '../../domain/models/community';
+import type { Topic } from '../../domain/models/topic';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useAuth } from '../../app/providers/AuthProvider';
 import type { MainStackParamList } from '../navigation/MainStack';
