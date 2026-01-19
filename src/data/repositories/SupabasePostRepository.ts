@@ -67,8 +67,8 @@ function isLocalFile(uri: string) {
 }
 
 async function selectPostsWithFallback<T>(
-  runner: (select: string) => Promise<{ data: T | null; error: unknown | null }>
-) {
+  runner: (select: string) => PromiseLike<{ data: T | null; error: unknown | null }>
+): Promise<{ data: T | null; error: unknown | null }> {
   const withCounts = await runner(POST_SELECT_WITH_COUNTS);
   if (withCounts.error && (withCounts.error as { code?: string }).code === 'PGRST200') {
     return runner(POST_SELECT_BASE);
@@ -190,7 +190,7 @@ export class SupabasePostRepository implements PostRepository {
       if (error) {
         throw error;
       }
-      const rows = (data ?? []) as PostRow[];
+      const rows = (data ?? []) as unknown as PostRow[];
       if (!rows.length) {
         return [];
       }
@@ -249,7 +249,7 @@ export class SupabasePostRepository implements PostRepository {
         throw error;
       }
 
-      return Promise.all((data ?? []).map((row) => toDomainWithImages(row as PostRow)));
+      return Promise.all((data ?? []).map((row) => toDomainWithImages(row as unknown as PostRow)));
     });
 
     return cached ?? [];
@@ -273,7 +273,7 @@ export class SupabasePostRepository implements PostRepository {
       if (error) {
         throw error;
       }
-      return Promise.all((data ?? []).map((row) => toDomainWithImages(row as PostRow)));
+      return Promise.all((data ?? []).map((row) => toDomainWithImages(row as unknown as PostRow)));
     });
 
     return cached ?? [];
@@ -298,7 +298,7 @@ export class SupabasePostRepository implements PostRepository {
         throw error;
       }
 
-      const rows = (data ?? []) as PostRow[];
+      const rows = (data ?? []) as unknown as PostRow[];
       if (!rows.length) {
         return [];
       }
@@ -383,9 +383,9 @@ export class SupabasePostRepository implements PostRepository {
       const mapped = new Map<number, Post>();
       const mappedEntries = await Promise.all(
         (postsData ?? []).map(async (row) => {
-          const post = await toDomainWithImages(row as PostRow, {
+          const post = await toDomainWithImages(row as unknown as PostRow, {
             isSaved: true,
-            isLiked: likedSet.has((row as PostRow).id),
+            isLiked: likedSet.has((row as unknown as PostRow).id),
           });
           return [post.id, post] as const;
         })
@@ -526,6 +526,10 @@ export class SupabasePostRepository implements PostRepository {
       throw createError;
     }
 
+    if (!createdRow) {
+      throw new Error('Failed to create post: no data returned');
+    }
+
     if (!shouldUpload || !imageUri) {
       const created = await toDomainWithImages(createdRow);
       await clearCache(CacheKey.feedByUser(post.userId, 0));
@@ -548,6 +552,10 @@ export class SupabasePostRepository implements PostRepository {
 
       if (updateError) {
         throw updateError;
+      }
+
+      if (!updatedRow) {
+        throw new Error('Failed to update post image: no data returned');
       }
 
       const created = await toDomainWithImages(updatedRow);
@@ -584,7 +592,7 @@ export class SupabasePostRepository implements PostRepository {
       throw error;
     }
 
-    return Promise.all((data ?? []).map((row) => toDomainWithImages(row as PostRow)));
+    return Promise.all((data ?? []).map((row) => toDomainWithImages(row as unknown as PostRow)));
   }
 
   async updateModerationStatus(postId: number, status: Post['moderationStatus']): Promise<void> {

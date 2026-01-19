@@ -39,7 +39,7 @@ export const CommunityCard = React.memo<CommunityCardProps>(
             <Image source={{ uri: community.imageUrl }} style={styles.communityImage} />
           ) : (
             <LinearGradient
-              colors={getPlaceholderGradient(community.id) as [string, string, ...string[]]}
+              colors={getPlaceholderGradient(community.id)}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.communityIconPlaceholder}

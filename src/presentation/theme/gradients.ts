@@ -7,9 +7,9 @@ export const PLACEHOLDER_GRADIENTS = [
   ['#EE0979', '#FF6A00'],
   ['#00B4DB', '#0083B0'],
   ['#7028E4', '#E5E0FF'],
-];
+] as const;
 
-export const getPlaceholderGradient = (id: number) => {
+export const getPlaceholderGradient = (id: number): [string, string, ...string[]] => {
   const index = Math.abs(id) % PLACEHOLDER_GRADIENTS.length;
-  return PLACEHOLDER_GRADIENTS[index] || PLACEHOLDER_GRADIENTS[0];
+  return [...(PLACEHOLDER_GRADIENTS[index] || PLACEHOLDER_GRADIENTS[0])];
 };
