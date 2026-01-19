@@ -13,6 +13,11 @@ import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import WebViewScreen from '../screens/WebViewScreen';
+import EditCommunityScreen from '../screens/EditCommunityScreen';
+import PendingContentScreen from '../screens/PendingContentScreen';
+import ReportedContentScreen from '../screens/ReportedContentScreen';
+import ModerationLogsScreen from '../screens/ModerationLogsScreen';
+import ManageModeratorsScreen from '../screens/ManageModeratorsScreen';
 import type { Community } from '../../domain/models/community';
 import type { Post } from '../../domain/models/post';
 
@@ -31,6 +36,11 @@ export type MainStackParamList = {
   Notifications: undefined;
   SearchResults: { focus?: boolean; sort?: SearchSort; topicId?: number } | undefined;
   WebView: { title: string; url: string };
+  EditCommunity: { communityId: number };
+  PendingContent: { communityId: number };
+  ReportedContent: { communityId: number };
+  ModerationLogs: { communityId: number };
+  ManageModerators: { communityId: number };
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -50,6 +60,11 @@ export default function MainStack() {
       <Stack.Screen name="SearchResults" component={SearchScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="WebView" component={WebViewScreen} />
+      <Stack.Screen name="EditCommunity" component={EditCommunityScreen} />
+      <Stack.Screen name="PendingContent" component={PendingContentScreen} />
+      <Stack.Screen name="ReportedContent" component={ReportedContentScreen} />
+      <Stack.Screen name="ModerationLogs" component={ModerationLogsScreen} />
+      <Stack.Screen name="ManageModerators" component={ManageModeratorsScreen} />
     </Stack.Navigator>
   );
 }

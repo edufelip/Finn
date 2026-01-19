@@ -5,6 +5,7 @@ export const profileCopy = {
   tabs: {
     posts: t('profile.tab.posts'),
     saved: t('profile.tab.saved'),
+    communities: t('profile.tab.communities'),
   },
   stats: {
     posts: t('profile.stats.posts'),
@@ -19,6 +20,10 @@ export const profileCopy = {
   savedEmpty: {
     title: t('profile.savedEmpty.title'),
     body: t('profile.savedEmpty.body'),
+  },
+  communitiesEmpty: {
+    title: t('profile.communitiesEmpty.title'),
+    body: t('profile.communitiesEmpty.body'),
   },
   loading: {
     title: t('profile.loading.title'),
@@ -48,10 +53,14 @@ export const profileCopy = {
     statsFollowing: 'profile-stats-following',
     tabPosts: 'profile-tab-posts',
     tabSaved: 'profile-tab-saved',
+    tabCommunities: 'profile-tab-communities',
     emptyTitle: 'profile-empty-title',
     savedEmptyTitle: 'profile-saved-empty-title',
+    communitiesEmptyTitle: 'profile-communities-empty-title',
     createPost: 'profile-create-post',
+    manageCommunity: 'profile-manage-community',
     list: 'profile-post-list',
+    communityList: 'profile-community-list',
     loadingTitle: 'profile-loading-title',
   },
 };
