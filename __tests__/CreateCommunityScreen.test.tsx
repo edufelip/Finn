@@ -98,6 +98,7 @@ describe('CreateCommunityScreen', () => {
           title: 'New Community',
           description: 'Community details',
           ownerId: 'user-1',
+          topicId: null,
         },
         'file://processed.jpg'
       );

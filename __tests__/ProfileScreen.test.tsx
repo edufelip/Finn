@@ -6,6 +6,7 @@ import ProfileScreen from '../src/presentation/screens/ProfileScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { profileCopy } from '../src/presentation/content/profileCopy';
 import { formatMonthYear } from '../src/presentation/i18n/formatters';
+import { usePostsStore } from '../src/app/store/postsStore';
 
 const mockNavigate = jest.fn();
 
@@ -50,6 +51,7 @@ describe('ProfileScreen', () => {
     mockNavigate.mockReset();
     network.getNetworkStateAsync.mockReset();
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    usePostsStore.getState().reset();
   });
 
   it('renders profile info and posts', async () => {
@@ -92,6 +94,9 @@ describe('ProfileScreen', () => {
 
     await waitFor(() =>
       expect(getByTestId(profileCopy.testIds.name).props.children).toBe('Jane Doe')
+    );
+    await waitFor(() =>
+      expect(getByTestId(profileCopy.testIds.statsPosts).props.children).toBe(1)
     );
     // Bio is optional, so we don't test for it in this case
     const joinedText = profileCopy.memberSince(formatMonthYear('2024-01-01T00:00:00Z'));

@@ -8,24 +8,24 @@ import { postDetailCopy } from '../src/presentation/content/postDetailCopy';
 
 const mockGoBack = jest.fn();
 
+const mockPost = {
+  id: 1,
+  content: 'Test Post',
+  userId: 'user-1',
+  userName: 'User',
+  likesCount: 0,
+  commentsCount: 0,
+  isLiked: false,
+  isSaved: false,
+};
+
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ goBack: mockGoBack }),
   useRoute: () => ({
     params: {
-      post: {
-        id: 1,
-        content: 'Hello',
-        communityId: 1,
-        communityTitle: 'General',
-        userId: 'user-1',
-        userName: 'Tester',
-        likesCount: 0,
-        commentsCount: 0,
-        isLiked: false,
-        isSaved: false,
-      },
+      post: mockPost,
     },
   }),
+  useNavigation: () => ({ goBack: jest.fn(), navigate: jest.fn() }),
 }));
 
 jest.mock('../src/app/providers/AuthProvider', () => ({

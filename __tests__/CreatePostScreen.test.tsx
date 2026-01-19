@@ -93,6 +93,7 @@ describe('CreatePostScreen', () => {
           content: 'My post',
           communityId: 1,
           userId: 'user-1',
+          moderationStatus: 'approved',
         },
         null
       );
@@ -145,6 +146,7 @@ describe('CreatePostScreen', () => {
             communityId: 1,
             userId: 'user-1',
             imageUri: 'file://persisted/offline-post.jpg',
+            moderationStatus: 'approved',
           },
         })
       );
@@ -225,6 +227,7 @@ describe('CreatePostScreen', () => {
           content: 'My post with image',
           communityId: 1,
           userId: 'user-1',
+          moderationStatus: 'approved',
         },
         'file://post.jpg'
       );

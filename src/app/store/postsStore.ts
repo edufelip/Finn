@@ -147,13 +147,15 @@ export const usePostsStore = create<PostsState>()(
           };
         });
       },
-      reset: () => ({
-        postsById: {},
-        homeIds: [],
-        communityIds: {},
-        profileIds: {},
-        savedIds: {},
-      }),
+      reset: () => {
+        set({
+          postsById: {},
+          homeIds: [],
+          communityIds: {},
+          profileIds: {},
+          savedIds: {},
+        });
+      },
     }),
     {
       name: 'posts-store',

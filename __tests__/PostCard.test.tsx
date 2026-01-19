@@ -5,20 +5,40 @@ import { render, fireEvent } from '@testing-library/react-native';
 import PostCard from '../src/presentation/components/PostCard';
 import { postCardCopy } from '../src/presentation/content/postCardCopy';
 
+jest.mock('../src/app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    session: { user: { id: 'user-1', email: 'user@example.com' } },
+    initializing: false,
+  }),
+}));
+
+import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
+
 describe('PostCard', () => {
   it('renders community image when provided', () => {
     const { getByTestId, getByText } = render(
-      <PostCard
-        post={{
-          id: 1,
-          content: 'Hello',
-          communityId: 1,
-          communityTitle: 'General',
-          communityImageUrl: 'https://example.com/community.jpg',
-          userId: 'user-1',
-          userName: 'Tester',
+      <RepositoryProvider
+        overrides={{
+          posts: {
+            likePost: jest.fn(),
+            dislikePost: jest.fn(),
+            bookmarkPost: jest.fn(),
+            unbookmarkPost: jest.fn(),
+          },
         }}
-      />
+      >
+        <PostCard
+          post={{
+            id: 1,
+            content: 'Hello',
+            communityId: 1,
+            communityTitle: 'General',
+            communityImageUrl: 'https://example.com/community.jpg',
+            userId: 'user-1',
+            userName: 'Tester',
+          }}
+        />
+      </RepositoryProvider>
     );
 
     expect(getByTestId('post-community-image-1')).toBeTruthy();
@@ -29,17 +49,28 @@ describe('PostCard', () => {
 
   it('renders post image when provided', () => {
     const { getByTestId, getByText } = render(
-      <PostCard
-        post={{
-          id: 2,
-          content: 'Hello',
-          communityId: 1,
-          communityTitle: 'General',
-          userId: 'user-1',
-          userName: 'Tester',
-          imageUrl: 'https://example.com/post.jpg',
+      <RepositoryProvider
+        overrides={{
+          posts: {
+            likePost: jest.fn(),
+            dislikePost: jest.fn(),
+            bookmarkPost: jest.fn(),
+            unbookmarkPost: jest.fn(),
+          },
         }}
-      />
+      >
+        <PostCard
+          post={{
+            id: 2,
+            content: 'Hello',
+            communityId: 1,
+            communityTitle: 'General',
+            userId: 'user-1',
+            userName: 'Tester',
+            imageUrl: 'https://example.com/post.jpg',
+          }}
+        />
+      </RepositoryProvider>
     );
 
     expect(getByTestId('post-image-2')).toBeTruthy();
@@ -48,15 +79,26 @@ describe('PostCard', () => {
 
   it('skips community image when missing', () => {
     const { queryByTestId, getByText } = render(
-      <PostCard
-        post={{
-          id: 2,
-          content: 'Hello',
-          communityId: 1,
-          userId: 'user-1',
-          userName: 'Tester',
+      <RepositoryProvider
+        overrides={{
+          posts: {
+            likePost: jest.fn(),
+            dislikePost: jest.fn(),
+            bookmarkPost: jest.fn(),
+            unbookmarkPost: jest.fn(),
+          },
         }}
-      />
+      >
+        <PostCard
+          post={{
+            id: 2,
+            content: 'Hello',
+            communityId: 1,
+            userId: 'user-1',
+            userName: 'Tester',
+          }}
+        />
+      </RepositoryProvider>
     );
 
     expect(queryByTestId('post-community-image-2')).toBeNull();
@@ -68,18 +110,29 @@ describe('PostCard', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const { getByTestId } = render(
-      <PostCard
-        post={{
-          id: 3,
-          content: 'Hello',
-          communityId: 1,
-          communityTitle: 'General',
-          userId: 'user-1',
-          userName: 'Tester',
-          isSaved: false,
+      <RepositoryProvider
+        overrides={{
+          posts: {
+            likePost: jest.fn(),
+            dislikePost: jest.fn(),
+            bookmarkPost: jest.fn(),
+            unbookmarkPost: jest.fn(),
+          },
         }}
-        onToggleSave={jest.fn()}
-      />
+      >
+        <PostCard
+          post={{
+            id: 3,
+            content: 'Hello',
+            communityId: 1,
+            communityTitle: 'General',
+            userId: 'user-1',
+            userName: 'Tester',
+            isSaved: false,
+          }}
+          onToggleSave={jest.fn()}
+        />
+      </RepositoryProvider>
     );
 
     fireEvent.press(getByTestId('post-options-3'));

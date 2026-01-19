@@ -14,6 +14,7 @@ jest.mock('../src/data/cache/cacheHelpers', () => ({
 
 jest.mock('../src/data/cache/cacheStore', () => ({
   setCache: jest.fn(),
+  getCache: jest.fn(),
   clearCache: jest.fn(),
 }));
 
@@ -25,46 +26,30 @@ describe('SupabaseUserRepository', () => {
     supabase.storage.from.mockReset();
   });
 
-  it('fetches user with follow counts using GET limit(0)', async () => {
-    // Mock user profile query
-    const profileSelect = jest.fn().mockReturnThis();
-    const profileEq = jest.fn().mockReturnThis();
-    const profileMaybeSingle = jest.fn().mockResolvedValue({
-      data: {
-        id: 'user-1',
-        name: 'Test User',
-      },
-      error: null,
-    });
-
+  it('fetches followers count using HEAD request', async () => {
     // Mock follow counts queries
-    const countSelect = jest.fn().mockReturnThis();
-    const countEq = jest.fn().mockReturnThis();
-    const countLimit = jest.fn().mockResolvedValue({
+    const countResult = {
       data: [],
       count: 5,
       error: null,
-    });
+    };
+    const countEq = jest.fn().mockResolvedValue(countResult);
+    const countSelect = jest.fn().mockReturnValue({ eq: countEq });
 
     supabase.from.mockImplementation((table: string) => {
-      if (table === TABLES.users) {
-        return { select: profileSelect, eq: profileEq, maybeSingle: profileMaybeSingle };
-      }
       if (table === TABLES.userFollows) {
-        return { select: countSelect, eq: countEq, limit: countLimit };
+        return { select: countSelect };
       }
       throw new Error(`Unexpected table ${table}`);
     });
 
     const repository = new SupabaseUserRepository();
-    const user = await repository.getUser('user-1');
+    const count = await repository.getFollowersCount('user-1');
 
-    expect(user).toBeTruthy();
-    expect(user?.followersCount).toBe(5);
-    expect(user?.followingCount).toBe(5); // We reused the same mock for both
+    expect(count).toBe(5);
 
     // Verify calls to user_follows
-    expect(countSelect).toHaveBeenCalledWith('*', { count: 'exact', head: false });
-    expect(countLimit).toHaveBeenCalledWith(0);
+    expect(countSelect).toHaveBeenCalledWith('*', { count: 'exact', head: true });
+    expect(countEq).toHaveBeenCalledWith('following_id', 'user-1');
   });
 });

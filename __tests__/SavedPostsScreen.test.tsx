@@ -6,6 +6,7 @@ import SavedPostsScreen from '../src/presentation/screens/SavedPostsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { savedPostsCopy } from '../src/presentation/content/savedPostsCopy';
 import { postCardCopy } from '../src/presentation/content/postCardCopy';
+import { usePostsStore } from '../src/app/store/postsStore';
 
 const mockNavigate = jest.fn();
 
@@ -46,6 +47,7 @@ describe('SavedPostsScreen', () => {
     network.getNetworkStateAsync.mockReset();
     enqueueWrite.mockReset();
     network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    usePostsStore.getState().reset();
   });
 
   it('loads saved posts and can unsave online', async () => {

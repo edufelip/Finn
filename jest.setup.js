@@ -50,6 +50,8 @@ jest.mock('react-native-reanimated', () => {
     useDerivedValue: (fn) => ({ value: fn() }),
     useReducedMotion: () => false,
     withTiming: (value) => value,
+    withSpring: (value) => value,
+    withSequence: (...args) => args[args.length - 1],
     interpolate: (_value, _input, output) => (output ? output[0] : 0),
     interpolateColor: (_value, _input, output) => (output ? output[0] : 'transparent'),
     Easing: { out: (value) => value, cubic: (value) => value },

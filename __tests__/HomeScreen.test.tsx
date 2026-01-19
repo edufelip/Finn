@@ -6,6 +6,7 @@ import HomeScreen from '../src/presentation/screens/HomeScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { homeCopy } from '../src/presentation/content/homeCopy';
 import { guestCopy } from '../src/presentation/content/guestCopy';
+import { usePostsStore } from '../src/app/store/postsStore';
 
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
@@ -44,6 +45,7 @@ describe('HomeScreen', () => {
     });
     mockNavigate.mockReset();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    usePostsStore.getState().reset();
   });
 
   it('renders posts and search entry', async () => {
