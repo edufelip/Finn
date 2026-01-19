@@ -23,6 +23,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { moderationLogsCopy } from '../content/moderationLogsCopy';
 import { formatTimeAgo } from '../i18n/formatters';
+import { useModerationAuth } from '../hooks/useModerationAuth';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ModerationLogs'>;
 type Route = RouteProp<MainStackParamList, 'ModerationLogs'>;
@@ -31,51 +32,34 @@ export default function ModerationLogsScreen() {
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { session } = useAuth();
-  const {
-    moderationLogs: logRepository,
-    communities: communityRepository,
-    communityModerators: moderatorRepository,
-  } = useRepositories();
+  const { moderationLogs: logRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const { communityId } = route.params;
 
+  // Use moderation auth hook to handle authorization
+  const { community, loading: authLoading, isAuthorized } = useModerationAuth({
+    communityId,
+    requireOwner: false, // Allow both owners and moderators
+    alerts: {
+      signInRequired: moderationLogsCopy.alerts.signInRequired,
+      notFound: { title: moderationLogsCopy.alerts.failed.title, message: 'Community not found' },
+      notAuthorized: moderationLogsCopy.alerts.notAuthorized,
+      failed: moderationLogsCopy.alerts.failed,
+    },
+  });
+
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<ModerationLog[]>([]);
 
   const loadLogs = useCallback(async () => {
-    if (!session?.user?.id) {
-      Alert.alert(
-        moderationLogsCopy.alerts.signInRequired.title,
-        moderationLogsCopy.alerts.signInRequired.message
-      );
-      navigation.goBack();
+    if (!isAuthorized) {
       return;
     }
 
     setLoading(true);
     try {
-      // Verify user is owner or moderator
-      const community = await communityRepository.getCommunity(communityId);
-      if (!community) {
-        Alert.alert(moderationLogsCopy.alerts.failed.title, 'Community not found');
-        navigation.goBack();
-        return;
-      }
-
-      const isOwner = community.ownerId === session.user.id;
-      const isModerator = await moderatorRepository.isModerator(communityId, session.user.id);
-
-      if (!isOwner && !isModerator) {
-        Alert.alert(
-          moderationLogsCopy.alerts.notAuthorized.title,
-          moderationLogsCopy.alerts.notAuthorized.message
-        );
-        navigation.goBack();
-        return;
-      }
-
       const logData = await logRepository.getLogs(communityId);
       setLogs(logData);
     } catch (err) {
@@ -85,7 +69,7 @@ export default function ModerationLogsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [communityId, communityRepository, logRepository, moderatorRepository, navigation, session?.user?.id]);
+  }, [communityId, logRepository, isAuthorized]);
 
   useEffect(() => {
     loadLogs();
@@ -177,6 +161,28 @@ export default function ModerationLogsScreen() {
     [getActionColor, getActionIcon, getActionLabel, styles, theme.onSurfaceVariant]
   );
 
+  // Show loading during both auth and data fetch
+  if (authLoading || loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color={theme.onBackground} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{moderationLogsCopy.title}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthorized || !community) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -187,27 +193,21 @@ export default function ModerationLogsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={logs}
-          keyExtractor={(item) => `log-${item.id}`}
-          renderItem={renderLog}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconWrapper}>
-                <MaterialIcons name="history" size={64} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.emptyTitle}>{moderationLogsCopy.emptyState.title}</Text>
-              <Text style={styles.emptyMessage}>{moderationLogsCopy.emptyState.message}</Text>
+      <FlatList
+        data={logs}
+        keyExtractor={(item) => `log-${item.id}`}
+        renderItem={renderLog}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrapper}>
+              <MaterialIcons name="history" size={64} color={theme.onSurfaceVariant} />
             </View>
-          }
-        />
-      )}
+            <Text style={styles.emptyTitle}>{moderationLogsCopy.emptyState.title}</Text>
+            <Text style={styles.emptyMessage}>{moderationLogsCopy.emptyState.message}</Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }

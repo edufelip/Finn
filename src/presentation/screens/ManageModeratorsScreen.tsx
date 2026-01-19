@@ -25,6 +25,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { manageModeratorsCopy } from '../content/manageModeratorsCopy';
 import { formatTimeAgo } from '../i18n/formatters';
+import { useModerationAuth } from '../hooks/useModerationAuth';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ManageModerators'>;
 type Route = RouteProp<MainStackParamList, 'ManageModerators'>;
@@ -35,7 +36,6 @@ export default function ManageModeratorsScreen() {
   const { session } = useAuth();
   const {
     communityModerators: moderatorRepository,
-    communities: communityRepository,
     moderationLogs: logRepository,
   } = useRepositories();
   const theme = useThemeColors();
@@ -43,45 +43,29 @@ export default function ManageModeratorsScreen() {
 
   const { communityId } = route.params;
 
+  // Use moderation auth hook to handle authorization
+  const { community, loading: authLoading, isAuthorized, isOwner } = useModerationAuth({
+    communityId,
+    requireOwner: false, // Allow both owners and moderators
+    alerts: {
+      signInRequired: manageModeratorsCopy.alerts.signInRequired,
+      notFound: { title: manageModeratorsCopy.alerts.failed.title, message: 'Community not found' },
+      notAuthorized: manageModeratorsCopy.alerts.notAuthorized,
+      failed: manageModeratorsCopy.alerts.failed,
+    },
+  });
+
   const [loading, setLoading] = useState(true);
   const [moderators, setModerators] = useState<CommunityModerator[]>([]);
   const [removingModeratorId, setRemovingModeratorId] = useState<number | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
 
   const loadModerators = useCallback(async () => {
-    if (!session?.user?.id) {
-      Alert.alert(
-        manageModeratorsCopy.alerts.signInRequired.title,
-        manageModeratorsCopy.alerts.signInRequired.message
-      );
-      navigation.goBack();
+    if (!isAuthorized) {
       return;
     }
 
     setLoading(true);
     try {
-      // Verify user is owner or moderator
-      const community = await communityRepository.getCommunity(communityId);
-      if (!community) {
-        Alert.alert(manageModeratorsCopy.alerts.failed.title, 'Community not found');
-        navigation.goBack();
-        return;
-      }
-
-      const ownerCheck = community.ownerId === session.user.id;
-      setIsOwner(ownerCheck);
-
-      const isModerator = await moderatorRepository.isModerator(communityId, session.user.id);
-
-      if (!ownerCheck && !isModerator) {
-        Alert.alert(
-          manageModeratorsCopy.alerts.notAuthorized.title,
-          manageModeratorsCopy.alerts.notAuthorized.message
-        );
-        navigation.goBack();
-        return;
-      }
-
       const moderatorData = await moderatorRepository.getModerators(communityId);
       setModerators(moderatorData);
     } catch (err) {
@@ -91,7 +75,7 @@ export default function ManageModeratorsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [communityId, communityRepository, moderatorRepository, navigation, session?.user?.id]);
+  }, [communityId, moderatorRepository, isAuthorized]);
 
   useEffect(() => {
     loadModerators();
@@ -266,6 +250,28 @@ export default function ManageModeratorsScreen() {
     [handleRemoveModerator, isOwner, removingModeratorId, styles, theme]
   );
 
+  // Show loading during both auth and data fetch
+  if (authLoading || loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color={theme.onBackground} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{manageModeratorsCopy.title}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthorized || !community) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -276,40 +282,32 @@ export default function ManageModeratorsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      ) : (
-        <>
-          <FlatList
-            data={moderators}
-            keyExtractor={(item) => `moderator-${item.id}`}
-            renderItem={renderModerator}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconWrapper}>
-                  <MaterialIcons name="supervisor-account" size={64} color={theme.onSurfaceVariant} />
-                </View>
-                <Text style={styles.emptyTitle}>{manageModeratorsCopy.emptyState.title}</Text>
-                <Text style={styles.emptyMessage}>{manageModeratorsCopy.emptyState.message}</Text>
-              </View>
-            }
-          />
-          {isOwner && (
-            <View style={styles.footer}>
-              <Pressable
-                style={styles.addButton}
-                onPress={handleAddModerator}
-                testID={manageModeratorsCopy.testIds.addButton}
-              >
-                <MaterialIcons name="person-add" size={20} color={theme.onPrimary} />
-                <Text style={styles.addButtonText}>{manageModeratorsCopy.addButton}</Text>
-              </Pressable>
+      <FlatList
+        data={moderators}
+        keyExtractor={(item) => `moderator-${item.id}`}
+        renderItem={renderModerator}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrapper}>
+              <MaterialIcons name="supervisor-account" size={64} color={theme.onSurfaceVariant} />
             </View>
-          )}
-        </>
+            <Text style={styles.emptyTitle}>{manageModeratorsCopy.emptyState.title}</Text>
+            <Text style={styles.emptyMessage}>{manageModeratorsCopy.emptyState.message}</Text>
+          </View>
+        }
+      />
+      {isOwner && (
+        <View style={styles.footer}>
+          <Pressable
+            style={styles.addButton}
+            onPress={handleAddModerator}
+            testID={manageModeratorsCopy.testIds.addButton}
+          >
+            <MaterialIcons name="person-add" size={20} color={theme.onPrimary} />
+            <Text style={styles.addButtonText}>{manageModeratorsCopy.addButton}</Text>
+          </Pressable>
+        </View>
       )}
     </SafeAreaView>
   );

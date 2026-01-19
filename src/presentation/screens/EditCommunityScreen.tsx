@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Network from 'expo-network';
 
 import type { MainStackParamList } from '../navigation/MainStack';
-import type { Community, PostPermission } from '../../domain/models/community';
+import type { PostPermission } from '../../domain/models/community';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { isMockMode } from '../../config/appConfig';
@@ -30,6 +30,7 @@ import ImageSourceSheet from '../components/ImageSourceSheet';
 import CommunityImageUpload from '../components/CommunityImageUpload';
 import PostPermissionSelector from '../components/PostPermissionSelector';
 import ModerationNavSection from '../components/ModerationNavSection';
+import { useModerationAuth } from '../hooks/useModerationAuth';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'EditCommunity'>;
 type Route = RouteProp<MainStackParamList, 'EditCommunity'>;
@@ -44,8 +45,18 @@ export default function EditCommunityScreen() {
 
   const { communityId } = route.params;
 
-  const [community, setCommunity] = useState<Community | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Use moderation auth hook to handle authorization
+  const { community, loading, isAuthorized } = useModerationAuth({
+    communityId,
+    requireOwner: true, // Only owners can edit community settings
+    alerts: {
+      signInRequired: editCommunityCopy.alerts.signInRequired,
+      notFound: { title: editCommunityCopy.alerts.failed.title, message: 'Community not found' },
+      notAuthorized: editCommunityCopy.alerts.notAuthorized,
+      failed: editCommunityCopy.alerts.failed,
+    },
+  });
+
   const [saving, setSaving] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
@@ -58,53 +69,16 @@ export default function EditCommunityScreen() {
     return imageUri !== originalImageUrl || postPermission !== originalPermission;
   }, [imageUri, originalImageUrl, postPermission, originalPermission]);
 
-  const loadCommunity = useCallback(async () => {
-    if (!session?.user?.id) {
-      Alert.alert(
-        editCommunityCopy.alerts.signInRequired.title,
-        editCommunityCopy.alerts.signInRequired.message
-      );
-      navigation.goBack();
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const data = await communityRepository.getCommunity(communityId);
-      if (!data) {
-        Alert.alert(editCommunityCopy.alerts.failed.title, 'Community not found');
-        navigation.goBack();
-        return;
-      }
-
-      if (data.ownerId !== session.user.id) {
-        Alert.alert(
-          editCommunityCopy.alerts.notAuthorized.title,
-          editCommunityCopy.alerts.notAuthorized.message
-        );
-        navigation.goBack();
-        return;
-      }
-
-      setCommunity(data);
-      const permission = data.postPermission ?? 'anyone_follows';
+  // Initialize form state from community data
+  useEffect(() => {
+    if (community) {
+      const permission = community.postPermission ?? 'anyone_follows';
       setPostPermission(permission);
       setOriginalPermission(permission);
-      setImageUri(data.imageUrl ?? null);
-      setOriginalImageUrl(data.imageUrl ?? null);
-    } catch (err) {
-      if (err instanceof Error) {
-        Alert.alert(editCommunityCopy.alerts.failed.title, err.message);
-      }
-      navigation.goBack();
-    } finally {
-      setLoading(false);
+      setImageUri(community.imageUrl ?? null);
+      setOriginalImageUrl(community.imageUrl ?? null);
     }
-  }, [communityId, communityRepository, navigation, session?.user?.id]);
-
-  useEffect(() => {
-    loadCommunity();
-  }, [loadCommunity]);
+  }, [community]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -244,7 +218,7 @@ export default function EditCommunityScreen() {
     );
   }
 
-  if (!community) {
+  if (!isAuthorized || !community) {
     return null;
   }
 

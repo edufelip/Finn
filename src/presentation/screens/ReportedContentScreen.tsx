@@ -24,6 +24,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { reportedContentCopy } from '../content/reportedContentCopy';
 import ReportCard from '../components/ReportCard';
+import { useModerationAuth } from '../hooks/useModerationAuth';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ReportedContent'>;
 type Route = RouteProp<MainStackParamList, 'ReportedContent'>;
@@ -35,8 +36,6 @@ export default function ReportedContentScreen() {
   const {
     posts: postRepository,
     postReports: reportRepository,
-    communities: communityRepository,
-    communityModerators: moderatorRepository,
     moderationLogs: moderationLogRepository,
   } = useRepositories();
   const theme = useThemeColors();
@@ -44,42 +43,29 @@ export default function ReportedContentScreen() {
 
   const { communityId } = route.params;
 
+  // Use moderation auth hook to handle authorization
+  const { community, loading: authLoading, isAuthorized } = useModerationAuth({
+    communityId,
+    requireOwner: false, // Allow both owners and moderators
+    alerts: {
+      signInRequired: reportedContentCopy.alerts.signInRequired,
+      notFound: { title: reportedContentCopy.alerts.failed.title, message: 'Community not found' },
+      notAuthorized: reportedContentCopy.alerts.notAuthorized,
+      failed: reportedContentCopy.alerts.failed,
+    },
+  });
+
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<PostReport[]>([]);
   const [processingReportIds, setProcessingReportIds] = useState<Set<number>>(new Set());
 
   const loadReports = useCallback(async () => {
-    if (!session?.user?.id) {
-      Alert.alert(
-        reportedContentCopy.alerts.signInRequired.title,
-        reportedContentCopy.alerts.signInRequired.message
-      );
-      navigation.goBack();
+    if (!isAuthorized) {
       return;
     }
 
     setLoading(true);
     try {
-      // Verify user is owner or moderator
-      const community = await communityRepository.getCommunity(communityId);
-      if (!community) {
-        Alert.alert(reportedContentCopy.alerts.failed.title, 'Community not found');
-        navigation.goBack();
-        return;
-      }
-
-      const isOwner = community.ownerId === session.user.id;
-      const isModerator = await moderatorRepository.isModerator(communityId, session.user.id);
-
-      if (!isOwner && !isModerator) {
-        Alert.alert(
-          reportedContentCopy.alerts.notAuthorized.title,
-          reportedContentCopy.alerts.notAuthorized.message
-        );
-        navigation.goBack();
-        return;
-      }
-
       const reportedPosts = await reportRepository.getReportsForCommunity(communityId);
       // Filter to only show pending reports
       setReports(reportedPosts.filter((report) => report.status === 'pending' || !report.status));
@@ -90,7 +76,7 @@ export default function ReportedContentScreen() {
     } finally {
       setLoading(false);
     }
-  }, [communityId, communityRepository, moderatorRepository, navigation, reportRepository, session?.user?.id]);
+  }, [communityId, reportRepository, isAuthorized]);
 
   useEffect(() => {
     loadReports();
@@ -235,6 +221,28 @@ export default function ReportedContentScreen() {
     [handleDelete, handleMarkSafe, processingReportIds]
   );
 
+  // Show loading during both auth and data fetch
+  if (authLoading || loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color={theme.onBackground} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{reportedContentCopy.title}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthorized || !community) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -245,27 +253,21 @@ export default function ReportedContentScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={reports}
-          keyExtractor={(item) => `report-${item.id}`}
-          renderItem={renderReport}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconWrapper}>
-                <MaterialIcons name="verified-user" size={64} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.emptyTitle}>{reportedContentCopy.emptyState.title}</Text>
-              <Text style={styles.emptyMessage}>{reportedContentCopy.emptyState.message}</Text>
+      <FlatList
+        data={reports}
+        keyExtractor={(item) => `report-${item.id}`}
+        renderItem={renderReport}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrapper}>
+              <MaterialIcons name="verified-user" size={64} color={theme.onSurfaceVariant} />
             </View>
-          }
-        />
-      )}
+            <Text style={styles.emptyTitle}>{reportedContentCopy.emptyState.title}</Text>
+            <Text style={styles.emptyMessage}>{reportedContentCopy.emptyState.message}</Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }

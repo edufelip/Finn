@@ -24,6 +24,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { pendingContentCopy } from '../content/pendingContentCopy';
 import PostCard from '../components/PostCard';
+import { useModerationAuth } from '../hooks/useModerationAuth';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'PendingContent'>;
 type Route = RouteProp<MainStackParamList, 'PendingContent'>;
@@ -34,8 +35,6 @@ export default function PendingContentScreen() {
   const { session } = useAuth();
   const {
     posts: postRepository,
-    communities: communityRepository,
-    communityModerators: moderatorRepository,
     moderationLogs: moderationLogRepository,
   } = useRepositories();
   const theme = useThemeColors();
@@ -43,42 +42,29 @@ export default function PendingContentScreen() {
 
   const { communityId } = route.params;
 
+  // Use moderation auth hook to handle authorization
+  const { community, loading: authLoading, isAuthorized } = useModerationAuth({
+    communityId,
+    requireOwner: false, // Allow both owners and moderators
+    alerts: {
+      signInRequired: pendingContentCopy.alerts.signInRequired,
+      notFound: { title: pendingContentCopy.alerts.failed.title, message: 'Community not found' },
+      notAuthorized: pendingContentCopy.alerts.notAuthorized,
+      failed: pendingContentCopy.alerts.failed,
+    },
+  });
+
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [processingPostIds, setProcessingPostIds] = useState<Set<number>>(new Set());
 
   const loadPendingPosts = useCallback(async () => {
-    if (!session?.user?.id) {
-      Alert.alert(
-        pendingContentCopy.alerts.signInRequired.title,
-        pendingContentCopy.alerts.signInRequired.message
-      );
-      navigation.goBack();
+    if (!isAuthorized) {
       return;
     }
 
     setLoading(true);
     try {
-      // Verify user is owner or moderator
-      const community = await communityRepository.getCommunity(communityId);
-      if (!community) {
-        Alert.alert(pendingContentCopy.alerts.failed.title, 'Community not found');
-        navigation.goBack();
-        return;
-      }
-
-      const isOwner = community.ownerId === session.user.id;
-      const isModerator = await moderatorRepository.isModerator(communityId, session.user.id);
-
-      if (!isOwner && !isModerator) {
-        Alert.alert(
-          pendingContentCopy.alerts.notAuthorized.title,
-          pendingContentCopy.alerts.notAuthorized.message
-        );
-        navigation.goBack();
-        return;
-      }
-
       const pendingPosts = await postRepository.getPendingPosts(communityId);
       setPosts(pendingPosts);
     } catch (err) {
@@ -88,7 +74,7 @@ export default function PendingContentScreen() {
     } finally {
       setLoading(false);
     }
-  }, [communityId, communityRepository, navigation, postRepository, session?.user?.id]);
+  }, [communityId, postRepository, isAuthorized]);
 
   useEffect(() => {
     loadPendingPosts();
@@ -264,6 +250,28 @@ export default function PendingContentScreen() {
     [handleApprove, handleReject, navigation, processingPostIds, styles, theme]
   );
 
+  // Show loading during both auth and data fetch
+  if (authLoading || loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color={theme.onBackground} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{pendingContentCopy.title}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthorized || !community) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -274,27 +282,21 @@ export default function PendingContentScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={posts}
-          keyExtractor={(item) => `pending-post-${item.id}`}
-          renderItem={renderPost}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconWrapper}>
-                <MaterialIcons name="check-circle-outline" size={64} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.emptyTitle}>{pendingContentCopy.emptyState.title}</Text>
-              <Text style={styles.emptyMessage}>{pendingContentCopy.emptyState.message}</Text>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => `pending-post-${item.id}`}
+        renderItem={renderPost}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrapper}>
+              <MaterialIcons name="check-circle-outline" size={64} color={theme.onSurfaceVariant} />
             </View>
-          }
-        />
-      )}
+            <Text style={styles.emptyTitle}>{pendingContentCopy.emptyState.title}</Text>
+            <Text style={styles.emptyMessage}>{pendingContentCopy.emptyState.message}</Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
