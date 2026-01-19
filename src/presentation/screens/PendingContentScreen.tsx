@@ -42,16 +42,19 @@ export default function PendingContentScreen() {
 
   const { communityId } = route.params;
 
+  // Memoize alerts to prevent infinite loops in useModerationAuth
+  const authAlerts = useMemo(() => ({
+    signInRequired: pendingContentCopy.alerts.signInRequired,
+    notFound: { title: pendingContentCopy.alerts.failed.title, message: 'Community not found' },
+    notAuthorized: pendingContentCopy.alerts.notAuthorized,
+    failed: pendingContentCopy.alerts.failed,
+  }), []);
+
   // Use moderation auth hook to handle authorization
   const { community, loading: authLoading, isAuthorized } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
-    alerts: {
-      signInRequired: pendingContentCopy.alerts.signInRequired,
-      notFound: { title: pendingContentCopy.alerts.failed.title, message: 'Community not found' },
-      notAuthorized: pendingContentCopy.alerts.notAuthorized,
-      failed: pendingContentCopy.alerts.failed,
-    },
+    alerts: authAlerts,
   });
 
   const [loading, setLoading] = useState(true);

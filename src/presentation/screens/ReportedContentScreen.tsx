@@ -43,16 +43,19 @@ export default function ReportedContentScreen() {
 
   const { communityId } = route.params;
 
+  // Memoize alerts to prevent infinite loops in useModerationAuth
+  const authAlerts = useMemo(() => ({
+    signInRequired: reportedContentCopy.alerts.signInRequired,
+    notFound: { title: reportedContentCopy.alerts.failed.title, message: 'Community not found' },
+    notAuthorized: reportedContentCopy.alerts.notAuthorized,
+    failed: reportedContentCopy.alerts.failed,
+  }), []);
+
   // Use moderation auth hook to handle authorization
   const { community, loading: authLoading, isAuthorized } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
-    alerts: {
-      signInRequired: reportedContentCopy.alerts.signInRequired,
-      notFound: { title: reportedContentCopy.alerts.failed.title, message: 'Community not found' },
-      notAuthorized: reportedContentCopy.alerts.notAuthorized,
-      failed: reportedContentCopy.alerts.failed,
-    },
+    alerts: authAlerts,
   });
 
   const [loading, setLoading] = useState(true);

@@ -45,16 +45,19 @@ export default function EditCommunityScreen() {
 
   const { communityId } = route.params;
 
+  // Memoize alerts to prevent infinite loops in useModerationAuth
+  const authAlerts = useMemo(() => ({
+    signInRequired: editCommunityCopy.alerts.signInRequired,
+    notFound: { title: editCommunityCopy.alerts.failed.title, message: 'Community not found' },
+    notAuthorized: editCommunityCopy.alerts.notAuthorized,
+    failed: editCommunityCopy.alerts.failed,
+  }), []);
+
   // Use moderation auth hook to handle authorization
   const { community, loading, isAuthorized } = useModerationAuth({
     communityId,
     requireOwner: true, // Only owners can edit community settings
-    alerts: {
-      signInRequired: editCommunityCopy.alerts.signInRequired,
-      notFound: { title: editCommunityCopy.alerts.failed.title, message: 'Community not found' },
-      notAuthorized: editCommunityCopy.alerts.notAuthorized,
-      failed: editCommunityCopy.alerts.failed,
-    },
+    alerts: authAlerts,
   });
 
   const [saving, setSaving] = useState(false);

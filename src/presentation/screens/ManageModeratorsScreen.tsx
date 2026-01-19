@@ -43,16 +43,19 @@ export default function ManageModeratorsScreen() {
 
   const { communityId } = route.params;
 
+  // Memoize alerts to prevent infinite loops in useModerationAuth
+  const authAlerts = useMemo(() => ({
+    signInRequired: manageModeratorsCopy.alerts.signInRequired,
+    notFound: { title: manageModeratorsCopy.alerts.failed.title, message: 'Community not found' },
+    notAuthorized: manageModeratorsCopy.alerts.notAuthorized,
+    failed: manageModeratorsCopy.alerts.failed,
+  }), []);
+
   // Use moderation auth hook to handle authorization
   const { community, loading: authLoading, isAuthorized, isOwner } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
-    alerts: {
-      signInRequired: manageModeratorsCopy.alerts.signInRequired,
-      notFound: { title: manageModeratorsCopy.alerts.failed.title, message: 'Community not found' },
-      notAuthorized: manageModeratorsCopy.alerts.notAuthorized,
-      failed: manageModeratorsCopy.alerts.failed,
-    },
+    alerts: authAlerts,
   });
 
   const [loading, setLoading] = useState(true);
