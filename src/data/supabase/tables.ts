@@ -11,4 +11,6 @@ export const TABLES = {
   notifications: 'notifications',
   postReports: 'post_reports',
   topics: 'topics',
+  communityModerators: 'community_moderators',
+  moderationLogs: 'moderation_logs',
 } as const;

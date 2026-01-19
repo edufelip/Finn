@@ -101,6 +101,26 @@ export class MockPostRepository implements PostRepository {
     return created;
   }
 
+  async getPendingPosts(communityId: number): Promise<Post[]> {
+    return mockPosts.filter(
+      (post) => post.communityId === communityId && post.moderationStatus === 'pending'
+    );
+  }
+
+  async updateModerationStatus(postId: number, status: Post['moderationStatus']): Promise<void> {
+    const post = mockPosts.find((p) => p.id === postId);
+    if (post) {
+      post.moderationStatus = status;
+    }
+  }
+
+  async markPostForReview(postId: number): Promise<void> {
+    const post = mockPosts.find((p) => p.id === postId);
+    if (post) {
+      post.moderationStatus = 'pending';
+    }
+  }
+
   async deletePost(postId: number): Promise<void> {
     const index = mockPosts.findIndex((post) => post.id === postId);
     if (index >= 0) {

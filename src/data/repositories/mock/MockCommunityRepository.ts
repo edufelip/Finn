@@ -80,6 +80,32 @@ export class MockCommunityRepository implements CommunityRepository {
     return created;
   }
 
+  async updateCommunitySettings(
+    communityId: number,
+    settings: {
+      postPermission?: Community['postPermission'];
+      imageUrl?: string | null;
+    },
+    imageUri?: string | null
+  ): Promise<Community> {
+    const community = mockCommunities.find((c) => c.id === communityId);
+    if (!community) {
+      throw new Error('Community not found');
+    }
+
+    if (settings.postPermission !== undefined) {
+      community.postPermission = settings.postPermission;
+    }
+
+    if (imageUri) {
+      community.imageUrl = imageUri;
+    } else if (settings.imageUrl !== undefined) {
+      community.imageUrl = settings.imageUrl;
+    }
+
+    return community;
+  }
+
   async subscribe(subscription: Subscription): Promise<Subscription> {
     const existing = mockSubscriptions.find(
       (item) => item.userId === subscription.userId && item.communityId === subscription.communityId

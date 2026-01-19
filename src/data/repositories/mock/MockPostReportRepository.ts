@@ -28,6 +28,19 @@ export class MockPostReportRepository implements PostReportRepository {
     return mockReports.filter((r) => r.userId === userId);
   }
 
+  async getReportsForCommunity(_communityId: number): Promise<PostReport[]> {
+    // For mock purposes, just return all reports
+    // In real implementation, we would filter by community
+    return mockReports;
+  }
+
+  async updateReportStatus(reportId: number, status: PostReport['status']): Promise<void> {
+    const report = mockReports.find((r) => r.id === reportId);
+    if (report) {
+      report.status = status;
+    }
+  }
+
   async hasUserReportedPost(postId: number, userId: string): Promise<boolean> {
     return mockReports.some((r) => r.postId === postId && r.userId === userId);
   }

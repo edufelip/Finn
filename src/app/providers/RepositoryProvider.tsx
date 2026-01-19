@@ -6,6 +6,8 @@ import type { PostRepository } from '../../domain/repositories/PostRepository';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
 import type { PostReportRepository } from '../../domain/repositories/PostReportRepository';
 import type { TopicRepository } from '../../domain/repositories/TopicRepository';
+import type { CommunityModeratorRepository } from '../../domain/repositories/CommunityModeratorRepository';
+import type { ModerationLogRepository } from '../../domain/repositories/ModerationLogRepository';
 import { createRepositories } from '../../data/repositories/repositoryFactory';
 
 export type RepositoryContextValue = {
@@ -15,6 +17,8 @@ export type RepositoryContextValue = {
   comments: CommentRepository;
   postReports: PostReportRepository;
   topics: TopicRepository;
+  communityModerators: CommunityModeratorRepository;
+  moderationLogs: ModerationLogRepository;
 };
 
 const RepositoryContext = createContext<RepositoryContextValue | undefined>(undefined);
@@ -35,6 +39,8 @@ type RepositoryProviderProps = {
     comments?: Partial<CommentRepository>;
     postReports?: Partial<PostReportRepository>;
     topics?: Partial<TopicRepository>;
+    communityModerators?: Partial<CommunityModeratorRepository>;
+    moderationLogs?: Partial<ModerationLogRepository>;
   };
 };
 
@@ -48,6 +54,8 @@ export function RepositoryProvider({ children, overrides }: RepositoryProviderPr
       comments: applyOverrides(defaultRepositories.comments, overrides?.comments),
       postReports: applyOverrides(defaultRepositories.postReports, overrides?.postReports),
       topics: applyOverrides(defaultRepositories.topics, overrides?.topics),
+      communityModerators: applyOverrides(defaultRepositories.communityModerators, overrides?.communityModerators),
+      moderationLogs: applyOverrides(defaultRepositories.moderationLogs, overrides?.moderationLogs),
     }),
     [defaultRepositories, overrides]
   );

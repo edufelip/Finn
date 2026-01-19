@@ -18,6 +18,7 @@ type CommunityRow = {
   owner_id: string;
   topic_id?: number | null;
   created_at?: string;
+  post_permission?: string | null;
 };
 
 type SubscriptionRow = {
@@ -107,6 +108,7 @@ async function toDomainWithImage(row: CommunityRow, subscribersCount?: number): 
     topicId: row.topic_id ?? null,
     createdAt: row.created_at,
     subscribersCount,
+    postPermission: (row.post_permission as Community['postPermission']) ?? 'anyone_follows',
   };
 }
 
@@ -292,6 +294,83 @@ export class SupabaseCommunityRepository implements CommunityRepository {
           await supabase.storage.from(COMMUNITY_IMAGE_BUCKET).remove([uploadedPath]);
         } catch {
           // Ignore cleanup failures to preserve the original error context.
+        }
+      }
+      throw error;
+    }
+  }
+
+  async updateCommunitySettings(
+    communityId: number,
+    settings: {
+      postPermission?: Community['postPermission'];
+      imageUrl?: string | null;
+    },
+    imageUri?: string | null
+  ): Promise<Community> {
+    let resolvedImageUrl = settings.imageUrl;
+    let uploadedPath: string | null = null;
+
+    // Handle image upload if imageUri is provided
+    if (imageUri) {
+      const community = await this.getCommunity(communityId);
+      if (!community) {
+        throw new Error('Community not found');
+      }
+
+      try {
+        const upload = await uploadCommunityImage(imageUri, community.ownerId);
+        resolvedImageUrl = upload.path;
+        uploadedPath = upload.wasUploaded ? upload.path : null;
+      } catch (error) {
+        if (!isBucketNotFoundError(error)) {
+          throw error;
+        }
+        resolvedImageUrl = null;
+        uploadedPath = null;
+      }
+    }
+
+    // Build update payload with only fields that are provided
+    const payload: Partial<{
+      post_permission: string;
+      image_url: string | null;
+    }> = {};
+
+    if (settings.postPermission !== undefined) {
+      payload.post_permission = settings.postPermission;
+    }
+
+    if (resolvedImageUrl !== undefined) {
+      payload.image_url = resolvedImageUrl;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.communities)
+        .update(payload)
+        .eq('id', communityId)
+        .select('*')
+        .single<CommunityRow>();
+
+      if (error) {
+        throw error;
+      }
+
+      const updated = await toDomainWithImage(data);
+
+      // Clear cache
+      await clearCache(CacheKey.community(communityId));
+      await clearCache(CacheKey.communities(null));
+
+      return updated;
+    } catch (error) {
+      // Clean up uploaded image if database update fails
+      if (uploadedPath) {
+        try {
+          await supabase.storage.from(COMMUNITY_IMAGE_BUCKET).remove([uploadedPath]);
+        } catch {
+          // Ignore cleanup failures
         }
       }
       throw error;

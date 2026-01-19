@@ -22,6 +22,7 @@ type PostRow = {
   created_at?: string;
   community_id: number;
   user_id: string;
+  moderation_status?: string | null;
   communities?: {
     title?: string;
     image_url?: string | null;
@@ -49,6 +50,7 @@ function toDomain(row: PostRow, extras?: Partial<Post>): Post {
     communityImageUrl: row.communities?.image_url ?? null,
     userId: row.user_id,
     userName: row.profiles?.name,
+    moderationStatus: (row.moderation_status as Post['moderationStatus']) ?? 'approved',
     // userPhotoUrl is handled in toDomainWithImages
     likesCount: row.likes?.[0]?.count ?? 0,
     commentsCount: row.comments?.[0]?.count ?? 0,
@@ -566,6 +568,51 @@ export class SupabasePostRepository implements PostRepository {
       }
       throw error;
     }
+  }
+
+  async getPendingPosts(communityId: number): Promise<Post[]> {
+    const { data, error } = await selectPostsWithFallback((select) =>
+      supabase
+        .from(TABLES.posts)
+        .select(select)
+        .eq('community_id', communityId)
+        .eq('moderation_status', 'pending')
+        .order('created_at', { ascending: false })
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return Promise.all((data ?? []).map((row) => toDomainWithImages(row as PostRow)));
+  }
+
+  async updateModerationStatus(postId: number, status: Post['moderationStatus']): Promise<void> {
+    const { error } = await supabase
+      .from(TABLES.posts)
+      .update({ moderation_status: status })
+      .eq('id', postId);
+
+    if (error) {
+      throw error;
+    }
+
+    // Clear relevant caches
+    await clearCache(CacheKey.feedByUser('public', 0));
+  }
+
+  async markPostForReview(postId: number): Promise<void> {
+    const { error } = await supabase
+      .from(TABLES.posts)
+      .update({ moderation_status: 'pending' })
+      .eq('id', postId);
+
+    if (error) {
+      throw error;
+    }
+
+    // Clear relevant caches
+    await clearCache(CacheKey.feedByUser('public', 0));
   }
 
   async deletePost(postId: number): Promise<void> {
