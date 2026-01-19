@@ -13,20 +13,23 @@ import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import WebViewScreen from '../screens/WebViewScreen';
+import type { Community } from '../../domain/models/community';
 import type { Post } from '../../domain/models/post';
+
+export type SearchSort = 'mostFollowed' | 'leastFollowed' | 'newest' | 'oldest';
 
 export type MainStackParamList = {
   DrawerRoot: undefined;
   CreatePost: { communityId?: number } | undefined;
   CreateCommunity: undefined;
-  CommunityDetail: { communityId: number };
+  CommunityDetail: { communityId: number; initialCommunity?: Community };
   SavedPosts: undefined;
   Settings: undefined;
   EditProfile: undefined;
-  PostDetail: { post: Post };
+  PostDetail: { post?: Post; postId?: number };
   Profile: undefined;
   Notifications: undefined;
-  SearchResults: { focus?: boolean } | undefined;
+  SearchResults: { focus?: boolean; sort?: SearchSort; topicId?: number } | undefined;
   WebView: { title: string; url: string };
 };
 
