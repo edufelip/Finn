@@ -17,8 +17,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import PostCard from '../components/PostCard';
+import ManagedCommunityCard from '../components/ManagedCommunityCard';
 import ScreenFade from '../components/ScreenFade';
 import type { Post } from '../../domain/models/post';
+import type { Community } from '../../domain/models/community';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -39,7 +41,7 @@ import { usePostsStore, useProfilePosts, useSavedPosts } from '../../app/store/p
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
-  const { users: userRepository, posts: postRepository } = useRepositories();
+  const { users: userRepository, posts: postRepository, communities: communityRepository } = useRepositories();
   const currentUser = useUserStore((state) => state.currentUser);
   const hasProfileLoaded = currentUser !== null;
   const tabBarHeight = useBottomTabBarHeight();
@@ -49,21 +51,26 @@ export default function ProfileScreen() {
   const setSavedPosts = usePostsStore((state) => state.setSavedPosts);
   const updatePost = usePostsStore((state) => state.updatePost);
   const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
-  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'communities'>('posts');
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [loadingCommunities, setLoadingCommunities] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [savedError, setSavedError] = useState<string | null>(null);
+  const [communitiesError, setCommunitiesError] = useState<string | null>(null);
   const [savedLoaded, setSavedLoaded] = useState(false);
+  const [communitiesLoaded, setCommunitiesLoaded] = useState(false);
+  const [communities, setCommunities] = useState<Community[]>([]);
   const [tabLayouts, setTabLayouts] = useState<{
     posts?: { x: number; width: number };
     saved?: { x: number; width: number };
+    communities?: { x: number; width: number };
   }>({});
   const activeTabRef = useRef(activeTab);
   const likeInFlightRef = useRef<Set<number>>(new Set());
   const countsLoadedRef = useRef(false);
   const reduceMotion = useReducedMotion();
-  const tabProgress = useSharedValue(activeTab === 'posts' ? 0 : 1);
+  const tabProgress = useSharedValue(activeTab === 'posts' ? 0 : activeTab === 'saved' ? 0.5 : 1);
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
   const theme = useThemeColors();
@@ -201,12 +208,36 @@ export default function ProfileScreen() {
     }
   }, [postRepository, session?.user?.id, setSavedPosts]);
 
+  const loadCommunities = useCallback(async () => {
+    if (!session?.user?.id) {
+      setCommunitiesError(profileCopy.errorSignInRequired);
+      return;
+    }
+
+    setLoadingCommunities(true);
+    setCommunitiesError(null);
+    try {
+      const communityData = await communityRepository.getCommunitiesFromUser(session.user.id);
+      setCommunities(communityData ?? []);
+      setCommunitiesLoaded(true);
+    } catch (err) {
+      if (err instanceof Error) {
+        setCommunitiesError(err.message);
+      }
+      setCommunitiesLoaded(true);
+    } finally {
+      setLoadingCommunities(false);
+    }
+  }, [communityRepository, session?.user?.id]);
+
   useFocusEffect(
     useCallback(() => {
       if (activeTab === 'saved' && !savedLoaded) {
         loadSavedPosts();
+      } else if (activeTab === 'communities' && !communitiesLoaded) {
+        loadCommunities();
       }
-    }, [activeTab, loadSavedPosts, savedLoaded])
+    }, [activeTab, loadSavedPosts, savedLoaded, loadCommunities, communitiesLoaded])
   );
 
   const handleToggleLike = async (post: Post) => {
@@ -301,10 +332,10 @@ export default function ProfileScreen() {
   const followersCount = currentUser?.followersCount ?? 0;
   const followingCount = currentUser?.followingCount ?? 0;
 
-  const currentPosts = activeTab === 'posts' ? posts : savedPosts;
-  const currentLoading = activeTab === 'posts' ? loadingPosts : loadingSaved;
-  const currentError = activeTab === 'posts' ? postsError : savedError;
-  const emptyCopy = activeTab === 'posts' ? profileCopy.empty : profileCopy.savedEmpty;
+  const currentPosts = activeTab === 'posts' ? posts : activeTab === 'saved' ? savedPosts : [];
+  const currentLoading = activeTab === 'posts' ? loadingPosts : activeTab === 'saved' ? loadingSaved : loadingCommunities;
+  const currentError = activeTab === 'posts' ? postsError : activeTab === 'saved' ? savedError : communitiesError;
+  const emptyCopy = activeTab === 'posts' ? profileCopy.empty : activeTab === 'saved' ? profileCopy.savedEmpty : profileCopy.communitiesEmpty;
 
   const stats = [
     {
@@ -325,7 +356,8 @@ export default function ProfileScreen() {
   ];
 
   useEffect(() => {
-    tabProgress.value = withTiming(activeTab === 'posts' ? 0 : 1, {
+    const progress = activeTab === 'posts' ? 0 : activeTab === 'saved' ? 0.5 : 1;
+    tabProgress.value = withTiming(progress, {
       duration: indicatorDuration,
       easing: Easing.out(Easing.cubic),
     });
@@ -351,15 +383,21 @@ export default function ProfileScreen() {
   }));
 
   const postsLabelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(tabProgress.value, [0, 1], [theme.onBackground, theme.onSurfaceVariant]),
-    opacity: interpolate(tabProgress.value, [0, 1], [1, 0.72]),
-    transform: [{ scale: interpolate(tabProgress.value, [0, 1], [1, 0.96]) }],
+    color: interpolateColor(tabProgress.value, [0, 0.5, 1], [theme.onBackground, theme.onSurfaceVariant, theme.onSurfaceVariant]),
+    opacity: interpolate(tabProgress.value, [0, 0.5, 1], [1, 0.72, 0.72]),
+    transform: [{ scale: interpolate(tabProgress.value, [0, 0.5, 1], [1, 0.96, 0.96]) }],
   }));
 
   const savedLabelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(tabProgress.value, [0, 1], [theme.onSurfaceVariant, theme.onBackground]),
-    opacity: interpolate(tabProgress.value, [0, 1], [0.72, 1]),
-    transform: [{ scale: interpolate(tabProgress.value, [0, 1], [0.96, 1]) }],
+    color: interpolateColor(tabProgress.value, [0, 0.5, 1], [theme.onSurfaceVariant, theme.onBackground, theme.onSurfaceVariant]),
+    opacity: interpolate(tabProgress.value, [0, 0.5, 1], [0.72, 1, 0.72]),
+    transform: [{ scale: interpolate(tabProgress.value, [0, 0.5, 1], [0.96, 1, 0.96]) }],
+  }));
+
+  const communitiesLabelStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(tabProgress.value, [0, 0.5, 1], [theme.onSurfaceVariant, theme.onSurfaceVariant, theme.onBackground]),
+    opacity: interpolate(tabProgress.value, [0, 0.5, 1], [0.72, 0.72, 1]),
+    transform: [{ scale: interpolate(tabProgress.value, [0, 0.5, 1], [0.96, 0.96, 1]) }],
   }));
 
   if (isGuest) {
@@ -375,12 +413,19 @@ export default function ProfileScreen() {
     );
   }
 
-  const handleTabChange = (nextTab: 'posts' | 'saved') => {
+  const handleTabChange = (nextTab: 'posts' | 'saved' | 'communities') => {
     if (nextTab === activeTabRef.current) {
       return;
     }
     setActiveTab(nextTab);
   };
+
+  const handleManageCommunity = useCallback(
+    (community: Community) => {
+      navigation.navigate('EditCommunity', { communityId: community.id });
+    },
+    [navigation]
+  );
 
   return (
     <View style={styles.container}>
@@ -405,7 +450,7 @@ export default function ProfileScreen() {
       <ScreenFade onlyOnTabSwitch>
         <FlatList
           testID={profileCopy.testIds.list}
-          data={currentPosts}
+          data={activeTab === 'communities' ? [] : currentPosts}
           keyExtractor={(item) => `${activeTab}-${item.id}`}
           contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight }]}
           ListHeaderComponent={
@@ -514,8 +559,47 @@ export default function ProfileScreen() {
                     </Animated.Text>
                   </View>
                 </Pressable>
+                <Pressable
+                  style={styles.tabItem}
+                  onPress={() => handleTabChange('communities')}
+                  onLayout={(event) => {
+                    const { x, width } = event.nativeEvent.layout;
+                    setTabLayouts((prev) => ({
+                      ...prev,
+                      communities: { x, width },
+                    }));
+                  }}
+                  testID={profileCopy.testIds.tabCommunities}
+                >
+                  <View style={styles.tabContent}>
+                    <MaterialIcons
+                      name="people"
+                      size={18}
+                      color={activeTab === 'communities' ? theme.onBackground : theme.onSurfaceVariant}
+                      style={styles.tabIcon}
+                    />
+                    <Animated.Text style={[styles.tabText, communitiesLabelStyle]}>
+                      {profileCopy.tabs.communities}
+                    </Animated.Text>
+                  </View>
+                </Pressable>
               </View>
               {currentError ? <Text style={styles.error}>{currentError}</Text> : null}
+              {activeTab === 'communities' && !currentLoading ? (
+                communities.length > 0 ? (
+                  <View testID={profileCopy.testIds.communityList}>
+                    {communities.map((community) => (
+                      <ManagedCommunityCard
+                        key={community.id}
+                        community={community}
+                        onPress={() => navigation.navigate('CommunityDetail', { communityId: community.id, initialCommunity: community })}
+                        showManageButton
+                        onManagePress={() => handleManageCommunity(community)}
+                      />
+                    ))}
+                  </View>
+                ) : null
+              ) : null}
             </View>
           }
           renderItem={({ item }) => (
@@ -548,7 +632,9 @@ export default function ProfileScreen() {
                     testID={
                       activeTab === 'posts'
                         ? profileCopy.testIds.emptyTitle
-                        : profileCopy.testIds.savedEmptyTitle
+                        : activeTab === 'saved'
+                        ? profileCopy.testIds.savedEmptyTitle
+                        : profileCopy.testIds.communitiesEmptyTitle
                     }
                   >
                     {emptyCopy.title}
