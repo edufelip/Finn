@@ -2,6 +2,8 @@ import { t } from '../i18n';
 
 export const manageModeratorsCopy = {
   title: t('manageModerators.title'),
+  unknownUser: t('manageModerators.unknownUser'),
+  owner: t('manageModerators.owner'),
   emptyState: {
     title: t('manageModerators.emptyState.title'),
     message: t('manageModerators.emptyState.message'),
@@ -11,6 +13,7 @@ export const manageModeratorsCopy = {
   assignedBy: (userName: string) => t('manageModerators.assignedBy', { userName }),
   addModerator: {
     title: t('manageModerators.addModerator.title'),
+    prompt: t('manageModerators.addModerator.prompt'),
     placeholder: t('manageModerators.addModerator.placeholder'),
     searchPlaceholder: t('manageModerators.addModerator.searchPlaceholder'),
     confirm: t('manageModerators.addModerator.confirm'),
@@ -30,6 +33,16 @@ export const manageModeratorsCopy = {
     notAuthorized: {
       title: t('manageModerators.alert.notAuthorized.title'),
       message: t('manageModerators.alert.notAuthorized.message'),
+    },
+    onlyOwnerCanRemove: {
+      title: t('manageModerators.alert.onlyOwnerCanRemove.title'),
+      message: t('manageModerators.alert.onlyOwnerCanRemove.message'),
+    },
+    confirmRemove: {
+      title: t('manageModerators.alert.confirmRemove.title'),
+      message: t('manageModerators.alert.confirmRemove.message'),
+      confirm: t('manageModerators.alert.confirmRemove.confirm'),
+      cancel: t('manageModerators.alert.confirmRemove.cancel'),
     },
     offline: {
       title: t('manageModerators.alert.offline.title'),

@@ -2,6 +2,7 @@ import { t } from '../i18n';
 
 export const moderationLogsCopy = {
   title: t('moderationLogs.title'),
+  unknownModerator: t('moderationLogs.unknownModerator'),
   emptyState: {
     title: t('moderationLogs.emptyState.title'),
     message: t('moderationLogs.emptyState.message'),

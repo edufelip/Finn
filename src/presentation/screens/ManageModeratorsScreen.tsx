@@ -89,7 +89,7 @@ export default function ManageModeratorsScreen() {
 
       Alert.prompt(
         manageModeratorsCopy.addModerator.title,
-        'Enter the user ID of the person you want to add as a moderator',
+        manageModeratorsCopy.addModerator.prompt,
         [
           {
             text: manageModeratorsCopy.addModerator.cancel,
@@ -152,22 +152,22 @@ export default function ManageModeratorsScreen() {
       // Only owner can remove moderators
       if (!isOwner) {
         Alert.alert(
-          manageModeratorsCopy.alerts.notAuthorized.title,
-          'Only the community owner can remove moderators'
+          manageModeratorsCopy.alerts.onlyOwnerCanRemove.title,
+          manageModeratorsCopy.alerts.onlyOwnerCanRemove.message
         );
         return;
       }
 
       Alert.alert(
-        manageModeratorsCopy.confirmRemove.title,
-        manageModeratorsCopy.confirmRemove.message(moderator.userName ?? 'this user'),
+        manageModeratorsCopy.alerts.confirmRemove.title,
+        manageModeratorsCopy.alerts.confirmRemove.message,
         [
           {
-            text: manageModeratorsCopy.confirmRemove.cancel,
+            text: manageModeratorsCopy.alerts.confirmRemove.cancel,
             style: 'cancel',
           },
           {
-            text: manageModeratorsCopy.confirmRemove.confirm,
+            text: manageModeratorsCopy.alerts.confirmRemove.confirm,
             style: 'destructive',
             onPress: async () => {
               const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -224,9 +224,11 @@ export default function ManageModeratorsScreen() {
               </View>
             )}
             <View style={styles.moderatorText}>
-              <Text style={styles.moderatorName}>{item.userName ?? 'Unknown User'}</Text>
+              <Text style={styles.moderatorName}>
+                {item.userName ?? manageModeratorsCopy.unknownUser}
+              </Text>
               <Text style={styles.moderatorMeta}>
-                {manageModeratorsCopy.assignedBy('Owner')} • {formatTimeAgo(item.createdAt)}
+                {manageModeratorsCopy.assignedBy(manageModeratorsCopy.owner)} • {formatTimeAgo(item.createdAt)}
               </Text>
             </View>
           </View>

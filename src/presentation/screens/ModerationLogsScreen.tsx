@@ -149,7 +149,7 @@ export default function ModerationLogsScreen() {
                 </View>
               )}
               <Text style={styles.metaText}>
-                {moderationLogsCopy.by(item.moderatorName ?? 'Unknown')}
+                {moderationLogsCopy.by(item.moderatorName ?? moderationLogsCopy.unknownModerator)}
               </Text>
               <Text style={styles.metaSeparator}>•</Text>
               <Text style={styles.metaText}>{formatTimeAgo(item.createdAt)}</Text>

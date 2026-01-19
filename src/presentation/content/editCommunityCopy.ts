@@ -42,6 +42,13 @@ export const editCommunityCopy = {
     saved: {
       title: t('editCommunity.alert.saved.title'),
       message: t('editCommunity.alert.saved.message'),
+      okButton: t('editCommunity.alert.saved.okButton'),
+    },
+    unsavedChanges: {
+      title: t('editCommunity.alert.unsavedChanges.title'),
+      message: t('editCommunity.alert.unsavedChanges.message'),
+      keepEditing: t('editCommunity.alert.unsavedChanges.keepEditing'),
+      discard: t('editCommunity.alert.unsavedChanges.discard'),
     },
     failed: {
       title: t('editCommunity.alert.failed.title'),

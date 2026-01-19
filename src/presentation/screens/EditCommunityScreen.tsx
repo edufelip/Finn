@@ -89,12 +89,12 @@ export default function EditCommunityScreen() {
       e.preventDefault();
 
       Alert.alert(
-        'Unsaved Changes',
-        'You have unsaved changes. Are you sure you want to discard them?',
+        editCommunityCopy.alerts.unsavedChanges.title,
+        editCommunityCopy.alerts.unsavedChanges.message,
         [
-          { text: 'Keep Editing', style: 'cancel' },
+          { text: editCommunityCopy.alerts.unsavedChanges.keepEditing, style: 'cancel' },
           {
-            text: 'Discard',
+            text: editCommunityCopy.alerts.unsavedChanges.discard,
             style: 'destructive',
             onPress: () => {
               if (e.data?.action) {
@@ -183,7 +183,7 @@ export default function EditCommunityScreen() {
       Alert.alert(
         editCommunityCopy.alerts.saved.title,
         editCommunityCopy.alerts.saved.message,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: editCommunityCopy.alerts.saved.okButton, onPress: () => navigation.goBack() }]
       );
     } catch (err) {
       if (err instanceof Error) {
