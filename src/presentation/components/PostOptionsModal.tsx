@@ -15,7 +15,7 @@ type PostOptionsModalProps = {
   position: { x: number; y: number };
 };
 
-export default function PostOptionsModal({
+const PostOptionsModal = ({
   visible,
   onClose,
   onSave,
@@ -24,7 +24,7 @@ export default function PostOptionsModal({
   isSaved,
   canModerate = false,
   position,
-}: PostOptionsModalProps) {
+}: PostOptionsModalProps) => {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -106,7 +106,9 @@ export default function PostOptionsModal({
       </Pressable>
     </Modal>
   );
-}
+};
+
+export default React.memo(PostOptionsModal);
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({

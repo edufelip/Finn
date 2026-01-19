@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ListRenderItemInfo } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -297,6 +298,34 @@ export default function CommunityDetailScreen() {
     );
   };
 
+  const handleOpenComments = useCallback((post: Post) => {
+    navigation.navigate('PostDetail', { post });
+  }, [navigation]);
+
+  const keyExtractor = useCallback((item: Post | number) => 
+    typeof item === 'number' ? `skeleton-${item}` : `${item.id}`,
+    []
+  );
+
+  const renderPost = useCallback((info: ListRenderItemInfo<Post | number>) => {
+    const { item } = info;
+    
+    if (typeof item === 'number') {
+      return <PostSkeleton />;
+    }
+    
+    return (
+      <PostCard
+        post={item}
+        onToggleLike={() => handleToggleLike(item)}
+        onToggleSave={() => handleToggleSave(item)}
+        onMarkForReview={() => handleMarkForReview(item)}
+        onOpenComments={() => handleOpenComments(item)}
+        canModerate={canModerate}
+      />
+    );
+  }, [handleToggleLike, handleToggleSave, handleMarkForReview, handleOpenComments, canModerate]);
+
   const handleToggleSubscription = async () => {
     if (!session?.user?.id) {
       showGuestGateAlert({ onSignIn: () => void exitGuest() });
@@ -535,21 +564,8 @@ export default function CommunityDetailScreen() {
           <FlatList
             testID={communityDetailCopy.testIds.list}
             data={loading ? [1, 2, 3] : posts}
-            keyExtractor={(item) => (typeof item === 'number' ? `skeleton-${item}` : `${item.id}`)}
-            renderItem={({ item }) => 
-              typeof item === 'number' ? (
-                <PostSkeleton />
-              ) : (
-                <PostCard
-                  post={item as Post}
-                  onToggleLike={() => handleToggleLike(item as Post)}
-                  onToggleSave={() => handleToggleSave(item as Post)}
-                  onMarkForReview={() => handleMarkForReview(item as Post)}
-                  onOpenComments={() => navigation.navigate('PostDetail', { post: item as Post })}
-                  canModerate={canModerate}
-                />
-              )
-            }
+            keyExtractor={keyExtractor}
+            renderItem={renderPost}
             ListHeaderComponent={ListHeader}
             ListEmptyComponent={!loading && posts.length === 0 ? EmptyState : null}
             ListFooterComponent={

@@ -23,7 +23,7 @@ type PostCardProps = {
   canModerate?: boolean;
 };
 
-export default function PostCard({
+const PostCard = ({
   post,
   onToggleLike,
   onOpenComments,
@@ -31,7 +31,7 @@ export default function PostCard({
   onShare,
   onMarkForReview,
   canModerate = false,
-}: PostCardProps) {
+}: PostCardProps) => {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const likeScale = useSharedValue(1);
@@ -199,7 +199,9 @@ export default function PostCard({
       />
     </View>
   );
-}
+};
+
+export default React.memo(PostCard);
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
