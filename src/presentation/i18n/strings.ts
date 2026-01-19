@@ -293,9 +293,15 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
 
     // Search
     'search.placeholder': 'Search',
-    'search.trending': 'Trending',
+    'search.emptyState.title': 'Search Communities',
+    'search.emptyState.subtitle': 'Find communities by name or topic',
     'search.empty': 'No communities found.',
     'search.followersLabel': 'Followers',
+    'search.sort.mostFollowed': 'Most Followed',
+    'search.sort.leastFollowed': 'Least Followed',
+    'search.sort.newest': 'Newest',
+    'search.sort.oldest': 'Oldest',
+    'search.filterByTopic': 'Filter by topic',
 
     // Saved posts
     'savedPosts.title': 'Saved',
