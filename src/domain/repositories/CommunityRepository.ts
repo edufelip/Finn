@@ -1,4 +1,4 @@
-import type { Community } from '../models/community';
+import type { Community, PostPermission } from '../models/community';
 import type { Subscription } from '../models/subscription';
 
 export type CommunitySortOrder = 'mostFollowed' | 'leastFollowed' | 'newest' | 'oldest';
@@ -10,6 +10,10 @@ export interface CommunityRepository {
   getSubscribedCommunities(userId: string): Promise<Community[]>;
   getCommunitySubscribersCount(communityId: number): Promise<number>;
   saveCommunity(community: Community, imageUri?: string | null): Promise<Community>;
+  updateCommunitySettings(communityId: number, settings: {
+    postPermission?: PostPermission;
+    imageUrl?: string | null;
+  }, imageUri?: string | null): Promise<Community>;
   subscribe(subscription: Subscription): Promise<Subscription>;
   unsubscribe(subscription: Subscription): Promise<void>;
   getSubscription(userId: string, communityId: number): Promise<Subscription | null>;

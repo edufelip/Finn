@@ -1,3 +1,5 @@
+export type ModerationStatus = 'pending' | 'approved' | 'rejected';
+
 export type Post = {
   id: number;
   content: string;
@@ -13,4 +15,5 @@ export type Post = {
   commentsCount?: number;
   isLiked?: boolean;
   isSaved?: boolean;
+  moderationStatus?: ModerationStatus;
 };

@@ -1,3 +1,5 @@
+export type PostPermission = 'anyone_follows' | 'moderated' | 'private';
+
 export type Community = {
   id: number;
   title: string;
@@ -7,4 +9,5 @@ export type Community = {
   topicId?: number | null;
   createdAt?: string;
   subscribersCount?: number;
+  postPermission?: PostPermission;
 };
