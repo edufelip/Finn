@@ -6,6 +6,13 @@ type TrendingTag = {
   tone: 'tech' | 'travel' | 'design';
 };
 
+type TopicItem = {
+  id: string;
+  label: string;
+  icon: 'sports-esports' | 'music-note' | 'movie' | 'science';
+  tone: 'orange' | 'green' | 'purple' | 'blue';
+};
+
 export const exploreCopy = {
   searchPlaceholder: t('explore.searchPlaceholder'),
   trendingTitle: t('explore.trending.title'),
@@ -25,6 +32,12 @@ export const exploreCopy = {
   primaryCta: t('explore.cta.primary'),
   secondaryCta: t('explore.cta.secondary'),
   topicsTitle: t('explore.topics.title'),
+  topics: [
+    { id: 'gaming', label: t('explore.topics.gaming'), icon: 'sports-esports', tone: 'orange' },
+    { id: 'music', label: t('explore.topics.music'), icon: 'music-note', tone: 'green' },
+    { id: 'movies', label: t('explore.topics.movies'), icon: 'movie', tone: 'purple' },
+    { id: 'science', label: t('explore.topics.science'), icon: 'science', tone: 'blue' },
+  ] as TopicItem[],
   communityFallback: t('explore.community.fallback'),
   testIds: {
     avatar: 'explore-avatar',
