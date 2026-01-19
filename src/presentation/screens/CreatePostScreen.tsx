@@ -53,10 +53,15 @@ export default function CreatePostScreen() {
   const [loading, setLoading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [imageSourceOpen, setImageSourceOpen] = useState(false);
+  const [userCanModerate, setUserCanModerate] = useState(false);
   const insets = useSafeAreaInsets();
   const contentMaxLength = 500;
 
-  const { communities: communityRepository, posts: postRepository } = useRepositories();
+  const { 
+    communities: communityRepository, 
+    posts: postRepository,
+    communityModerators: moderatorRepository,
+  } = useRepositories();
   const { isDark } = useTheme();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -101,6 +106,43 @@ export default function CreatePostScreen() {
       cancelled = true;
     };
   }, [communityRepository, session?.user?.id, initialCommunityId]);
+
+  // Check if user can moderate the selected community
+  useEffect(() => {
+    let cancelled = false;
+    const checkModeration = async () => {
+      if (!session?.user?.id || !selectedCommunityId) {
+        setUserCanModerate(false);
+        return;
+      }
+
+      try {
+        const community = communities.find((c) => c.id === selectedCommunityId);
+        if (!community) {
+          setUserCanModerate(false);
+          return;
+        }
+
+        // Check if user is owner
+        if (community.ownerId === session.user.id) {
+          if (!cancelled) setUserCanModerate(true);
+          return;
+        }
+
+        // Check if user is moderator
+        const isMod = await moderatorRepository.isModerator(selectedCommunityId, session.user.id);
+        if (!cancelled) setUserCanModerate(isMod);
+      } catch (error) {
+        if (!cancelled) setUserCanModerate(false);
+      }
+    };
+
+    checkModeration();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCommunityId, session?.user?.id, communities, moderatorRepository]);
 
   if (isGuest) {
     return (
@@ -177,6 +219,17 @@ export default function CreatePostScreen() {
       return;
     }
 
+    const selectedCommunity = communities.find((c) => c.id === selectedCommunityId);
+    if (!selectedCommunity) {
+      Alert.alert(createPostCopy.alerts.failed.title, 'Community not found');
+      return;
+    }
+
+    // Determine moderation status
+    // If user is owner/moderator OR community doesn't require moderation, approve immediately
+    const needsModeration = selectedCommunity.postPermission === 'moderated' && !userCanModerate;
+    const moderationStatus = needsModeration ? 'pending' : 'approved';
+
     setLoading(true);
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -189,6 +242,7 @@ export default function CreatePostScreen() {
           communityId: selectedCommunityId,
           userId: session.user.id,
           imageUri: persistedImageUri,
+          moderationStatus,
         },
         createdAt: Date.now(),
       });
@@ -205,10 +259,19 @@ export default function CreatePostScreen() {
           content: content.trim(),
           communityId: selectedCommunityId,
           userId: session.user.id,
+          moderationStatus,
         },
         imageUri ?? null
       );
-      Alert.alert(createPostCopy.alerts.posted.title, createPostCopy.alerts.posted.message);
+      
+      if (needsModeration) {
+        Alert.alert(
+          'Post Submitted',
+          'Your post has been submitted and is pending moderator approval.'
+        );
+      } else {
+        Alert.alert(createPostCopy.alerts.posted.title, createPostCopy.alerts.posted.message);
+      }
       navigation.goBack();
     } catch (error) {
       if (error instanceof Error) {
@@ -261,6 +324,14 @@ export default function CreatePostScreen() {
               </View>
               <MaterialIcons name="expand-more" size={20} color={theme.onSurfaceVariant} />
             </Pressable>
+            {selectedCommunity?.postPermission === 'moderated' && !userCanModerate && (
+              <View style={styles.moderationNotice}>
+                <MaterialIcons name="info" size={16} color={theme.tertiary} />
+                <Text style={styles.moderationNoticeText}>
+                  This community requires moderator approval before posts are visible.
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.contentSection}>
             <TextInput
@@ -458,6 +529,25 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 14,
       fontWeight: '600',
       color: theme.onSurface,
+    },
+    moderationNotice: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      marginTop: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: theme.tertiaryContainer,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.tertiary,
+    },
+    moderationNoticeText: {
+      flex: 1,
+      fontSize: 13,
+      lineHeight: 18,
+      color: theme.onTertiaryContainer,
+      fontWeight: '500',
     },
     contentSection: {
       flex: 1,
