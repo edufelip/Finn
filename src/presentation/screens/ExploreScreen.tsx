@@ -37,13 +37,14 @@ const MIN_SKELETON_MS = 350;
 export default function ExploreScreen() {
   const navigation = useNavigation<Navigation>();
   const { session, isGuest, exitGuest } = useAuth();
-  const { communities: communityRepository, users: userRepository } = useRepositories();
+  const { communities: communityRepository, users: userRepository, topics: topicRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const tabBarHeight = useBottomTabBarHeight();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [trending, setTrending] = useState<Community[]>([]);
   const [feedItems, setFeedItems] = useState<Community[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadToken = useRef(0);
@@ -83,8 +84,12 @@ export default function ExploreScreen() {
       setError(null);
     }
     try {
-      const data = await communityRepository.getCommunities();
-      const sorted = [...data].sort(
+      const [communitiesData, topicsData] = await Promise.all([
+        communityRepository.getCommunities(),
+        topicRepository.getTopics(),
+      ]);
+      
+      const sorted = [...communitiesData].sort(
         (a, b) => (b.subscribersCount ?? 0) - (a.subscribersCount ?? 0)
       );
       const trendingItems = sorted.slice(0, exploreCopy.trendingLimit);
@@ -95,6 +100,7 @@ export default function ExploreScreen() {
       if (isMounted.current && loadToken.current === token) {
         setTrending(trendingItems);
         setFeedItems(feedCandidates);
+        setTopics(topicsData.slice(0, 8)); // Show first 8 topics
       }
     } catch (err) {
       if (err instanceof Error && isMounted.current && loadToken.current === token) {
@@ -110,7 +116,7 @@ export default function ExploreScreen() {
         setLoading(false);
       }
     }
-  }, [communityRepository]);
+  }, [communityRepository, topicRepository]);
 
   useEffect(() => {
     loadTrending();
@@ -180,7 +186,18 @@ export default function ExploreScreen() {
     item: Community;
     index: number;
   }) => {
-    const tag = tagPalette[index % tagPalette.length];
+    // Find the topic for this community
+    const communityTopic = topics.find((t) => t.id === item.topicId);
+    
+    // Use community topic if available, otherwise fallback to cycling through tag palette
+    const tag = communityTopic 
+      ? {
+          label: communityTopic.label,
+          background: topicPalette[communityTopic.tone].border,
+          text: theme.onPrimary,
+        }
+      : tagPalette[index % tagPalette.length];
+    
     const members = formatCompactNumber(item.subscribersCount ?? 0);
     const meta = exploreCopy.trendingMembersLabel(members);
     const cardContent = (
@@ -253,9 +270,9 @@ export default function ExploreScreen() {
 
   const renderTopicsSkeleton = () => (
     <View style={styles.topicsGrid}>
-      {exploreCopy.topics.map((topic) => (
+      {Array.from({ length: 8 }).map((_, index) => (
         <Shimmer
-          key={`topic-skeleton-${topic.id}`}
+          key={`topic-skeleton-${index}`}
           baseColor={theme.surfaceVariant}
           highlightColor={theme.surface}
           style={styles.topicSkeleton}
@@ -359,7 +376,7 @@ export default function ExploreScreen() {
               <View style={styles.section}>
                 <Text style={styles.topicsTitle}>{exploreCopy.topicsTitle}</Text>
                 <View style={styles.topicsGrid}>
-                  {exploreCopy.topics.map((topic) => {
+                  {topics.map((topic) => {
                     const tonePalette = topicPalette[topic.tone as TopicTone];
                     return (
                       <Pressable
@@ -368,9 +385,10 @@ export default function ExploreScreen() {
                           styles.topicCard,
                           { backgroundColor: tonePalette.background, borderColor: tonePalette.border },
                         ]}
+                        onPress={() => navigation.navigate('SearchResults', { topicId: topic.id })}
                       >
                         <View style={[styles.topicIconWrap, { backgroundColor: tonePalette.border }]}>
-                          <MaterialIcons name={topic.icon} size={18} color={tonePalette.icon} />
+                          <MaterialIcons name={topic.icon as any} size={18} color={tonePalette.icon} />
                         </View>
                         <Text style={styles.topicLabel}>{topic.label}</Text>
                       </Pressable>
