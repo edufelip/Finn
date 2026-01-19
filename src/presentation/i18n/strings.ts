@@ -614,5 +614,17 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'postComments.alert.offline.title': 'Offline',
     'postComments.alert.offline.message': 'Your comment will be posted when you are back online.',
     'postComments.alert.commentFailed.title': 'Failed to comment',
+
+    // Onboarding
+    'onboarding.skip': 'Skip',
+    'onboarding.slides.discover.title': 'Discover Your Circle',
+    'onboarding.slides.discover.description': 'Find communities that match your passions, search for trending topics, and follow groups to stay updated.',
+    'onboarding.slides.share.title': 'Share Your Voice',
+    'onboarding.slides.share.description': 'Create insightful posts, share your unique ideas, and engage in meaningful professional discussions with the world.',
+    'onboarding.slides.connect.title': 'Connect and Grow',
+    'onboarding.slides.connect.description': 'Find friends who share your professional interests, expand your network, and build lasting connections.',
+    'onboarding.buttons.next': 'Next',
+    'onboarding.buttons.previous': 'Previous',
+    'onboarding.buttons.getStarted': 'Get Started',
   },
 };

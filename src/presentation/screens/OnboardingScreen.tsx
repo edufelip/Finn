@@ -18,33 +18,31 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import { useAppStore } from '../../app/store/appStore';
 import { spacing, radii } from '../theme/metrics';
+import { onboardingCopy } from '../content/onboardingCopy';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    title: 'Discover Your Circle',
-    description:
-      'Find communities that match your passions, search for trending topics, and follow groups to stay updated.',
+    title: onboardingCopy.slides.discover.title,
+    description: onboardingCopy.slides.discover.description,
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuA9uRVrs97YBnNDISgfmigG7AqDoXD6p6eiNeSe0NRJ6_9gsDle-vLuepXjbV3LPqOKGE7Ks2SMdBawxh3XD56ltkcM4YCKARw4_Jtidmn2VJei4cQlkqJpGIPV841XihGoeDk6INwV7pp7c47hE97f6Mb2dXrlspmPeUl8FecRtCDwPvY_ldXuwIZOoOyNnn-a57kzqF7mKlgp6WWpUFwsiixtTjFJn2BOhLGd_Sq7NRS4j0Endajay87rxdciUG028AcPBjSzLLM_',
   },
   {
     id: '2',
-    title: 'Share Your Voice',
-    description:
-      'Create insightful posts, share your unique ideas, and engage in meaningful professional discussions with the world.',
+    title: onboardingCopy.slides.share.title,
+    description: onboardingCopy.slides.share.description,
     image:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDuBvDAC-c3zc3Cuy9i6OwXe3jZhyC7SZ-NetYXqviLRt5wJCudv-nU-WBnjFUCHBk0wBHpoTqE5CiEnF3NX8IkWVM1C-SmYt_2xczv2TvqbCWiqLcgIwMUUDQ5wFr8_9jyj6KJzhRUDP5hKbYAHEtsuSRjWiJFCDZ87xMgzPXOGXH0t-Lea2nn8Ho_8bZQE5vW3Ch1DEEq7gWY8SzQAHQFUFsnQgedR4GRvh6iLEFOUSS4gUH5pf-lXrLDDONywba3itASp-iJY6Dp',
   },
   {
     id: '3',
-    title: 'Connect and Grow',
-    description:
-      'Find friends who share your professional interests, expand your network, and build lasting connections.',
+    title: onboardingCopy.slides.connect.title,
+    description: onboardingCopy.slides.connect.description,
     image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBeJ43E6DZc1U2Owj5OMaXdM9UhXeADzTI-dEgJ_YQpxQ5K8snPJoVOjmLkjVYPJvlE1Zai-t1ocpoqLXtE0ytnAboNdEY1WuUJnoa4IS9zzCn6gMNm5P5wfiSPBMN1ZUER2Qpc83GYOyPh24_FXqiGKvFR2LvMS6M6t3eLOH9i1_sn8S_nnkcbyPsF02t6U-Gys1zFXZjJplG1wIjkeINXazCBQ3JzHWMMbNClJMo1cr_sEDeWNCOA9cMI_gibZZaeMdwWASp6Psz3',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBeJ43E6DZc1U2Owj5OMaXdM9UhXeADzTI-dEgJ_YQpxQ5K8snPJoVOjmLkjVYPJvlE1Zai-t1ocpoqLXtE0ytnAboNdEY1WuUJnoa4IS9zzCn6gMNm5P5wfiSPBMN1ZEUR2Qpc83GYOyPh24_FXqiGKvFR2LvMS6M6t3eLOH9i1_sn8S_nnkcbyPsF02t6U-Gys1zFXZjJplG1wIjkeINXazCBQ3JzHWMMbNClJMo1cr_sEDeWNCOA9cMI_gibZZaeMdwWASp6Psz3',
   },
 ];
 
@@ -87,11 +85,20 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      testID={onboardingCopy.testIds.container}
+    >
       <View style={styles.header}>
         {currentIndex < SLIDES.length - 1 && (
-          <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-            <Text style={[styles.skipText, { color: theme.onSurfaceVariant }]}>Skip</Text>
+          <TouchableOpacity 
+            onPress={handleSkip} 
+            style={styles.skipButton}
+            testID={onboardingCopy.testIds.skipButton}
+          >
+            <Text style={[styles.skipText, { color: theme.onSurfaceVariant }]}>
+              {onboardingCopy.skip}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -104,15 +111,21 @@ export default function OnboardingScreen() {
         onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
         style={{ flex: 1 }}
+        testID={onboardingCopy.testIds.scrollView}
       >
-        {SLIDES.map((slide) => (
-          <View key={slide.id} style={[styles.slide, { width }]}>
+        {SLIDES.map((slide, index) => (
+          <View 
+            key={slide.id} 
+            style={[styles.slide, { width }]}
+            testID={onboardingCopy.testIds.slide(index)}
+          >
             <View style={styles.imageContainer}>
               <View style={[styles.imageWrapper, { backgroundColor: theme.surfaceVariant }]}>
                 <Image
                   source={{ uri: slide.image }}
                   style={styles.image}
                   resizeMode="cover"
+                  testID={onboardingCopy.testIds.slideImage(index)}
                 />
                 <LinearGradient
                   colors={['transparent', theme.background]}
@@ -123,10 +136,16 @@ export default function OnboardingScreen() {
               </View>
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.title, { color: theme.onBackground }]}>
+              <Text 
+                style={[styles.title, { color: theme.onBackground }]}
+                testID={onboardingCopy.testIds.slideTitle(index)}
+              >
                 {slide.title}
               </Text>
-              <Text style={[styles.description, { color: theme.onSurfaceVariant }]}>
+              <Text 
+                style={[styles.description, { color: theme.onSurfaceVariant }]}
+                testID={onboardingCopy.testIds.slideDescription(index)}
+              >
                 {slide.description}
               </Text>
             </View>
@@ -149,6 +168,7 @@ export default function OnboardingScreen() {
                   width: index === currentIndex ? 32 : 8,
                 },
               ]}
+              testID={onboardingCopy.testIds.dot(index)}
             />
           ))}
         </View>
@@ -158,8 +178,11 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               style={[styles.button, { backgroundColor: theme.primary }]}
               onPress={handleNext}
+              testID={onboardingCopy.testIds.nextButton}
             >
-              <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Next</Text>
+              <Text style={[styles.buttonText, { color: theme.onPrimary }]}>
+                {onboardingCopy.buttons.next}
+              </Text>
               <Ionicons name="arrow-forward" size={20} color={theme.onPrimary} style={styles.icon} />
             </TouchableOpacity>
           ) : currentIndex === 1 ? (
@@ -167,14 +190,20 @@ export default function OnboardingScreen() {
                <TouchableOpacity
                 style={[styles.buttonHalf, { backgroundColor: theme.surfaceVariant }]}
                 onPress={handlePrev}
+                testID={onboardingCopy.testIds.previousButton}
               >
-                <Text style={[styles.buttonText, { color: theme.onSurface }]}>Previous</Text>
+                <Text style={[styles.buttonText, { color: theme.onSurface }]}>
+                  {onboardingCopy.buttons.previous}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.buttonHalf, { backgroundColor: theme.primary }]}
                 onPress={handleNext}
+                testID={onboardingCopy.testIds.nextButton}
               >
-                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Next</Text>
+                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>
+                  {onboardingCopy.buttons.next}
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -182,15 +211,21 @@ export default function OnboardingScreen() {
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: theme.primary }]}
                 onPress={handleNext}
+                testID={onboardingCopy.testIds.getStartedButton}
               >
-                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Get Started</Text>
+                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>
+                  {onboardingCopy.buttons.getStarted}
+                </Text>
                 <Ionicons name="arrow-forward" size={20} color={theme.onPrimary} style={styles.icon} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.textButton]}
                 onPress={handlePrev}
+                testID={onboardingCopy.testIds.previousButton}
               >
-                <Text style={[styles.textButtonText, { color: theme.onSurfaceVariant }]}>Previous</Text>
+                <Text style={[styles.textButtonText, { color: theme.onSurfaceVariant }]}>
+                  {onboardingCopy.buttons.previous}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
