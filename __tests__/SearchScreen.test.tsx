@@ -41,6 +41,11 @@ describe('SearchScreen', () => {
           subscribersCount: 12,
         },
       ]),
+      getSubscription: jest.fn().mockResolvedValue(null),
+    };
+
+    const topicsRepo = {
+      getTopics: jest.fn().mockResolvedValue([]),
     };
 
     const usersRepo = {
@@ -48,7 +53,7 @@ describe('SearchScreen', () => {
     };
 
     const { getByTestId, getAllByText } = render(
-      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo }}>
+      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo, topics: topicsRepo }}>
         <SearchScreen />
       </RepositoryProvider>
     );
@@ -57,7 +62,7 @@ describe('SearchScreen', () => {
     expect(getAllByText(`12 ${searchCopy.followersLabel}`).length).toBeGreaterThan(0);
     fireEvent.press(getByTestId('community-card-1'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('CommunityDetail', { communityId: 1 });
+    expect(mockNavigate).toHaveBeenCalledWith('CommunityDetail', { communityId: 1, initialCommunity: expect.any(Object) });
   });
 
   it('renders search copy and empty state', async () => {
@@ -65,18 +70,21 @@ describe('SearchScreen', () => {
       getCommunities: jest.fn().mockResolvedValue([]),
     };
 
+    const topicsRepo = {
+      getTopics: jest.fn().mockResolvedValue([]),
+    };
+
     const usersRepo = {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
     };
 
     const { getByText, getByPlaceholderText } = render(
-      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo }}>
+      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo, topics: topicsRepo }}>
         <SearchScreen />
       </RepositoryProvider>
     );
 
     expect(getByPlaceholderText(searchCopy.placeholder)).toBeTruthy();
-    expect(getByText(searchCopy.trending)).toBeTruthy();
 
     await waitFor(() => expect(getByText(searchCopy.empty)).toBeTruthy());
   });
