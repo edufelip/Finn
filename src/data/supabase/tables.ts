@@ -9,4 +9,6 @@ export const TABLES = {
   pushTokens: 'push_tokens',
   userFollows: 'user_follows',
   notifications: 'notifications',
+  postReports: 'post_reports',
+  topics: 'topics',
 } as const;
