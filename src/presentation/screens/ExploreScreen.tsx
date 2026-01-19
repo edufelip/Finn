@@ -176,7 +176,7 @@ export default function ExploreScreen() {
   };
 
   const handleSeeAll = () => {
-    navigation.navigate('SearchResults', { focus: true });
+    navigation.navigate('SearchResults', {});
   };
 
   const renderTrendingItem = ({

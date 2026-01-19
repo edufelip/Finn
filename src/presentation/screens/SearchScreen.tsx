@@ -28,7 +28,8 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = React.useState('');
   const inputRef = useRef<TextInput>(null);
 
-  const shouldLoadOnMount = Boolean(route.params?.sort || route.params?.topicId);
+  // Load on mount unless user explicitly wants to focus the search input
+  const shouldLoadOnMount = !route.params?.focus;
 
   const {
     communities,
@@ -52,10 +53,10 @@ export default function SearchScreen() {
 
   // Focus input if requested
   useEffect(() => {
-    if (route.params?.focus && !shouldLoadOnMount) {
+    if (route.params?.focus) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [route.params?.focus, shouldLoadOnMount]);
+  }, [route.params?.focus]);
 
   const handleSearch = useCallback(() => {
     loadCommunities(searchText);
