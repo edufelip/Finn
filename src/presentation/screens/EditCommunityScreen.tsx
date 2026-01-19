@@ -226,7 +226,7 @@ export default function EditCommunityScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -330,6 +330,7 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
+      paddingTop: 20,
       paddingBottom: 24,
     },
     bottomSpacer: {
