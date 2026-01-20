@@ -23,6 +23,8 @@ type PostCardProps = {
   canModerate?: boolean;
   isFirst?: boolean;
   onPressUser?: () => void;
+  onPressCommunity?: () => void;
+  onPressBody?: () => void;
 };
 
 const PostCard = ({
@@ -35,6 +37,8 @@ const PostCard = ({
   canModerate = false,
   isFirst = false,
   onPressUser,
+  onPressCommunity,
+  onPressBody,
 }: PostCardProps & { isFirst?: boolean }) => {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -144,9 +148,11 @@ const PostCard = ({
             </View>
             <View style={styles.headerText}>
               <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
-              <Text style={styles.subline}>
-                {post.communityTitle ?? postCardCopy.communityFallback}
-              </Text>
+              <Pressable onPress={onPressCommunity} hitSlop={6}>
+                <Text style={styles.subline}>
+                  {post.communityTitle ?? postCardCopy.communityFallback}
+                </Text>
+              </Pressable>
             </View>
           </Pressable>
           <View ref={optionsButtonRef} collapsable={false} style={styles.optionsButton}>
@@ -161,7 +167,9 @@ const PostCard = ({
           </View>
         </View>
 
-        <Text style={styles.content}>{post.content}</Text>
+        <Pressable onPress={onPressBody} hitSlop={4}>
+          <Text style={styles.content}>{post.content}</Text>
+        </Pressable>
 
         {post.imageUrl ? (
           <View style={styles.imageFrame}>
@@ -175,7 +183,7 @@ const PostCard = ({
 
         <View style={styles.actionsRow}>
           <Pressable
-            style={styles.actionGroup}
+            style={[styles.actionGroup, styles.actionLike]}
             onPress={handleLikePress}
             testID={`post-like-${post.id}`}
             accessibilityLabel={`post-like-${post.id}`}
@@ -199,7 +207,7 @@ const PostCard = ({
             <Text style={styles.actionText}>{post.commentsCount ?? 0}</Text>
           </Pressable>
           <Pressable
-            style={styles.actionGroup}
+            style={[styles.actionGroup, styles.actionShare]}
             onPress={handleShare}
             testID={`post-share-${post.id}`}
             accessibilityLabel={`post-share-${post.id}`}
@@ -335,6 +343,12 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
+    },
+    actionLike: {
+      paddingLeft: 8,
+    },
+    actionShare: {
+      paddingRight: 8,
     },
     actionText: {
       fontSize: 13,

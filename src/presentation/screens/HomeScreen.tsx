@@ -459,12 +459,19 @@ export default function HomeScreen() {
               keyExtractor={(item) => `home-${item.id}`}
               renderItem={({ item, index }) => (
                 <PostCard
-              post={item}
-              isFirst={index === 0}
-              onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
-              onToggleLike={() => handleToggleLike(item)}
-              onToggleSave={() => handleToggleSave(item)}
-              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+                  post={item}
+                  isFirst={index === 0}
+                  onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                  onPressCommunity={() =>
+                    item.communityId &&
+                    navigation.navigate('CommunityDetail', {
+                      communityId: item.communityId,
+                    })
+                  }
+                  onPressBody={() => navigation.navigate('PostDetail', { post: item })}
+                  onToggleLike={() => handleToggleLike(item)}
+                  onToggleSave={() => handleToggleSave(item)}
+                  onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
                 />
               )}
               refreshing={refreshing && activeTab === 'communities'}
@@ -500,12 +507,19 @@ export default function HomeScreen() {
               keyExtractor={(item) => `following-${item.id}`}
               renderItem={({ item, index }) => (
                 <PostCard
-              post={item}
-              isFirst={index === 0}
-              onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
-              onToggleLike={() => handleToggleLike(item)}
-              onToggleSave={() => handleToggleSave(item)}
-              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+                  post={item}
+                  isFirst={index === 0}
+                  onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                  onPressCommunity={() =>
+                    item.communityId &&
+                    navigation.navigate('CommunityDetail', {
+                      communityId: item.communityId,
+                    })
+                  }
+                  onPressBody={() => navigation.navigate('PostDetail', { post: item })}
+                  onToggleLike={() => handleToggleLike(item)}
+                  onToggleSave={() => handleToggleSave(item)}
+                  onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
                 />
               )}
               refreshing={refreshing && activeTab === 'people'}
