@@ -76,7 +76,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
 
   const displayName = isGuest ? guestCopy.userLabel : user?.name ?? session?.user?.email ?? commonCopy.userFallback;
   const email = isGuest ? guestCopy.banner.title : session?.user?.email ?? commonCopy.emptyDash;
-  const photo = user?.photoUrl ? { uri: user.photoUrl } : require('../../../assets/user_icon.png');
+  const avatarInitial = (displayName ?? commonCopy.userFallback).charAt(0).toUpperCase();
   const statusColor = isOnline && isOnlineVisible ? theme.secondary : theme.outlineVariant;
   const savedBadge = savedCount && savedCount > 0 ? String(savedCount) : null;
 
@@ -117,7 +117,13 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
       >
         <View style={styles.header}>
           <View style={styles.avatarWrapper}>
-            <Image source={photo} style={styles.avatar} />
+            {user?.photoUrl ? (
+              <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarText}>{avatarInitial}</Text>
+              </View>
+            )}
             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           </View>
           <View style={styles.headerText}>
@@ -270,6 +276,18 @@ const createStyles = (theme: ThemeColors) =>
       width: '100%',
       height: '100%',
       resizeMode: 'cover',
+    },
+    avatarFallback: {
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surfaceVariant,
+    },
+    avatarText: {
+      color: theme.onSurface,
+      fontWeight: '700',
+      fontSize: 18,
     },
     statusDot: {
       position: 'absolute',

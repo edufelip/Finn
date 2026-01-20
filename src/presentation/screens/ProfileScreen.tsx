@@ -459,10 +459,13 @@ export default function ProfileScreen() {
                 <View style={styles.avatarGlow} />
                 <View style={styles.avatarGroup}>
                   <View style={styles.avatarOuter}>
-                    <Image
-                      source={currentUser?.photoUrl ? { uri: currentUser.photoUrl } : require('../../../assets/user_icon.png')}
-                      style={styles.avatar}
-                    />
+                    {currentUser?.photoUrl ? (
+                      <Image source={{ uri: currentUser.photoUrl }} style={styles.avatar} />
+                    ) : (
+                      <View style={styles.avatarFallback}>
+                        <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
                 <View style={styles.nameBlock}>
@@ -755,6 +758,19 @@ const createStyles = (theme: ThemeColors) =>
       width: 118,
       height: 118,
       borderRadius: 59,
+    },
+    avatarFallback: {
+      width: 118,
+      height: 118,
+      borderRadius: 59,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surfaceVariant,
+    },
+    avatarText: {
+      color: theme.onSurface,
+      fontWeight: '700',
+      fontSize: 32,
     },
     nameBlock: {
       marginTop: 16,

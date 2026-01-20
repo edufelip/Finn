@@ -82,7 +82,7 @@ You'll need at least 3 test users:
 **Pass Criteria:**
 - ✅ Alert prompt accepts user ID
 - ✅ New moderator appears in list immediately
-- ✅ Avatar and metadata display correctly
+- ✅ Avatar shows photo if available; otherwise shows initial letter fallback
 - ✅ Moderation log created
 
 ---

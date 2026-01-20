@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
 
 import type { Post } from '../../domain/models/post';
@@ -21,6 +21,8 @@ type PostCardProps = {
   onShare?: () => void;
   onMarkForReview?: () => void;
   canModerate?: boolean;
+  isFirst?: boolean;
+  onPressUser?: () => void;
 };
 
 const PostCard = ({
@@ -31,7 +33,9 @@ const PostCard = ({
   onShare,
   onMarkForReview,
   canModerate = false,
-}: PostCardProps) => {
+  isFirst = false,
+  onPressUser,
+}: PostCardProps & { isFirst?: boolean }) => {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const likeScale = useSharedValue(1);
@@ -115,41 +119,60 @@ const PostCard = ({
   };
 
   return (
-    <View style={styles.wrapper} testID={`post-card-${post.id}`}>
+    <View
+      style={[styles.wrapper, isFirst && styles.firstCardSpacer]}
+      testID={`post-card-${post.id}`}
+    >
       <View style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.communityImageWrapper}>
-            {post.userPhotoUrl ? (
-              <Image
-                source={{ uri: post.userPhotoUrl }}
-                style={styles.communityImage}
-                testID={`post-user-image-${post.id}`}
-                accessibilityLabel={`post-user-image-${post.id}`}
-              />
-            ) : (
-              <Image source={require('../../../assets/user_icon.png')} style={styles.communityImage} />
-            )}
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.community}>{post.userName ?? postCardCopy.authorFallback}</Text>
-            <Text style={styles.author}>
-              Posted in {post.communityTitle ?? postCardCopy.communityFallback}
-            </Text>
-          </View>
-        </View>
-        <View ref={optionsButtonRef} collapsable={false} style={styles.optionsButton}>
-          <Pressable
-            onPress={handleOptions}
-            testID={`post-options-${post.id}`}
-            accessibilityLabel={`post-options-${post.id}`}
-          >
-            <MaterialIcons name="more-vert" size={20} color={theme.onSurfaceVariant} />
+        <View style={styles.headerRow}>
+          <Pressable style={styles.headerLeft} onPress={onPressUser} hitSlop={8}>
+            <View style={styles.avatarWrapper}>
+              {post.userPhotoUrl ? (
+                <Image
+                  source={{ uri: post.userPhotoUrl }}
+                  style={styles.avatar}
+                  testID={`post-user-image-${post.id}`}
+                  accessibilityLabel={`post-user-image-${post.id}`}
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarText}>
+                    {(post.userName ?? postCardCopy.authorFallback).charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
+              <Text style={styles.subline}>
+                {post.communityTitle ?? postCardCopy.communityFallback}
+              </Text>
+            </View>
           </Pressable>
+          <View ref={optionsButtonRef} collapsable={false} style={styles.optionsButton}>
+            <Pressable
+              onPress={handleOptions}
+              testID={`post-options-${post.id}`}
+              accessibilityLabel={`post-options-${post.id}`}
+              hitSlop={8}
+            >
+              <MaterialIcons name="more-vert" size={22} color={theme.onSurfaceVariant} />
+            </Pressable>
+          </View>
         </View>
+
         <Text style={styles.content}>{post.content}</Text>
+
         {post.imageUrl ? (
-          <Image source={{ uri: post.imageUrl }} style={styles.postImage} testID={`post-image-${post.id}`} />
+          <View style={styles.imageFrame}>
+            <Image
+              source={{ uri: post.imageUrl }}
+              style={styles.postImage}
+              testID={`post-image-${post.id}`}
+            />
+          </View>
         ) : null}
+
         <View style={styles.actionsRow}>
           <Pressable
             style={styles.actionGroup}
@@ -159,8 +182,8 @@ const PostCard = ({
           >
             <Animated.View style={likeStyle}>
               <MaterialIcons
-                name="keyboard-arrow-up"
-                size={24}
+                name={post.isLiked ? 'favorite' : 'favorite-border'}
+                size={22}
                 color={post.isLiked ? theme.primary : theme.onSurfaceVariant}
               />
             </Animated.View>
@@ -172,7 +195,7 @@ const PostCard = ({
             testID={`post-comment-${post.id}`}
             accessibilityLabel={`post-comment-${post.id}`}
           >
-            <MaterialIcons name="chat" size={16} color={theme.onSurfaceVariant} />
+            <MaterialIcons name="chat-bubble-outline" size={20} color={theme.onSurfaceVariant} />
             <Text style={styles.actionText}>{post.commentsCount ?? 0}</Text>
           </Pressable>
           <Pressable
@@ -181,7 +204,7 @@ const PostCard = ({
             testID={`post-share-${post.id}`}
             accessibilityLabel={`post-share-${post.id}`}
           >
-            <MaterialIcons name="share" size={16} color={theme.onSurfaceVariant} />
+            <MaterialCommunityIcons name="share-variant" size={20} color={theme.onSurfaceVariant} />
             <Text style={styles.actionText}>{postCardCopy.share}</Text>
           </Pressable>
         </View>
@@ -212,71 +235,110 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     wrapper: {
       marginBottom: 16,
+      paddingHorizontal: 8,
     },
     card: {
       backgroundColor: theme.surface,
-      paddingBottom: 8,
+      padding: 16,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant,
       position: 'relative',
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.08,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
     },
-    header: {
+    firstCardSpacer: {
+      marginTop: 8,
+    },
+    headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginTop: 20,
-      marginHorizontal: 16,
+      marginBottom: 12,
     },
-    communityImageWrapper: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: 10,
+    },
+    avatarWrapper: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
       overflow: 'hidden',
-      marginRight: 8,
+      backgroundColor: theme.surfaceVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    communityImage: {
+    avatar: {
       width: '100%',
       height: '100%',
     },
-    headerText: {
-      flex: 1,
+    avatarFallback: {
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    community: {
+    avatarText: {
       fontSize: 16,
+      fontWeight: '700',
       color: theme.onSurface,
     },
-    author: {
-      marginTop: 2,
+    headerText: {
+      flex: 1,
+      gap: 2,
+    },
+    authorName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.onSurface,
+    },
+    subline: {
+      fontSize: 12,
       color: theme.onSurfaceVariant,
     },
     optionsButton: {
-      position: 'absolute',
-      top: 16,
-      right: 16,
+      marginLeft: 12,
     },
     content: {
-      marginTop: 16,
-      marginHorizontal: 16,
+      marginTop: 4,
       color: theme.onSurface,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    imageFrame: {
+      marginTop: 12,
+      borderRadius: 16,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.outlineVariant,
     },
     postImage: {
-      marginTop: 8,
       width: '100%',
       height: 200,
       resizeMode: 'cover',
     },
     actionsRow: {
-      marginTop: 5,
-      marginHorizontal: 16,
-      flexDirection: 'row',
-      height: 35,
-    },
-    actionGroup: {
-      flex: 1,
+      marginTop: 12,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: 4,
+      justifyContent: 'space-between',
+      borderTopWidth: 1,
+      borderTopColor: theme.outlineVariant,
+      paddingTop: 12,
+    },
+    actionGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
     },
     actionText: {
-      fontSize: 12,
+      fontSize: 13,
+      fontWeight: '600',
       color: theme.onSurfaceVariant,
     },
   });

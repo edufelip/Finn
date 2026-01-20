@@ -13,6 +13,7 @@ type HeaderTestIds = {
 
 type HomeExploreHeaderProps = {
   profilePhoto: string | null;
+  displayInitial?: string;
   placeholder: string;
   onPressAvatar: () => void;
   onPressSearch: () => void;
@@ -22,6 +23,7 @@ type HomeExploreHeaderProps = {
 
 export default function HomeExploreHeader({
   profilePhoto,
+  displayInitial,
   placeholder,
   onPressAvatar,
   onPressSearch,
@@ -39,10 +41,9 @@ export default function HomeExploreHeader({
         testID={testIds.avatar}
         accessibilityLabel={testIds.avatar}
       >
-        <Image
-          source={profilePhoto ? { uri: profilePhoto } : require('../../../assets/user_icon.png')}
-          style={styles.avatar}
-        />
+        <View style={styles.avatarFallback}>
+          <Text style={styles.avatarText}>{displayInitial ?? '?'}</Text>
+        </View>
       </Pressable>
       <View style={styles.searchContainer}>
         <MaterialIcons name="search" size={20} color={theme.onSurfaceVariant} />
@@ -91,6 +92,17 @@ const createStyles = (theme: ThemeColors) =>
     avatar: {
       width: '100%',
       height: '100%',
+    },
+    avatarFallback: {
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: {
+      color: theme.onSurface,
+      fontWeight: '700',
+      fontSize: 16,
     },
     searchContainer: {
       flex: 1,

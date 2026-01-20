@@ -18,6 +18,7 @@ import PendingContentScreen from '../screens/PendingContentScreen';
 import ReportedContentScreen from '../screens/ReportedContentScreen';
 import ModerationLogsScreen from '../screens/ModerationLogsScreen';
 import ManageModeratorsScreen from '../screens/ManageModeratorsScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
 import type { Community } from '../../domain/models/community';
 import type { Post } from '../../domain/models/post';
 
@@ -41,6 +42,7 @@ export type MainStackParamList = {
   ReportedContent: { communityId: number };
   ModerationLogs: { communityId: number };
   ManageModerators: { communityId: number };
+  UserProfile: { userId: string };
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -65,6 +67,7 @@ export default function MainStack() {
       <Stack.Screen name="ReportedContent" component={ReportedContentScreen} />
       <Stack.Screen name="ModerationLogs" component={ModerationLogsScreen} />
       <Stack.Screen name="ManageModerators" component={ManageModeratorsScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );
 }

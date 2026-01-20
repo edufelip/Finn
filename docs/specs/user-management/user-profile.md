@@ -20,9 +20,14 @@ Manages user identity, profile information, social connections, and visibility s
 ### UC-PROF-03: View Profile Header (Drawer)
 1. User opens the navigation drawer.
 2. System fetches the user profile and saved posts count.
-3. System displays the user's name, email, and avatar.
+3. System displays the user's name, email, and an avatar composed of the first letter of their name (or email if name absent) when no photo is available.
 4. System displays a badge with the count of saved posts.
 5. System displays a real-time status indicator (online/offline).
+
+### UC-PROF-04: Open User Profile from Post
+1. User taps a post avatar or username.
+2. System navigates to `UserProfile` screen with the tapped user’s ID.
+3. Screen renders (currently blank placeholder).
 
 ## Test Cases
 ...

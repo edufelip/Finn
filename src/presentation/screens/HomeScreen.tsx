@@ -42,6 +42,7 @@ type Tab = 'communities' | 'people';
 export default function HomeScreen() {
   const navigation = useNavigation<Navigation>();
   const { session, isGuest, exitGuest } = useAuth();
+  const [profileName, setProfileName] = useState<string | null>(null);
   const { width: screenWidth } = useWindowDimensions();
   
   const [activeTab, setActiveTab] = useState<Tab>('communities');
@@ -117,9 +118,15 @@ export default function HomeScreen() {
     if (!session?.user?.id) return;
     userRepository
       .getUser(session.user.id)
-      .then((data) => setProfilePhoto(data?.photoUrl ?? null))
-      .catch(() => setProfilePhoto(null));
-  }, [session?.user?.id, userRepository]);
+      .then((data) => {
+        setProfilePhoto(data?.photoUrl ?? null);
+        setProfileName(data?.name ?? session.user.email ?? null);
+      })
+      .catch(() => {
+        setProfilePhoto(null);
+        setProfileName(session.user.email ?? null);
+      });
+  }, [session?.user?.id, session?.user?.email, userRepository]);
 
   const loadHomeFeed = useCallback(
     async (pageToLoad: number, replace = false) => {
@@ -184,6 +191,11 @@ export default function HomeScreen() {
       loadFollowingFeed(0, true);
     }
   }, [activeTab, followingHasMore, followingPosts.length, loadFollowingFeed, session?.user?.id]);
+
+  const displayInitial = (profileName ?? session?.user?.email ?? (isGuest ? 'Guest' : 'User'))
+    .trim()
+    .charAt(0)
+    .toUpperCase();
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -418,6 +430,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeExploreHeader
         profilePhoto={profilePhoto}
+        displayInitial={displayInitial}
         placeholder={homeCopy.searchPlaceholder}
         onPressAvatar={openDrawer}
         onPressSearch={() => navigation.navigate('SearchResults', { focus: true })}
@@ -444,12 +457,14 @@ export default function HomeScreen() {
               testID={homeCopy.testIds.feedList}
               data={homePosts}
               keyExtractor={(item) => `home-${item.id}`}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <PostCard
-                  post={item}
-                  onToggleLike={() => handleToggleLike(item)}
-                  onToggleSave={() => handleToggleSave(item)}
-                  onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+              post={item}
+              isFirst={index === 0}
+              onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
+              onToggleLike={() => handleToggleLike(item)}
+              onToggleSave={() => handleToggleSave(item)}
+              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
                 />
               )}
               refreshing={refreshing && activeTab === 'communities'}
@@ -483,12 +498,14 @@ export default function HomeScreen() {
               testID="following-feed-list"
               data={followingPosts}
               keyExtractor={(item) => `following-${item.id}`}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <PostCard
-                  post={item}
-                  onToggleLike={() => handleToggleLike(item)}
-                  onToggleSave={() => handleToggleSave(item)}
-                  onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+              post={item}
+              isFirst={index === 0}
+              onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
+              onToggleLike={() => handleToggleLike(item)}
+              onToggleSave={() => handleToggleSave(item)}
+              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
                 />
               )}
               refreshing={refreshing && activeTab === 'people'}

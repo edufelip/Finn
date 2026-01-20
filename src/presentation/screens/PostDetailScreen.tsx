@@ -240,25 +240,35 @@ export default function PostDetailScreen() {
         testID={postDetailCopy.testIds.list}
         data={comments}
         keyExtractor={(item) => `${item.id}`}
-        renderItem={({ item }) => (
-          <View style={styles.comment} testID={`comment-item-${item.id}`}>
-            <View style={styles.commentHeader}>
-              <View style={styles.commentAvatar}>
-                <Image source={require('../../../assets/user_icon.png')} style={styles.commentAvatarImage} />
+        renderItem={({ item, index }) => {
+          const name = item.userName ?? postDetailCopy.commentAuthorFallback;
+          const initial = name.charAt(0).toUpperCase();
+          return (
+            <View
+              style={[styles.comment, index === 0 && styles.firstComment]}
+              testID={`comment-item-${item.id}`}
+            >
+              <View style={styles.commentHeader}>
+                <View style={styles.commentAvatar}>
+                  <Text style={styles.commentAvatarText}>{initial}</Text>
+                </View>
+                <View style={styles.commentMeta}>
+                  <Text style={styles.commentAuthor}>{name}</Text>
+                  <Text style={styles.commentDate}>{postDetailCopy.commentAge}</Text>
+                </View>
               </View>
-              <Text style={styles.commentAuthor}>{item.userName ?? postDetailCopy.commentAuthorFallback}</Text>
-              <Text style={styles.commentDate}>{postDetailCopy.commentAge}</Text>
+              <Text style={styles.commentBody}>{item.content}</Text>
             </View>
-            <Text style={styles.commentBody}>{item.content}</Text>
-          </View>
-        )}
+          );
+        }}
         ListHeaderComponent={
-          <View>
+          <View style={styles.listHeader}>
             <PostCard
               post={post}
               onToggleLike={handleToggleLike}
               onToggleSave={handleToggleSave}
               onShare={handleShare}
+              onPressUser={() => navigation.navigate('UserProfile', { userId: post.userId })}
             />
             <View style={styles.commentsHeader}>
               <Text style={styles.commentsHeaderText}>{postDetailCopy.commentsTitle}</Text>
@@ -267,10 +277,13 @@ export default function PostDetailScreen() {
         }
         ListEmptyComponent={<Text style={styles.empty}>{postDetailCopy.empty}</Text>}
         style={styles.list}
+        contentContainerStyle={styles.listContent}
       />
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <View style={styles.bottomAvatar}>
-          <Image source={require('../../../assets/user_icon.png')} style={styles.bottomAvatarImage} />
+          <Text style={styles.bottomAvatarText}>
+            {(session?.user?.email ?? postDetailCopy.currentUserFallback).charAt(0).toUpperCase()}
+          </Text>
         </View>
         <View style={styles.inputStack}>
           <TextInput
@@ -318,10 +331,17 @@ const createStyles = (theme: ThemeColors) =>
     list: {
       backgroundColor: theme.background,
     },
+    listContent: {
+      paddingHorizontal: 8,
+      paddingBottom: 120,
+      gap: 12,
+    },
+    listHeader: {
+      gap: 8,
+    },
     commentsHeader: {
       backgroundColor: theme.background,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+      paddingHorizontal: 16
     },
     commentsHeaderText: {
       fontWeight: '700',
@@ -329,37 +349,55 @@ const createStyles = (theme: ThemeColors) =>
     },
     comment: {
       backgroundColor: theme.surface,
-      paddingTop: 8,
-      paddingBottom: 12,
-      paddingHorizontal: 16,
-      marginBottom: 8,
+      padding: 14,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant,
+      shadowColor: theme.shadow,
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 3,
+    },
+    firstComment: {
+      marginTop: 8,
     },
     commentHeader: {
       flexDirection: 'row',
       alignItems: 'center',
+      gap: 10,
+      marginBottom: 8,
     },
     commentAvatar: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      overflow: 'hidden',
-      marginRight: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      backgroundColor: theme.surfaceVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    commentAvatarImage: {
-      width: '100%',
-      height: '100%',
+    commentAvatarText: {
+      fontWeight: '700',
+      color: theme.onSurface,
+    },
+    commentMeta: {
+      flex: 1,
+      gap: 2,
     },
     commentAuthor: {
       fontWeight: '700',
       color: theme.onSurface,
+      fontSize: 14,
     },
     commentDate: {
       fontSize: 12,
       color: theme.onSurfaceVariant,
     },
     commentBody: {
-      marginTop: 8,
-      color: theme.onSurface,
+      marginTop: 2,
+      color: theme.onSurfaceVariant,
+      fontSize: 14,
+      lineHeight: 20,
     },
     empty: {
       textAlign: 'center',
@@ -379,11 +417,13 @@ const createStyles = (theme: ThemeColors) =>
       width: 36,
       height: 36,
       borderRadius: 18,
-      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surfaceVariant,
     },
-    bottomAvatarImage: {
-      width: '100%',
-      height: '100%',
+    bottomAvatarText: {
+      fontWeight: '700',
+      color: theme.onSurface,
     },
     commentInput: {
       height: '100%',
