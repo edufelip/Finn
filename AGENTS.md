@@ -1,59 +1,50 @@
 # Repository Guidelines
 
-# Global Rules (Must Follow)
-
-You are a world-class software engineer and software architect.
-
-Your motto is:
-
-> Every mission assigned is delivered with 100% quality and state-of-the-art execution — no hacks, no workarounds, no partial deliverables and no mock-driven confidence. Mocks/stubs may exist in unit tests for I/O boundaries, but final validation must rely on real integration and end-to-end tests.
-> 
-
-You always:
-
-- Deliver end-to-end, production-like solutions with clean, modular, and maintainable architecture.
-- Take full ownership of the task: you do not abandon work because it is complex or tedious; you only pause when requirements are truly contradictory or when critical clarification is needed.
-- Are proactive and efficient: you avoid repeatedly asking for confirmation like “Can I proceed?” and instead move logically to next steps, asking focused questions only when they unblock progress.
-- Follow the full engineering cycle for significant tasks: **understand → design → implement → (conceptually) test → refine → document**, using all relevant tools and environment capabilities appropriately.
-- Respect both functional and non-functional requirements and, when the user’s technical ideas are unclear or suboptimal, you propose better, modern, state-of-the-art alternatives that still satisfy their business goals.
-- Manage context efficiently and avoid abrupt, low-value interruptions; when you must stop due to platform limits, you clearly summarize what was done and what remains.
+## Contributor Expectations
+- Deliver production-quality changes and document key decisions.
+- Add or update tests when behavior changes; note manual validation when needed.
+- Keep changes scoped and prefer small, reviewable diffs.
 
 ## Project Structure & Module Organization
-- Repo root: React Native + Expo app. Source lives in `src` with `app/`, `domain/`, `data/`, and `presentation/` layers.
-- `e2e/maestro/`: Maestro E2E flows for the RN app.
-- `supabase/`: Supabase migrations/config.
-- `docs/`: project documentation and specs.
+- `src/app`: app bootstrap, stores, and providers.
+- `src/domain`: core models and repository interfaces.
+- `src/data`: Supabase repositories, caching, offline queue, and data sync.
+- `src/presentation`: navigation and screens.
+- `__tests__`: unit/integration tests.
+- `e2e/maestro`: end-to-end tests.
+- `assets`: static images, icons, and media.
+- `docs`: specs and testing guidance.
+- `supabase`: migrations and SQL helpers.
 
 ## Build, Test, and Development Commands
-Run from the repo root unless noted.
-- `npm install` - install dependencies (applies `patch-package` postinstall).
-- `npm run start` - Metro dev server.
-- `npm run ios` / `npm run android` - build and run on simulator/device.
-- `npm run lint` - ESLint.
-- `npm run typecheck` - TypeScript type check.
-- `npm test` - Jest unit/UI tests.
-- `npm run e2e` - Maestro flows in `e2e/maestro`.
+- `npm install`: install dependencies.
+- `npm run start`: start Metro bundler.
+- `npm run ios` / `npm run android`: run native builds on device.
+- `npm run lint`: lint with Expo ESLint config.
+- `npm run typecheck`: TypeScript type check.
+- `npm test`: run Jest tests (CI-friendly, no watch).
+- `npm run e2e`: run Maestro tests (pair with `EXPO_PUBLIC_APP_MODE=mock`).
 
 ## Coding Style & Naming Conventions
-- TypeScript/React Native; 2-space indentation is the local convention.
+- TypeScript + React Native (Expo). Use 2-space indentation and semicolons.
 - Components/screens in PascalCase; hooks `useX`; `testID`s are kebab-case.
-- Keep domain logic in `domain/` or `data/`, UI in `presentation/`.
-- Use `patch-package` for native module fixes (`patches/`).
-- **No hardcoded resources**: do not inline user-facing strings, colors, icons, or other UI resources in components. Centralize them like Android `res/`:
-  - Copy: `src/presentation/content/*`
-  - Design tokens (colors/spacing/typography): `src/presentation/theme/*`
-  - Images/icons: `assets/` (or a dedicated `presentation/assets` module that re-exports assets)
+- Keep domain interfaces in `src/domain`, concrete implementations in `src/data`, UI in `src/presentation`.
+- **No hardcoded resources**: copy lives in `src/presentation/content`, design tokens in `src/presentation/theme`, and assets in `assets/`.
 
 ## Testing Guidelines
-- Unit/UI tests: Jest + Testing Library in `__tests__/` (`*.test.tsx`).
-- E2E: Maestro flows in `e2e/maestro/`. Use `EXPO_PUBLIC_APP_MODE=mock` for deterministic data.
-- Add tests for new screens and repositories; prefer stable selectors via `testID`.
+- Frameworks: Jest, `jest-expo`, `@testing-library/react-native`.
+- Place tests under `__tests__` and name files `*.test.ts(x)`.
+- E2E flows live in `e2e/maestro`; use mock mode for deterministic data.
+- Manual scenarios are documented in `docs/TESTING_GUIDE.md`.
 
 ## Commit & Pull Request Guidelines
-- Follow existing commit style (examples: `hotfix - ...`, `Update-project - ...`); keep messages short and imperative.
-- PRs should include: summary, test commands run, and screenshots for UI changes.
-- Link related issues/tickets when available.
+- Prefixes: `feat`, `feature`, `featuer` (legacy), `fix`, `refactor`, `docs`, `test`, `perf`, `ci`; optional scopes like `feat(ui): ...`.
+- Keep subjects short and imperative.
+- PRs include summary, testing notes (commands + results), and screenshots for UI changes.
 
-## Security & Configuration Tips
-- Environment variables live in `.env` (see `.env.example`).
-- Do not commit secrets (Supabase keys, OAuth client secrets).
+## Configuration & Environment Tips
+- Copy `.env.example` to `.env` and set Expo public variables.
+- Supabase scripts live in `scripts/`; avoid seeding prod unless explicitly intended.
+
+## Native Projects
+Expo prebuild has been run; `ios/` and `android/` are managed directly. Avoid re-running prebuild unless explicitly planned.

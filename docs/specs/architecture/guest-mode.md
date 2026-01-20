@@ -13,7 +13,8 @@ Provides a friction-less "browse-first" experience for unauthenticated users.
 The UI provides explicit feedback to guest users:
 - **Tab Bar FAB**: Displays a **lock icon** instead of an "add" icon.
 - **Create Sheet**: Interactive cards (Community/Post) display a **lock badge** and reduced opacity.
-- **Home Feed**: Displays a persistent banner prompting for sign-in.
+- **Home Feed (Communities tab)**: Displays a persistent banner prompting for sign-in.
+- **Home Feed (People tab)**: Shows an empty state with copy directing guests to sign in and start following people.
 
 ## Use Cases
 ### UC-GUST-01: Attempting Restricted Action
