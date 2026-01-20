@@ -7,6 +7,10 @@ export class MockCommentRepository implements CommentRepository {
     return mockComments.filter((comment) => comment.postId === postId);
   }
 
+  async getCommentsFromUser(userId: string): Promise<Comment[]> {
+    return mockComments.filter((comment) => comment.userId === userId);
+  }
+
   async saveComment(comment: Comment): Promise<Comment> {
     const created = {
       ...comment,

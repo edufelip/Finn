@@ -268,7 +268,14 @@ export default function PostDetailScreen() {
               onToggleLike={handleToggleLike}
               onToggleSave={handleToggleSave}
               onShare={handleShare}
-              onPressUser={() => navigation.navigate('UserProfile', { userId: post.userId })}
+              onPressCommunity={() => navigation.navigate('CommunityDetail', { communityId: post.communityId })}
+              onPressUser={() => {
+                if (session?.user?.id === post.userId) {
+                  navigation.navigate('Tabs', { screen: 'Profile' });
+                } else {
+                  navigation.navigate('UserProfile', { userId: post.userId });
+                }
+              }}
             />
             <View style={styles.commentsHeader}>
               <Text style={styles.commentsHeaderText}>{postDetailCopy.commentsTitle}</Text>

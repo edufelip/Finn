@@ -213,6 +213,15 @@ export default function PendingContentScreen() {
         <View style={styles.postContainer}>
           <PostCard
             post={item}
+            onPressUser={() => {
+              if (session?.user?.id === item.userId) {
+                navigation.navigate('Tabs', { screen: 'Profile' });
+              } else {
+                navigation.navigate('UserProfile', { userId: item.userId });
+              }
+            }}
+            onPressCommunity={() => navigation.navigate('CommunityDetail', { communityId: item.communityId })}
+            onPressBody={() => navigation.navigate('PostDetail', { post: item })}
             onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
           />
           <View style={styles.actionsRow}>

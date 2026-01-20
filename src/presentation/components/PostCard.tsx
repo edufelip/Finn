@@ -129,32 +129,73 @@ const PostCard = ({
     >
       <View style={styles.card}>
         <View style={styles.headerRow}>
-          <Pressable style={styles.headerLeft} onPress={onPressUser} hitSlop={8}>
-            <View style={styles.avatarWrapper}>
-              {post.userPhotoUrl ? (
-                <Image
-                  source={{ uri: post.userPhotoUrl }}
-                  style={styles.avatar}
-                  testID={`post-user-image-${post.id}`}
-                  accessibilityLabel={`post-user-image-${post.id}`}
-                />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarText}>
-                    {(post.userName ?? postCardCopy.authorFallback).charAt(0).toUpperCase()}
+          {onPressUser ? (
+            <Pressable style={styles.headerLeft} onPress={onPressUser} hitSlop={8}>
+              <View style={styles.avatarWrapper}>
+                {post.userPhotoUrl ? (
+                  <Image
+                    source={{ uri: post.userPhotoUrl }}
+                    style={styles.avatar}
+                    testID={`post-user-image-${post.id}`}
+                    accessibilityLabel={`post-user-image-${post.id}`}
+                  />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarText}>
+                      {(post.userName ?? postCardCopy.authorFallback).charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
+                {onPressCommunity ? (
+                  <Pressable onPress={onPressCommunity} hitSlop={6}>
+                    <Text style={styles.subline}>
+                      {post.communityTitle ?? postCardCopy.communityFallback}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Text style={styles.subline}>
+                    {post.communityTitle ?? postCardCopy.communityFallback}
                   </Text>
-                </View>
-              )}
+                )}
+              </View>
+            </Pressable>
+          ) : (
+            <View style={styles.headerLeft}>
+              <View style={styles.avatarWrapper}>
+                {post.userPhotoUrl ? (
+                  <Image
+                    source={{ uri: post.userPhotoUrl }}
+                    style={styles.avatar}
+                    testID={`post-user-image-${post.id}`}
+                    accessibilityLabel={`post-user-image-${post.id}`}
+                  />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarText}>
+                      {(post.userName ?? postCardCopy.authorFallback).charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
+                {onPressCommunity ? (
+                  <Pressable onPress={onPressCommunity} hitSlop={6}>
+                    <Text style={styles.subline}>
+                      {post.communityTitle ?? postCardCopy.communityFallback}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Text style={styles.subline}>
+                    {post.communityTitle ?? postCardCopy.communityFallback}
+                  </Text>
+                )}
+              </View>
             </View>
-            <View style={styles.headerText}>
-              <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
-              <Pressable onPress={onPressCommunity} hitSlop={6}>
-                <Text style={styles.subline}>
-                  {post.communityTitle ?? postCardCopy.communityFallback}
-                </Text>
-              </Pressable>
-            </View>
-          </Pressable>
+          )}
           <View ref={optionsButtonRef} collapsable={false} style={styles.optionsButton}>
             <Pressable
               onPress={handleOptions}
@@ -167,9 +208,13 @@ const PostCard = ({
           </View>
         </View>
 
-        <Pressable onPress={onPressBody} hitSlop={4}>
+        {onPressBody ? (
+          <Pressable onPress={onPressBody} hitSlop={4}>
+            <Text style={styles.content}>{post.content}</Text>
+          </Pressable>
+        ) : (
           <Text style={styles.content}>{post.content}</Text>
-        </Pressable>
+        )}
 
         {post.imageUrl ? (
           <View style={styles.imageFrame}>

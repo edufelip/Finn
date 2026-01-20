@@ -26,11 +26,17 @@ Manages user identity, profile information, social connections, and visibility s
 
 ### UC-PROF-04: Open User Profile from Post
 1. User taps a post avatar or username.
-2. System navigates to `UserProfile` screen with the tapped user’s ID.
-3. Screen renders (currently blank placeholder).
+2. System checks if the target `userId` is the same as the current user's `id`.
+3. If they match, the system navigates to the main `Profile` tab within the Bottom Tab navigator.
+4. If they differ, the system navigates to the `UserProfile` screen with the target `userId`.
 
-## Test Cases
-...
+## Implementation Details
+The `UserProfile` screen uses a high-fidelity professional design including:
+- Cover image with gradient overlay.
+- Overlapping avatar with online status indicator.
+- Follower/Following stat summaries.
+- Animated tab selector ("Posts" and "Comments") using `react-native-reanimated`.
+- Horizontal content pager synchronized with tab selection.
+- Message button for direct communication.
 
-## Data Structures
-... (existing content) ...
+The screen automatically fetches and maps "Liked" and "Saved" statuses for all displayed posts to ensure UI consistency.

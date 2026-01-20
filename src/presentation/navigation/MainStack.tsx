@@ -19,8 +19,10 @@ import ReportedContentScreen from '../screens/ReportedContentScreen';
 import ModerationLogsScreen from '../screens/ModerationLogsScreen';
 import ManageModeratorsScreen from '../screens/ManageModeratorsScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
+import ChatScreen from '../screens/ChatScreen';
 import type { Community } from '../../domain/models/community';
 import type { Post } from '../../domain/models/post';
+import type { User } from '../../domain/models/user';
 
 export type SearchSort = 'mostFollowed' | 'leastFollowed' | 'newest' | 'oldest';
 
@@ -43,6 +45,7 @@ export type MainStackParamList = {
   ModerationLogs: { communityId: number };
   ManageModerators: { communityId: number };
   UserProfile: { userId: string };
+  Chat: { userId: string; user?: User };
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -68,6 +71,7 @@ export default function MainStack() {
       <Stack.Screen name="ModerationLogs" component={ModerationLogsScreen} />
       <Stack.Screen name="ManageModerators" component={ManageModeratorsScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Navigator>
   );
 }

@@ -20,14 +20,21 @@ Provides a UI for users to view and manage their direct messages and conversatio
 1. User sees a badge on the "Primary" tab indicating the number of unread conversations.
 2. User identifies unread conversations by a vertical blue bar.
 
-## Test Cases
-- **TC-INBX-01**: Verify that guests see a "Sign in required" gate when trying to access the Inbox.
-- **TC-INBX-02**: Verify that switching tabs (e.g., to "Requests") filters the displayed conversations correctly.
-
-## Terminology
-- **Primary**: Main conversation list.
-- **Requests**: Messages from users not followed by the current user.
-- **Archived**: Conversations hidden from the main list.
+### UC-INBX-03: Direct Message from Profile
+1. User navigates to a user's profile (`UserProfile`).
+2. User taps the "Message" button.
+3. System navigates to the `Chat` screen.
+4. User can view the conversation history and send new messages.
 
 ## Implementation Details
-The current implementation of the Inbox is a **UI prototype** using static data defined in `inboxCopy.ts`. Real-time messaging and backend synchronization are not yet implemented.
+The messaging system consists of:
+- **Inbox Screen**: A tabbed list of conversations (UI prototype).
+- **Chat Screen**: A high-fidelity direct message interface with:
+    - Receiver online status and verified badge.
+    - Right-aligned blue bubbles for user messages.
+    - Left-aligned white bubbles for contact messages.
+    - Attachment support (e.g., PDF schema) with icons.
+    - Modern input bar with quick actions for images and attachments.
+    - `KeyboardAvoidingView` integration for seamless typing experience.
+
+Real-time messaging backend synchronization is currently mocked using local state.

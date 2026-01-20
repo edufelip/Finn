@@ -18,10 +18,15 @@ Ensures a cohesive visual identity and consistent user experience across the ent
 ### 2. Shimmer / Skeletons
 - **Behavior**: Displays a pulsating animated background.
 
-### 3. Create Bottom Sheet
-- **Transition**: Uses a `slide` animation from the bottom.
-- **Behavior**: Dismissible by clicking the backdrop or the close button.
-- **Visuals**: Displays semantic cards for "Community" and "Post" creation.
+### 4. Professional Profile Pattern
+- **Layout**: Features a 180px height cover image with a gradient transition to the background.
+- **Avatar**: 100x100 rounded avatar (borderRadius: 30) overlapping the cover image by 50px.
+- **Interactivity**: Horizontal sliding content pager using `react-native-reanimated` for smooth tab transitions.
+
+### 5. Messaging & Chat UI
+- **Structure**: Uses a `KeyboardAvoidingView` with a fixed-height header and flexible-height message list.
+- **Bubbles**: Semantic differentiation between sender (Primary blue, sharp corner) and receiver (Surface white, sharp corner).
+- **Attachments**: Standardized attachment cards with icons and metadata.
 
 ## Accessibility & Platforms
 - **Test IDs**: Interactive components use the `testID` prop.

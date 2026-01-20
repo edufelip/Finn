@@ -317,14 +317,31 @@ export default function CommunityDetailScreen() {
     return (
       <PostCard
         post={item}
+        onPressCommunity={() => navigation.navigate('CommunityDetail', { communityId: item.communityId })}
+        onPressBody={() => handleOpenComments(item)}
         onToggleLike={() => handleToggleLike(item)}
         onToggleSave={() => handleToggleSave(item)}
         onMarkForReview={() => handleMarkForReview(item)}
         onOpenComments={() => handleOpenComments(item)}
+        onPressUser={() => {
+          if (session?.user?.id === item.userId) {
+            navigation.navigate('Tabs', { screen: 'Profile' });
+          } else {
+            navigation.navigate('UserProfile', { userId: item.userId });
+          }
+        }}
         canModerate={canModerate}
       />
     );
-  }, [handleToggleLike, handleToggleSave, handleMarkForReview, handleOpenComments, canModerate]);
+  }, [
+    handleToggleLike,
+    handleToggleSave,
+    handleMarkForReview,
+    handleOpenComments,
+    canModerate,
+    navigation,
+    session?.user?.id,
+  ]);
 
   const handleToggleSubscription = async () => {
     if (!session?.user?.id) {

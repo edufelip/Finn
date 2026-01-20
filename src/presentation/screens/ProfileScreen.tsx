@@ -608,6 +608,15 @@ export default function ProfileScreen() {
           renderItem={({ item }) => (
             <PostCard
               post={item}
+              onPressUser={() => {
+                if (session?.user?.id === item.userId) {
+                  navigation.navigate('Tabs', { screen: 'Profile' });
+                } else {
+                  navigation.navigate('UserProfile', { userId: item.userId });
+                }
+              }}
+              onPressCommunity={() => navigation.navigate('CommunityDetail', { communityId: item.communityId })}
+              onPressBody={() => navigation.navigate('PostDetail', { post: item })}
               onToggleLike={() => handleToggleLike(item)}
               onToggleSave={() => handleToggleSave(item)}
               onOpenComments={() => navigation.navigate('PostDetail', { post: item })}

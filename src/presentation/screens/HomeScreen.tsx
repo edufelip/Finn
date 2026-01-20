@@ -461,7 +461,13 @@ export default function HomeScreen() {
                 <PostCard
                   post={item}
                   isFirst={index === 0}
-                  onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                  onPressUser={() => {
+                    if (session?.user?.id === item.userId) {
+                      navigation.navigate('Tabs', { screen: 'Profile' });
+                    } else {
+                      navigation.navigate('UserProfile', { userId: item.userId });
+                    }
+                  }}
                   onPressCommunity={() =>
                     item.communityId &&
                     navigation.navigate('CommunityDetail', {
@@ -509,7 +515,13 @@ export default function HomeScreen() {
                 <PostCard
                   post={item}
                   isFirst={index === 0}
-                  onPressUser={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                  onPressUser={() => {
+                    if (session?.user?.id === item.userId) {
+                      navigation.navigate('Tabs', { screen: 'Profile' });
+                    } else {
+                      navigation.navigate('UserProfile', { userId: item.userId });
+                    }
+                  }}
                   onPressCommunity={() =>
                     item.communityId &&
                     navigation.navigate('CommunityDetail', {

@@ -66,6 +66,19 @@ export class SupabaseCommentRepository implements CommentRepository {
     return cached ?? [];
   }
 
+  async getCommentsFromUser(userId: string): Promise<Comment[]> {
+    const { data, error } = await supabase
+      .from(TABLES.comments)
+      .select('*, profiles(name, photo_url)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+    return (data ?? []).map((row) => toDomain(row as CommentRow));
+  }
+
   async saveComment(comment: Comment): Promise<Comment> {
     const { data, error } = await supabase
       .from(TABLES.comments)
