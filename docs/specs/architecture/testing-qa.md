@@ -19,7 +19,9 @@ Defines the testing strategy and quality benchmarks to ensure application stabil
 
 ### 2. Component Testing (React Native Testing Library)
 - **Render Tests**: Ensure components display correctly with different props.
+- **Theme Consistency**: Verified via recursive style inspection (e.g., in `BackgroundConsistency.test.tsx`) to ensure that containers correctly apply `theme.background` and other semantic colors.
 - **Interaction Tests**: Simulate user clicks and inputs to verify handler calls and navigation.
+...
 - **Skeleton/Loading**: Verify that loading states are shown and hidden correctly.
 
 ### 3. Integration & E2E Testing

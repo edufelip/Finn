@@ -12,16 +12,33 @@ Enables community management via delegated roles and audit trails.
 - **PR-MOD-02**: Complex list items (like Report Cards) shall use `React.memo` to prevent unnecessary re-renders during state updates.
 
 ## Use Cases
+
 ...
-### UC-MOD-01: Approve a Pending Post
-1. Moderator navigates to Community Settings > Pending Content.
-2. Moderator reviews a post.
-3. Moderator clicks "Approve".
-4. System updates post status to `approved` and creates a log entry.
-5. Post becomes visible in the public feed.
+
+### UC-MOD-02: Add a Moderator
+
+1. Community owner navigates to "Manage Moderators".
+
+2. Owner clicks "Add Moderator".
+
+3. System displays a native `Alert.prompt` (iOS/Android).
+
+4. Owner enters the user ID and confirms.
+
+5. System validates ID, adds the moderator, and refreshes the list.
+
+
 
 ## Test Cases
+
 - **TC-MOD-01**: Verify that a regular member cannot see the "Pending Content" button.
+
 - **TC-MOD-02**: Verify that removing a moderator immediately revokes their access to moderation tools.
 
-... (existing content) ...
+- **TC-MOD-03**: Verify that only the community owner can remove other moderators.
+
+
+
+## Terminology
+
+...
