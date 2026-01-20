@@ -101,23 +101,23 @@ describe('HomeScreen', () => {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
     };
 
-    const { getByText, getByTestId } = render(
+    const { getAllByText, getByText, getByTestId } = render(
       <RepositoryProvider overrides={{ posts: postsRepo, users: usersRepo }}>
         <HomeScreen />
       </RepositoryProvider>
     );
 
     await waitFor(() => {
-      expect(getByText(homeCopy.emptyTitle)).toBeTruthy();
+      expect(getAllByText(homeCopy.emptyTitle)[0]).toBeTruthy();
     });
     await waitForHomeEffects(postsRepo, usersRepo);
 
-    expect(getByText(homeCopy.emptyBody)).toBeTruthy();
-    expect(getByText(homeCopy.primaryCta)).toBeTruthy();
-    expect(getByText(homeCopy.secondaryCta)).toBeTruthy();
-    expect(getByText(homeCopy.tagsTitle)).toBeTruthy();
+    expect(getAllByText(homeCopy.emptyBody)[0]).toBeTruthy();
+    expect(getAllByText(homeCopy.primaryCta)[0]).toBeTruthy();
+    expect(getAllByText(homeCopy.secondaryCta)[0]).toBeTruthy();
+    expect(getAllByText(homeCopy.tagsTitle)[0]).toBeTruthy();
     homeCopy.tags.forEach((tag) => {
-      expect(getByText(tag)).toBeTruthy();
+      expect(getAllByText(tag)[0]).toBeTruthy();
     });
     expect(getByText(homeCopy.searchPlaceholder)).toBeTruthy();
     expect(getByTestId(homeCopy.testIds.notifications)).toBeTruthy();

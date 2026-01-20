@@ -7,6 +7,13 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import * as Network from 'expo-network';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+  useDerivedValue,
+} from 'react-native-reanimated';
 
 import PostCard from '../components/PostCard';
 import HomeExploreHeader from '../components/HomeExploreHeader';
@@ -37,7 +44,15 @@ export default function HomeScreen() {
   const { session, isGuest, exitGuest } = useAuth();
   
   const [activeTab, setActiveTab] = useState<Tab>('communities');
-  
+  const [tabLayouts, setTabLayouts] = useState<{
+    communities?: { x: number; width: number };
+    people?: { x: number; width: number };
+  }>({});
+
+  const tabProgress = useSharedValue(0);
+  const indicatorX = useSharedValue(0);
+  const indicatorWidth = useSharedValue(0);
+
   const homePosts = useHomePosts();
   const followingPosts = useFollowingPosts();
   const setHomePosts = usePostsStore((state) => state.setHomePosts);
@@ -60,6 +75,35 @@ export default function HomeScreen() {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const tabBarHeight = useBottomTabBarHeight();
+
+  useEffect(() => {
+    const isPeople = activeTab === 'people';
+    tabProgress.value = withTiming(isPeople ? 1 : 0, {
+      duration: 300,
+      easing: Easing.bezier(0.33, 1, 0.68, 1),
+    });
+
+    const layout = tabLayouts[activeTab];
+    if (layout) {
+      indicatorX.value = withTiming(layout.x, {
+        duration: 300,
+        easing: Easing.bezier(0.33, 1, 0.68, 1),
+      });
+      indicatorWidth.value = withTiming(layout.width, {
+        duration: 300,
+        easing: Easing.bezier(0.33, 1, 0.68, 1),
+      });
+    }
+  }, [activeTab, tabLayouts, tabProgress, indicatorX, indicatorWidth]);
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: -tabProgress.value * 100 + '%' }],
+  }));
+
+  const indicatorAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorWidth.value,
+  }));
 
   useFocusEffect(
     useCallback(() => {
@@ -248,9 +292,14 @@ export default function HomeScreen() {
 
   const renderTabBar = () => (
     <View style={styles.tabContainer}>
+      <Animated.View style={[styles.tabIndicator, indicatorAnimatedStyle]} />
       <Pressable
         onPress={() => setActiveTab('communities')}
-        style={[styles.tab, activeTab === 'communities' && styles.activeTab]}
+        onLayout={(e) => {
+          const { x, width } = e.nativeEvent.layout;
+          setTabLayouts((prev) => ({ ...prev, communities: { x, width } }));
+        }}
+        style={styles.tab}
       >
         <Text style={[styles.tabText, activeTab === 'communities' && styles.activeTabText]}>
           {homeCopy.tabs.communities}
@@ -258,7 +307,11 @@ export default function HomeScreen() {
       </Pressable>
       <Pressable
         onPress={() => setActiveTab('people')}
-        style={[styles.tab, activeTab === 'people' && styles.activeTab]}
+        onLayout={(e) => {
+          const { x, width } = e.nativeEvent.layout;
+          setTabLayouts((prev) => ({ ...prev, people: { x, width } }));
+        }}
+        style={styles.tab}
       >
         <Text style={[styles.tabText, activeTab === 'people' && styles.activeTabText]}>
           {homeCopy.tabs.people}
@@ -383,8 +436,8 @@ export default function HomeScreen() {
       {renderTabBar()}
       <ScreenFade onlyOnTabSwitch>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <View style={styles.flex1}>
-          <View style={[styles.flex1, activeTab !== 'communities' && styles.hidden]}>
+        <Animated.View style={[styles.animatedContent, contentAnimatedStyle]}>
+          <View style={styles.tabContentWrapper}>
             <FlatList
               testID={homeCopy.testIds.feedList}
               data={homePosts}
@@ -423,7 +476,7 @@ export default function HomeScreen() {
               }
             />
           </View>
-          <View style={[styles.flex1, activeTab !== 'people' && styles.hidden]}>
+          <View style={styles.tabContentWrapper}>
             <FlatList
               testID="following-feed-list"
               data={followingPosts}
@@ -464,7 +517,7 @@ export default function HomeScreen() {
               }
             />
           </View>
-        </View>
+        </Animated.View>
       </ScreenFade>
     </SafeAreaView>
   );
@@ -482,16 +535,19 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: theme.outlineVariant,
+      position: 'relative',
     },
     tab: {
       paddingVertical: 12,
       paddingHorizontal: 16,
       marginRight: 8,
-      borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
     },
-    activeTab: {
-      borderBottomColor: theme.primary,
+    tabIndicator: {
+      position: 'absolute',
+      bottom: 0,
+      height: 2,
+      backgroundColor: theme.primary,
+      borderRadius: 1,
     },
     tabText: {
       fontSize: 14,
@@ -501,11 +557,17 @@ const createStyles = (theme: ThemeColors) =>
     activeTabText: {
       color: theme.primary,
     },
+    animatedContent: {
+      flex: 1,
+      flexDirection: 'row',
+      width: '200%',
+    },
+    tabContentWrapper: {
+      flex: 1,
+      width: '50%',
+    },
     flex1: {
       flex: 1,
-    },
-    hidden: {
-      display: 'none',
     },
     list: {
       backgroundColor: theme.background,

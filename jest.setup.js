@@ -54,7 +54,12 @@ jest.mock('react-native-reanimated', () => {
     withSequence: (...args) => args[args.length - 1],
     interpolate: (_value, _input, output) => (output ? output[0] : 0),
     interpolateColor: (_value, _input, output) => (output ? output[0] : 'transparent'),
-    Easing: { out: (value) => value, cubic: (value) => value },
+    Easing: {
+      out: (value) => value,
+      cubic: (value) => value,
+      bezier: () => ({ factory: () => (t) => t }),
+      inOut: (value) => value,
+    },
     Layout: { springify: () => ({ damping: () => ({ stiffness: () => ({}) }) }) },
     SlideInLeft: transition,
     SlideInRight: transition,
@@ -62,6 +67,10 @@ jest.mock('react-native-reanimated', () => {
     SlideOutRight: transition,
   };
 });
+
+jest.mock('expo-network', () => ({
+  getNetworkStateAsync: jest.fn(async () => ({ isConnected: true })),
+}));
 
 jest.mock('@expo/vector-icons', () => {
   const React = require('react');
