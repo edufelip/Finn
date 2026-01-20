@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -42,6 +42,7 @@ type Tab = 'communities' | 'people';
 export default function HomeScreen() {
   const navigation = useNavigation<Navigation>();
   const { session, isGuest, exitGuest } = useAuth();
+  const { width: screenWidth } = useWindowDimensions();
   
   const [activeTab, setActiveTab] = useState<Tab>('communities');
   const [tabLayouts, setTabLayouts] = useState<{
@@ -97,7 +98,8 @@ export default function HomeScreen() {
   }, [activeTab, tabLayouts, tabProgress, indicatorX, indicatorWidth]);
 
   const contentAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: -tabProgress.value * 100 + '%' }],
+    // Slide exactly one screen width to reveal the second tab; avoids percent strings that break RN transforms.
+    transform: [{ translateX: -tabProgress.value * screenWidth }],
   }));
 
   const indicatorAnimatedStyle = useAnimatedStyle(() => ({
