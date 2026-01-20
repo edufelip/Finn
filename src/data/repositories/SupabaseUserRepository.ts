@@ -18,6 +18,8 @@ type UserRow = {
   online_visible?: boolean | null;
   notifications_enabled?: boolean | null;
   last_seen_at?: string | null;
+  followers_count?: number | null;
+  following_count?: number | null;
   bio?: string | null;
   location?: string | null;
 };
@@ -88,6 +90,8 @@ function toDomain(row: UserRow): User {
     onlineVisible: row.online_visible ?? true,
     notificationsEnabled: row.notifications_enabled ?? true,
     lastSeenAt: row.last_seen_at ?? null,
+    followersCount: row.followers_count ?? undefined,
+    followingCount: row.following_count ?? undefined,
     bio: row.bio ?? null,
     location: row.location ?? null,
   };
@@ -115,9 +119,35 @@ async function uploadUserAvatar(imageUri: string, userId: string): Promise<strin
 
 const mergeFollowCounts = (base: User, cached?: User | null) => ({
   ...base,
-  followersCount: cached?.followersCount ?? base.followersCount ?? 0,
-  followingCount: cached?.followingCount ?? base.followingCount ?? 0,
+  followersCount: base.followersCount ?? cached?.followersCount ?? 0,
+  followingCount: base.followingCount ?? cached?.followingCount ?? 0,
 });
+
+const bumpCachedFollowCounts = async (followerId: string, followingId: string, delta: number) => {
+  const followerCache = await getCache<User>(CacheKey.user(followerId), { allowExpired: true });
+  if (followerCache) {
+    await setCache(
+      CacheKey.user(followerId),
+      {
+        ...followerCache,
+        followingCount: Math.max(0, (followerCache.followingCount ?? 0) + delta),
+      },
+      CACHE_TTL_MS.profiles
+    );
+  }
+
+  const followingCache = await getCache<User>(CacheKey.user(followingId), { allowExpired: true });
+  if (followingCache) {
+    await setCache(
+      CacheKey.user(followingId),
+      {
+        ...followingCache,
+        followersCount: Math.max(0, (followingCache.followersCount ?? 0) + delta),
+      },
+      CACHE_TTL_MS.profiles
+    );
+  }
+};
 
 export class SupabaseUserRepository implements UserRepository {
   async getUser(id: string): Promise<User | null> {
@@ -154,6 +184,8 @@ export class SupabaseUserRepository implements UserRepository {
         online_visible: user.onlineVisible ?? true,
         notifications_enabled: user.notificationsEnabled ?? true,
         last_seen_at: user.lastSeenAt ?? now,
+        followers_count: user.followersCount ?? 0,
+        following_count: user.followingCount ?? 0,
       })
       .select('*')
       .single<UserRow>();
@@ -404,6 +436,7 @@ export class SupabaseUserRepository implements UserRepository {
     if (error) {
       throw error;
     }
+    await bumpCachedFollowCounts(followerId, followingId, 1);
   }
 
   async unfollowUser(followerId: string, followingId: string): Promise<void> {
@@ -416,6 +449,7 @@ export class SupabaseUserRepository implements UserRepository {
     if (error) {
       throw error;
     }
+    await bumpCachedFollowCounts(followerId, followingId, -1);
   }
 
   async isFollowing(followerId: string, followingId: string): Promise<boolean> {
@@ -433,25 +467,51 @@ export class SupabaseUserRepository implements UserRepository {
   }
 
   async getFollowersCount(userId: string): Promise<number> {
-    const { count, error } = await supabase
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .select('followers_count')
+      .eq('id', userId)
+      .maybeSingle<{ followers_count: number | null }>();
+
+    if (error) {
+      throw error;
+    }
+    if (data?.followers_count !== null && data?.followers_count !== undefined) {
+      return data.followers_count;
+    }
+
+    const { count, error: countError } = await supabase
       .from(TABLES.userFollows)
       .select('*', { count: 'exact', head: true })
       .eq('following_id', userId);
 
-    if (error) {
-      throw error;
+    if (countError) {
+      throw countError;
     }
     return count ?? 0;
   }
 
   async getFollowingCount(userId: string): Promise<number> {
-    const { count, error } = await supabase
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .select('following_count')
+      .eq('id', userId)
+      .maybeSingle<{ following_count: number | null }>();
+
+    if (error) {
+      throw error;
+    }
+    if (data?.following_count !== null && data?.following_count !== undefined) {
+      return data.following_count;
+    }
+
+    const { count, error: countError } = await supabase
       .from(TABLES.userFollows)
       .select('*', { count: 'exact', head: true })
       .eq('follower_id', userId);
 
-    if (error) {
-      throw error;
+    if (countError) {
+      throw countError;
     }
     return count ?? 0;
   }

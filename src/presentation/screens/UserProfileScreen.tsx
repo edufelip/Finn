@@ -40,6 +40,7 @@ import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { usePostsStore } from '../../app/store/postsStore';
 import { isMockMode } from '../../config/appConfig';
 import { enqueueWrite } from '../../data/offline/queueStore';
+import { isUserOnline } from '../../domain/presence';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 180;
@@ -63,6 +64,13 @@ export default function UserProfileScreen() {
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
   const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({});
   const [isAvatarOpen, setIsAvatarOpen] = useState(false);
+
+  const showOnlineDot =
+    user != null &&
+    isUserOnline({
+      onlineVisible: user.onlineVisible ?? true,
+      lastSeenAt: user.lastSeenAt ?? null,
+    });
 
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
@@ -339,8 +347,8 @@ export default function UserProfileScreen() {
                     </Text>
                   </View>
                 )}
-                <View style={styles.onlineDot} />
-              </Pressable>
+            {showOnlineDot ? <View style={styles.onlineDot} /> : null}
+          </Pressable>
               
               <View style={styles.actionButtons}>
                 <Pressable

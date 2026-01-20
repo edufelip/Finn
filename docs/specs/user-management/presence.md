@@ -14,6 +14,7 @@ Determines if a user is currently "online" based on their last activity and priv
 1. User A views User B's profile.
 2. System checks User B's `onlineVisible` flag and `lastSeenAt` timestamp.
 3. If visible and within the threshold (2 minutes), System shows an "Online" indicator.
+4. If not visible or outside the threshold, the indicator is hidden.
 
 ## Test Cases
 - **TC-PRES-01**: Verify that backgrounding the app stops the heartbeat and presence tracking.

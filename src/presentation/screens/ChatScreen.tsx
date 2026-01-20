@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -12,98 +12,76 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp, RouteProp } from '@react-navigation/native';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { commonCopy } from '../content/commonCopy';
-
-type Message = {
-  id: string;
-  senderId: string;
-  text: string;
-  timestamp: string;
-  isMe: boolean;
-  attachment?: {
-    name: string;
-    size: string;
-    type: 'pdf' | 'image';
-  };
-};
+import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useAuth } from '../../app/providers/AuthProvider';
+import { isUserOnline } from '../../domain/presence';
+import type { ChatMessage } from '../../domain/models/chat';
 
 export default function ChatScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute<RouteProp<MainStackParamList, 'Chat'>>();
   const { userId, user: initialUser } = route.params;
+  const { session } = useAuth();
+  const { chats: chatRepository, users: userRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
 
   const [message, setMessage] = useState('');
-  const [messages] = useState<Message[]>([
-    {
-      id: '1',
-      senderId: userId,
-      text: 'Hi! I saw your request about the LLM optimization paper. Happy to discuss how we achieved those latency gains.',
-      timestamp: '10:24 AM',
-      isMe: false,
-    },
-    {
-      id: '2',
-      senderId: 'me',
-      text: "That would be amazing, Alex! I'm particularly interested in the quantization techniques you mentioned on page 4.",
-      timestamp: '10:26 AM',
-      isMe: true,
-    },
-    {
-      id: '3',
-      senderId: userId,
-      text: "Specifically, we used a custom 4-bit implementation that handles outliers differently. I've attached a snippet of the schema we used.",
-      timestamp: '10:27 AM',
-      isMe: false,
-    },
-    {
-      id: '4',
-      senderId: userId,
-      text: '',
-      timestamp: '10:27 AM',
-      isMe: false,
-      attachment: {
-        name: 'quantization_schema.pdf',
-        size: '1.2 MB',
-        type: 'pdf',
-      },
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [peer, setPeer] = useState(initialUser ?? null);
 
-  const displayName = initialUser?.name || commonCopy.userFallback;
-  const displayPhoto = initialUser?.photoUrl;
+  useEffect(() => {
+    let isMounted = true;
+    const bootstrap = async () => {
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const thread = await chatRepository.getOrCreateDirectThread(session.user.id, userId);
+        if (!isMounted) return;
+        setThreadId(thread.id);
+        const [threadMessages, user] = await Promise.all([
+          chatRepository.getMessages(thread.id, 50),
+          peer ? Promise.resolve(peer) : userRepository.getUser(userId),
+        ]);
+        if (!isMounted) return;
+        setMessages(threadMessages);
+        if (user) {
+          setPeer(user);
+        }
+        await chatRepository.markThreadRead(thread.id, session.user.id);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    void bootstrap();
+    return () => {
+      isMounted = false;
+    };
+  }, [chatRepository, session?.user?.id, userId, userRepository, peer]);
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    if (item.attachment) {
-      return (
-        <View style={[styles.messageRow, item.isMe ? styles.myMessageRow : styles.otherMessageRow]}>
-          {!item.isMe && <View style={styles.avatarSpacer} />}
-          <View style={[styles.attachmentContainer, styles.shadowSoft]}>
-            <View style={styles.attachmentIconBox}>
-              <MaterialIcons name="description" size={24} color="#3B82F6" />
-            </View>
-            <View style={styles.attachmentInfo}>
-              <Text style={styles.attachmentName} numberOfLines={1}>
-                {item.attachment.name}
-              </Text>
-              <Text style={styles.attachmentSize}>{item.attachment.size}</Text>
-            </View>
-          </View>
-        </View>
-      );
-    }
+  const displayName = peer?.name || commonCopy.userFallback;
+  const displayPhoto = peer?.photoUrl;
+  const isOnline = peer ? isUserOnline(peer) : false;
 
+  const renderMessage = ({ item }: { item: ChatMessage }) => {
+    const isMe = item.senderId === session?.user?.id;
     return (
-      <View style={[styles.messageRow, item.isMe ? styles.myMessageRow : styles.otherMessageRow]}>
-        {!item.isMe && (
+      <View style={[styles.messageRow, isMe ? styles.myMessageRow : styles.otherMessageRow]}>
+        {!isMe && (
           <View style={styles.avatarContainer}>
             {displayPhoto ? (
               <Image source={{ uri: displayPhoto }} style={styles.miniAvatar} />
@@ -118,23 +96,42 @@ export default function ChatScreen() {
           <View
             style={[
               styles.bubble,
-              item.isMe ? styles.myBubble : styles.otherBubble,
-              item.isMe ? styles.shadowMyBubble : styles.shadowSoft,
+              isMe ? styles.myBubble : styles.otherBubble,
+              isMe ? styles.shadowMyBubble : styles.shadowSoft,
             ]}
           >
-            <Text style={[styles.messageText, item.isMe ? styles.myMessageText : styles.otherMessageText]}>
-              {item.text}
+            <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.otherMessageText]}>
+              {item.content}
             </Text>
           </View>
-          <View style={[styles.timeRow, item.isMe && styles.myTimeRow]}>
-            <Text style={styles.timeText}>{item.timestamp}</Text>
-            {item.isMe && (
+          <View style={[styles.timeRow, isMe && styles.myTimeRow]}>
+            <Text style={styles.timeText}>
+              {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+            {isMe && (
               <MaterialIcons name="done-all" size={14} color="#3B82F6" style={styles.readReceipt} />
             )}
           </View>
         </View>
       </View>
     );
+  };
+
+  const handleSend = async () => {
+    if (!session?.user?.id) {
+      return;
+    }
+    if (!threadId || !message.trim()) {
+      return;
+    }
+    const content = message.trim();
+    setMessage('');
+    try {
+      const created = await chatRepository.sendMessage(threadId, session.user.id, content);
+      setMessages((prev) => [...prev, created]);
+    } catch {
+      setMessage(content);
+    }
   };
 
   return (
@@ -153,14 +150,14 @@ export default function ChatScreen() {
                   <Text style={styles.headerAvatarText}>{displayName.charAt(0).toUpperCase()}</Text>
                 </View>
               )}
-              <View style={styles.onlineDot} />
+              {isOnline ? <View style={styles.onlineDot} /> : null}
             </View>
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.headerName}>{displayName}</Text>
                 <MaterialIcons name="verified" size={14} color="#3B82F6" />
               </View>
-              <Text style={styles.statusText}>Online now</Text>
+              <Text style={styles.statusText}>{isOnline ? 'Online now' : 'Offline'}</Text>
             </View>
           </View>
           <Pressable style={styles.infoButton} hitSlop={8}>
@@ -172,7 +169,7 @@ export default function ChatScreen() {
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.id}`}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.dateSeparator}>
@@ -181,6 +178,17 @@ export default function ChatScreen() {
             <View style={styles.dateLine} />
           </View>
         }
+        ListEmptyComponent={
+          loading ? (
+            <View style={styles.loadingState}>
+              <Text style={styles.loadingText}>Loading messages...</Text>
+            </View>
+          ) : (
+            <View style={styles.loadingState}>
+              <Text style={styles.loadingText}>No messages yet.</Text>
+            </View>
+          )
+        }
       />
 
       <KeyboardAvoidingView
@@ -188,14 +196,6 @@ export default function ChatScreen() {
         keyboardVerticalOffset={0}
       >
         <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <View style={styles.inputActions}>
-            <Pressable style={styles.iconButton}>
-              <MaterialCommunityIcons name="plus-circle-outline" size={26} color="#64748B" />
-            </Pressable>
-            <Pressable style={styles.iconButton}>
-              <MaterialIcons name="image-outline" size={26} color="#64748B" />
-            </Pressable>
-          </View>
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
@@ -206,7 +206,7 @@ export default function ChatScreen() {
               multiline
             />
           </View>
-          <Pressable style={styles.sendButton}>
+          <Pressable style={styles.sendButton} onPress={handleSend} disabled={!message.trim()}>
             <MaterialIcons name="send" size={20} color="#FFF" />
           </Pressable>
         </View>
@@ -308,6 +308,7 @@ const createStyles = (theme: ThemeColors) =>
     listContent: {
       paddingHorizontal: 16,
       paddingBottom: 24,
+      flexGrow: 1,
     },
     dateSeparator: {
       flexDirection: 'row',
@@ -409,37 +410,6 @@ const createStyles = (theme: ThemeColors) =>
     readReceipt: {
       marginLeft: 2,
     },
-    attachmentContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#FFF',
-      padding: 10,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: '#F1F5F9',
-      gap: 12,
-    },
-    attachmentIconBox: {
-      width: 40,
-      height: 40,
-      backgroundColor: '#EFF6FF',
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    attachmentInfo: {
-      paddingRight: 16,
-    },
-    attachmentName: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: '#0F172A',
-      maxWidth: 150,
-    },
-    attachmentSize: {
-      fontSize: 10,
-      color: '#64748B',
-    },
     inputContainer: {
       backgroundColor: '#FFF',
       borderTopWidth: 1,
@@ -449,16 +419,6 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'flex-end',
       gap: 8,
-    },
-    inputActions: {
-      flexDirection: 'row',
-      paddingBottom: 4,
-    },
-    iconButton: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     textInputWrapper: {
       flex: 1,

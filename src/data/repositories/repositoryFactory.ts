@@ -1,5 +1,6 @@
 import type { CommentRepository } from '../../domain/repositories/CommentRepository';
 import type { CommunityRepository } from '../../domain/repositories/CommunityRepository';
+import type { ChatRepository } from '../../domain/repositories/ChatRepository';
 import type { PostRepository } from '../../domain/repositories/PostRepository';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
 import type { PostReportRepository } from '../../domain/repositories/PostReportRepository';
@@ -8,6 +9,7 @@ import type { CommunityModeratorRepository } from '../../domain/repositories/Com
 import type { ModerationLogRepository } from '../../domain/repositories/ModerationLogRepository';
 import { isMockMode } from '../../config/appConfig';
 import { SupabaseCommentRepository } from './SupabaseCommentRepository';
+import { SupabaseChatRepository } from './SupabaseChatRepository';
 import { SupabaseCommunityRepository } from './SupabaseCommunityRepository';
 import { SupabasePostRepository } from './SupabasePostRepository';
 import { SupabaseUserRepository } from './SupabaseUserRepository';
@@ -16,6 +18,7 @@ import { SupabaseTopicRepository } from './SupabaseTopicRepository';
 import { SupabaseCommunityModeratorRepository } from './SupabaseCommunityModeratorRepository';
 import { SupabaseModerationLogRepository } from './SupabaseModerationLogRepository';
 import { MockCommentRepository } from './mock/MockCommentRepository';
+import { MockChatRepository } from './mock/MockChatRepository';
 import { MockCommunityRepository } from './mock/MockCommunityRepository';
 import { MockPostRepository } from './mock/MockPostRepository';
 import { MockUserRepository } from './mock/MockUserRepository';
@@ -25,6 +28,7 @@ import { MockCommunityModeratorRepository } from './mock/MockCommunityModeratorR
 import { MockModerationLogRepository } from './mock/MockModerationLogRepository';
 
 export type RepositoryBundle = {
+  chats: ChatRepository;
   posts: PostRepository;
   communities: CommunityRepository;
   users: UserRepository;
@@ -38,6 +42,7 @@ export type RepositoryBundle = {
 export function createRepositories(): RepositoryBundle {
   if (isMockMode()) {
     return {
+      chats: new MockChatRepository(),
       posts: new MockPostRepository(),
       communities: new MockCommunityRepository(),
       users: new MockUserRepository(),
@@ -50,6 +55,7 @@ export function createRepositories(): RepositoryBundle {
   }
 
   return {
+    chats: new SupabaseChatRepository(),
     posts: new SupabasePostRepository(),
     communities: new SupabaseCommunityRepository(),
     users: new SupabaseUserRepository(),

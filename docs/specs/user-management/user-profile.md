@@ -13,6 +13,7 @@ Manages user identity, profile information, social connections, and visibility s
 - **FR-PROF-05**: Users shall be able to delete their account permanently.
 - **FR-PROF-06**: Users shall be able to toggle their online visibility status.
 - **FR-PROF-07**: Users shall be able to toggle global push notification preferences.
+- **FR-PROF-08**: The system shall show an online indicator when `onlineVisible` is true and `lastSeenAt` is within the threshold.
 
 ## Use Cases
 ### UC-PROF-01: Update Profile Info

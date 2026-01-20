@@ -9,6 +9,9 @@ Provides a UI for users to view and manage their direct messages and conversatio
 - **FR-INBX-03**: The system shall display unread indicators for new messages.
 - **FR-INBX-04**: The system shall show the online status of conversation participants.
 - **FR-INBX-05**: The system shall restrict inbox access to authenticated users.
+- **FR-INBX-06**: The system shall support 1:1 direct message threads only (no group chats).
+- **FR-INBX-07**: The system shall use a "seen up to" timestamp per user per thread for read status.
+- **FR-INBX-08**: The system shall prevent a user from messaging themselves.
 
 ## Use Cases
 ### UC-INBX-01: Search Conversations
@@ -28,13 +31,16 @@ Provides a UI for users to view and manage their direct messages and conversatio
 
 ## Implementation Details
 The messaging system consists of:
-- **Inbox Screen**: A tabbed list of conversations (UI prototype).
-- **Chat Screen**: A high-fidelity direct message interface with:
+- **Inbox Screen**: A tabbed list of 1:1 conversations (UI prototype).
+- **Chat Screen**: A direct message interface with:
     - Receiver online status and verified badge.
     - Right-aligned blue bubbles for user messages.
     - Left-aligned white bubbles for contact messages.
-    - Attachment support (e.g., PDF schema) with icons.
-    - Modern input bar with quick actions for images and attachments.
+    - "Seen up to" read state per thread.
+    - Modern input bar for text-only messages.
     - `KeyboardAvoidingView` integration for seamless typing experience.
 
-Real-time messaging backend synchronization is currently mocked using local state.
+Data model (direct messages):
+- `chat_threads`: stores the 1:1 participant pair and last message preview.
+- `chat_members`: stores per-user `last_read_at` (seen up to).
+- `chat_messages`: stores message content and sender per thread.

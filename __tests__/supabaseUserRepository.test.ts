@@ -26,18 +26,17 @@ describe('SupabaseUserRepository', () => {
     supabase.storage.from.mockReset();
   });
 
-  it('fetches followers count using HEAD request', async () => {
-    // Mock follow counts queries
+  it('fetches followers count from profiles cache column', async () => {
     const countResult = {
-      data: [],
-      count: 5,
+      data: { followers_count: 5 },
       error: null,
     };
-    const countEq = jest.fn().mockResolvedValue(countResult);
+    const maybeSingle = jest.fn().mockResolvedValue(countResult);
+    const countEq = jest.fn().mockReturnValue({ maybeSingle });
     const countSelect = jest.fn().mockReturnValue({ eq: countEq });
 
     supabase.from.mockImplementation((table: string) => {
-      if (table === TABLES.userFollows) {
+      if (table === TABLES.users) {
         return { select: countSelect };
       }
       throw new Error(`Unexpected table ${table}`);
@@ -47,9 +46,33 @@ describe('SupabaseUserRepository', () => {
     const count = await repository.getFollowersCount('user-1');
 
     expect(count).toBe(5);
+    expect(countSelect).toHaveBeenCalledWith('followers_count');
+    expect(countEq).toHaveBeenCalledWith('id', 'user-1');
+    expect(maybeSingle).toHaveBeenCalled();
+  });
 
-    // Verify calls to user_follows
-    expect(countSelect).toHaveBeenCalledWith('*', { count: 'exact', head: true });
-    expect(countEq).toHaveBeenCalledWith('following_id', 'user-1');
+  it('fetches following count from profiles cache column', async () => {
+    const countResult = {
+      data: { following_count: 3 },
+      error: null,
+    };
+    const maybeSingle = jest.fn().mockResolvedValue(countResult);
+    const countEq = jest.fn().mockReturnValue({ maybeSingle });
+    const countSelect = jest.fn().mockReturnValue({ eq: countEq });
+
+    supabase.from.mockImplementation((table: string) => {
+      if (table === TABLES.users) {
+        return { select: countSelect };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const repository = new SupabaseUserRepository();
+    const count = await repository.getFollowingCount('user-1');
+
+    expect(count).toBe(3);
+    expect(countSelect).toHaveBeenCalledWith('following_count');
+    expect(countEq).toHaveBeenCalledWith('id', 'user-1');
+    expect(maybeSingle).toHaveBeenCalled();
   });
 });

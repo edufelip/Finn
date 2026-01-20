@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import type { CommentRepository } from '../../domain/repositories/CommentRepository';
+import type { ChatRepository } from '../../domain/repositories/ChatRepository';
 import type { CommunityRepository } from '../../domain/repositories/CommunityRepository';
 import type { PostRepository } from '../../domain/repositories/PostRepository';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
@@ -11,6 +12,7 @@ import type { ModerationLogRepository } from '../../domain/repositories/Moderati
 import { createRepositories } from '../../data/repositories/repositoryFactory';
 
 export type RepositoryContextValue = {
+  chats: ChatRepository;
   posts: PostRepository;
   communities: CommunityRepository;
   users: UserRepository;
@@ -33,6 +35,7 @@ const applyOverrides = <T extends object>(base: T, override?: Partial<T>) => {
 type RepositoryProviderProps = {
   children: React.ReactNode;
   overrides?: {
+    chats?: Partial<ChatRepository>;
     posts?: Partial<PostRepository>;
     communities?: Partial<CommunityRepository>;
     users?: Partial<UserRepository>;
@@ -48,6 +51,7 @@ export function RepositoryProvider({ children, overrides }: RepositoryProviderPr
   const defaultRepositories = useMemo(() => createRepositories(), []);
   const value = useMemo(
     () => ({
+      chats: applyOverrides(defaultRepositories.chats, overrides?.chats),
       posts: applyOverrides(defaultRepositories.posts, overrides?.posts),
       communities: applyOverrides(defaultRepositories.communities, overrides?.communities),
       users: applyOverrides(defaultRepositories.users, overrides?.users),

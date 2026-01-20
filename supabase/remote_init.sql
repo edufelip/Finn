@@ -9,6 +9,8 @@ create table if not exists public.profiles (
   online_visible boolean not null default true,
   notifications_enabled boolean not null default true,
   last_seen_at timestamptz,
+  followers_count integer not null default 0,
+  following_count integer not null default 0,
   bio text,
   location text
 );
@@ -336,6 +338,127 @@ create policy "user_follows_delete_own"
   to authenticated
   using (auth.uid() = follower_id);
 
+create table if not exists public.chat_threads (
+  id uuid primary key default gen_random_uuid(),
+  participant_a uuid not null references public.profiles(id) on delete cascade,
+  participant_b uuid not null references public.profiles(id) on delete cascade,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  last_message_at timestamptz,
+  last_message_preview text,
+  constraint chat_threads_no_self check (participant_a <> participant_b),
+  unique (participant_a, participant_b)
+);
+
+create table if not exists public.chat_members (
+  thread_id uuid not null references public.chat_threads(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  last_read_at timestamptz,
+  primary key (thread_id, user_id)
+);
+
+create table if not exists public.chat_messages (
+  id bigserial primary key,
+  thread_id uuid not null references public.chat_threads(id) on delete cascade,
+  sender_id uuid references public.profiles(id) on delete set null,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_chat_messages_thread_created
+  on public.chat_messages (thread_id, created_at desc);
+
+alter table public.chat_threads enable row level security;
+alter table public.chat_members enable row level security;
+alter table public.chat_messages enable row level security;
+
+create policy "chat_threads_select_member"
+  on public.chat_threads
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.chat_members
+      where chat_members.thread_id = chat_threads.id
+        and chat_members.user_id = auth.uid()
+    )
+  );
+
+create policy "chat_threads_insert_creator"
+  on public.chat_threads
+  for insert
+  to authenticated
+  with check (
+    auth.uid() = created_by
+    and auth.uid() in (participant_a, participant_b)
+  );
+
+create policy "chat_threads_update_member"
+  on public.chat_threads
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.chat_members
+      where chat_members.thread_id = chat_threads.id
+        and chat_members.user_id = auth.uid()
+    )
+  );
+
+create policy "chat_members_select_self"
+  on public.chat_members
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "chat_members_insert_creator"
+  on public.chat_members
+  for insert
+  to authenticated
+  with check (
+    auth.uid() = user_id
+    or auth.uid() = (
+      select created_by
+      from public.chat_threads
+      where chat_threads.id = thread_id
+    )
+  );
+
+create policy "chat_members_update_self"
+  on public.chat_members
+  for update
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "chat_messages_select_member"
+  on public.chat_messages
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.chat_members
+      where chat_members.thread_id = chat_messages.thread_id
+        and chat_members.user_id = auth.uid()
+    )
+  );
+
+create policy "chat_messages_insert_member"
+  on public.chat_messages
+  for insert
+  to authenticated
+  with check (
+    auth.uid() = sender_id
+    and exists (
+      select 1
+      from public.chat_members
+      where chat_members.thread_id = chat_messages.thread_id
+        and chat_members.user_id = auth.uid()
+    )
+  );
+
 insert into storage.buckets (id, name, public)
 values
   ('community-images', 'community-images', true),
@@ -494,20 +617,44 @@ create extension if not exists pg_net;
 alter table public.profiles
   add column if not exists online_visible boolean,
   add column if not exists last_seen_at timestamptz,
-  add column if not exists notifications_enabled boolean;
+  add column if not exists notifications_enabled boolean,
+  add column if not exists followers_count integer,
+  add column if not exists following_count integer;
 
 alter table public.profiles
   alter column online_visible set default true,
   alter column notifications_enabled set default true,
-  alter column last_seen_at set default now();
+  alter column last_seen_at set default now(),
+  alter column followers_count set default 0,
+  alter column following_count set default 0;
 
 update public.profiles
   set last_seen_at = coalesce(last_seen_at, created_at, now());
 
+update public.profiles p
+set followers_count = coalesce(f.cnt, 0)
+from (
+  select following_id as user_id, count(*) as cnt
+  from public.user_follows
+  group by following_id
+) f
+where p.id = f.user_id;
+
+update public.profiles p
+set following_count = coalesce(f.cnt, 0)
+from (
+  select follower_id as user_id, count(*) as cnt
+  from public.user_follows
+  group by follower_id
+) f
+where p.id = f.user_id;
+
 alter table public.profiles
   alter column last_seen_at set not null,
   alter column online_visible set not null,
-  alter column notifications_enabled set not null;
+  alter column notifications_enabled set not null,
+  alter column followers_count set not null,
+  alter column following_count set not null;
 
 create index if not exists idx_profiles_last_seen_at on public.profiles (last_seen_at desc);
 
@@ -611,6 +758,37 @@ drop trigger if exists trg_notify_follow on public.user_follows;
 create trigger trg_notify_follow
   after insert on public.user_follows
   for each row execute function public.create_follow_notification();
+
+create or replace function public.handle_user_follow_counts()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if (tg_op = 'INSERT') then
+    update public.profiles
+      set followers_count = followers_count + 1
+      where id = new.following_id;
+    update public.profiles
+      set following_count = following_count + 1
+      where id = new.follower_id;
+  elsif (tg_op = 'DELETE') then
+    update public.profiles
+      set followers_count = greatest(followers_count - 1, 0)
+      where id = old.following_id;
+    update public.profiles
+      set following_count = greatest(following_count - 1, 0)
+      where id = old.follower_id;
+  end if;
+
+  return null;
+end;
+$$;
+
+drop trigger if exists trg_user_follow_counts on public.user_follows;
+create trigger trg_user_follow_counts
+  after insert or delete on public.user_follows
+  for each row execute function public.handle_user_follow_counts();
 
 drop trigger if exists trg_notify_like on public.likes;
 create trigger trg_notify_like
