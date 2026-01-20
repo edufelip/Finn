@@ -8,7 +8,9 @@ Posts are the core content unit of the platform, consisting of text and optional
     - **Validation**: Post content is required.
     - **Validation**: Community selection is required.
     - **Validation**: Post content must be within the character limit (implicitly handled by UI).
-- **FR-POST-02**: Users shall be able to browse posts in a personalized home feed.
+- **FR-POST-02**: Users shall be able to browse posts in a personalized home feed (Communities tab) and a social feed (People tab).
+    - **Communities Feed**: Shows posts from all communities the user has joined.
+    - **People Feed**: Shows posts from all users the user follows.
 - **FR-POST-03**: Users shall be able to like/unlike posts.
 - **FR-POST-04**: Users shall be able to save/unsave posts for later viewing.
 - **FR-POST-05**: The system shall support pagination (20 items per page) for all feeds.

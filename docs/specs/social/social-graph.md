@@ -8,6 +8,7 @@ Manages relationships between users, specifically the following/follower model.
 - **FR-SOC-02**: Users shall be able to unfollow users.
 - **FR-SOC-03**: The system shall prevent a user from following themselves.
 - **FR-SOC-04**: The system shall provide a real-time "isFollowing" status for UI buttons.
+- **FR-SOC-05**: The system shall generate a social feed (People tab) containing posts from all followed users, sorted by recency.
 
 ## Use Cases
 ### UC-SOC-01: Follow a Peer

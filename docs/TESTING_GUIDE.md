@@ -275,6 +275,35 @@ You'll need at least 3 test users:
 
 ---
 
+### Scenario 11: Home Feed Tabs & Following Feed
+**User:** Authenticated User (User A) and Guest
+
+**Steps (Authenticated):**
+1. Navigate to Home
+2. **Expected:** Two tabs visible: "Communities" and "People"
+3. Tap "People"
+4. **Expected:** Feed switches to posts from followed users
+5. Scroll down in "People" tab, then switch back to "Communities"
+6. **Expected:** "Communities" tab preserves its previous scroll position
+7. Follow a new user (from Explore or Search)
+8. Return to Home → "People" and pull to refresh
+9. **Expected:** New user's posts appear in the feed
+
+**Steps (Guest):**
+1. Open app as Guest
+2. Navigate to Home → "People" tab
+3. **Expected:** Empty state visible with "Sign in to start following people..." message
+4. Tap the "Sign in" button in the empty state
+5. **Expected:** Redirected to Auth/Login screen
+
+**Pass Criteria:**
+- ✅ Tabs are visible and functional
+- ✅ Scroll state is preserved when switching tabs
+- ✅ Refreshing loads new data for the active tab
+- ✅ Guest sees specific empty state with login CTA
+
+---
+
 ## 🔍 Data Verification
 
 ### Check Database Records
