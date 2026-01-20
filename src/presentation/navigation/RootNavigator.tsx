@@ -20,7 +20,7 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const { session, initializing, isGuest } = useAuth();
-  const { hasSeenOnboarding } = useAppStore();
+  const { hasSeenOnboarding, isRehydrated } = useAppStore();
 
   const linking = useMemo(() => {
     const scheme = Constants.expoConfig?.scheme || 'finn';
@@ -59,7 +59,7 @@ export default function RootNavigator() {
     } as any;
   }, []);
 
-  if (initializing) {
+  if (initializing || !isRehydrated) {
     return <LoadingScreen />;
   }
 
