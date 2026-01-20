@@ -600,4 +600,61 @@ describe('SupabasePostRepository', () => {
     expect(result[0].communityImageUrl).toBe('https://signed.example.com/community.jpg');
     expect(result[0].imageUrl).toBe('https://public.example.com/post.jpg');
   });
+
+  it('fetches following feed correctly', async () => {
+    const followsQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockResolvedValue({
+        data: [{ following_id: 'user-2' }, { following_id: 'user-3' }],
+        error: null,
+      }),
+    };
+
+    const postsQuery = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      range: jest.fn().mockResolvedValue({
+        data: [
+          {
+            id: 10,
+            content: 'Following Post',
+            community_id: 1,
+            user_id: 'user-2',
+            communities: { title: 'General', image_url: null },
+            profiles: { name: 'User 2' },
+          },
+        ],
+        error: null,
+      }),
+    };
+
+    const likesQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [], error: null }),
+    };
+
+    const savedQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [], error: null }),
+    };
+
+    supabase.from.mockImplementation((table: string) => {
+      if (table === TABLES.userFollows) return followsQuery;
+      if (table === TABLES.posts) return postsQuery;
+      if (table === TABLES.likes) return likesQuery;
+      if (table === TABLES.savedPosts) return savedQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const repository = new SupabasePostRepository();
+    const result = await repository.getFollowingFeed('user-1', 0);
+
+    expect(followsQuery.eq).toHaveBeenCalledWith('follower_id', 'user-1');
+    expect(postsQuery.in).toHaveBeenCalledWith('user_id', ['user-2', 'user-3']);
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toBe('Following Post');
+  });
 });

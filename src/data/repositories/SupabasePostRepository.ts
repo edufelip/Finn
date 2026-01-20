@@ -231,6 +231,79 @@ export class SupabasePostRepository implements PostRepository {
     return cached ?? [];
   }
 
+  async getFollowingFeed(userId: string, page: number): Promise<Post[]> {
+    const cacheKey = CacheKey.feedByFollowing(userId, page);
+    const cached = await cacheFirst<Post[]>(cacheKey, CACHE_TTL_MS.feed, async () => {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      // Get list of followed user IDs
+      const { data: follows, error: followsError } = await supabase
+        .from(TABLES.userFollows)
+        .select('following_id')
+        .eq('follower_id', userId);
+
+      if (followsError) {
+        throw followsError;
+      }
+
+      const followingIds = (follows ?? []).map((f) => f.following_id);
+
+      if (followingIds.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await selectPostsWithFallback((select) =>
+        supabase
+          .from(TABLES.posts)
+          .select(select)
+          .in('user_id', followingIds)
+          .order('created_at', { ascending: false })
+          .range(from, to)
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      const rows = (data ?? []) as unknown as PostRow[];
+      if (!rows.length) {
+        return [];
+      }
+
+      const postIds = rows.map((row) => row.id);
+      const [likesData, savedData] = await Promise.all([
+        supabase
+          .from(TABLES.likes)
+          .select('post_id')
+          .eq('user_id', userId)
+          .in('post_id', postIds),
+        supabase
+          .from(TABLES.savedPosts)
+          .select('post_id')
+          .eq('user_id', userId)
+          .in('post_id', postIds),
+      ]);
+
+      if (likesData.error) throw likesData.error;
+      if (savedData.error) throw savedData.error;
+
+      const likedSet = new Set((likesData.data ?? []).map((row) => row.post_id));
+      const savedSet = new Set((savedData.data ?? []).map((row) => row.post_id));
+
+      return Promise.all(
+        rows.map((row) =>
+          toDomainWithImages(row, {
+            isLiked: likedSet.has(row.id),
+            isSaved: savedSet.has(row.id),
+          })
+        )
+      );
+    });
+
+    return cached ?? [];
+  }
+
   async getPublicFeed(page: number): Promise<Post[]> {
     const cacheKey = CacheKey.feedByUser('public', page);
     const cached = await cacheFirst<Post[]>(cacheKey, CACHE_TTL_MS.feed, async () => {

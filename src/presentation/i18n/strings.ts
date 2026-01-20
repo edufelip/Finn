@@ -62,9 +62,14 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
 
     // Home
     'home.searchPlaceholder': 'Search communities...',
+    'home.tabs.communities': 'Communities',
+    'home.tabs.people': 'People',
     'home.emptyTitle': "It's quiet in here...",
     'home.emptyBody':
       'Your feed is waiting for some activity. Join communities to discover discussions, insights, and connect with peers.',
+    'home.followingEmptyTitle': 'Nothing to see here... yet',
+    'home.followingEmptyBody': 'Follow people to see their latest posts and stay updated with what they are sharing.',
+    'home.followingGuestBody': 'Sign in to start following people and see their posts in your feed.',
     'home.primaryCta': 'Explore Communities',
     'home.secondaryCta': 'Find Connections',
     'home.tagsTitle': 'Suggested Topics',

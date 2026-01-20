@@ -12,8 +12,8 @@ const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
 
 const waitForHomeEffects = async (postsRepo: { getUserFeed: jest.Mock }, usersRepo: { getUser: jest.Mock }) => {
-  await waitFor(() => expect(postsRepo.getUserFeed).toHaveBeenCalled());
-  await waitFor(() => expect(usersRepo.getUser).toHaveBeenCalled());
+  await waitFor(() => expect(postsRepo.getUserFeed).toHaveBeenCalled(), { timeout: 3000 });
+  await waitFor(() => expect(usersRepo.getUser).toHaveBeenCalled(), { timeout: 3000 });
 };
 
 jest.mock('@react-navigation/native', () => {
@@ -373,5 +373,47 @@ describe('HomeScreen', () => {
     await waitFor(() => expect(postsRepo.bookmarkPost).toHaveBeenCalledWith(3, 'user-1'));
     await waitForHomeEffects(postsRepo, usersRepo);
     alertSpy.mockRestore();
+  });
+
+  it('switches to People tab and loads following feed', async () => {
+    const postsRepo = {
+      getUserFeed: jest.fn().mockResolvedValue([]),
+      getFollowingFeed: jest.fn().mockResolvedValue([
+        {
+          id: 10,
+          content: 'Following post',
+          communityId: 1,
+          communityTitle: 'General',
+          userId: 'user-2',
+          userName: 'Followed User',
+          likesCount: 0,
+          commentsCount: 0,
+          isLiked: false,
+        },
+      ]),
+      likePost: jest.fn(),
+      dislikePost: jest.fn(),
+      bookmarkPost: jest.fn(),
+      unbookmarkPost: jest.fn(),
+    };
+
+    const usersRepo = {
+      getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
+    };
+
+    const { getByText } = render(
+      <RepositoryProvider overrides={{ posts: postsRepo, users: usersRepo }}>
+        <HomeScreen />
+      </RepositoryProvider>
+    );
+
+    await waitForHomeEffects(postsRepo, usersRepo);
+
+    fireEvent.press(getByText(homeCopy.tabs.people));
+
+    await waitFor(() => {
+      expect(postsRepo.getFollowingFeed).toHaveBeenCalledWith('user-1', 0);
+      expect(getByText('Following post')).toBeTruthy();
+    });
   });
 });

@@ -23,23 +23,36 @@ import type { ThemeColors } from '../theme/colors';
 import { homeCopy } from '../content/homeCopy';
 import GuestBanner from '../components/GuestBanner';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
-import { useHomePosts, usePostsStore } from '../../app/store/postsStore';
+import { useHomePosts, useFollowingPosts, usePostsStore } from '../../app/store/postsStore';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
   NativeStackNavigationProp<MainStackParamList>
 >;
 
+type Tab = 'communities' | 'people';
+
 export default function HomeScreen() {
   const navigation = useNavigation<Navigation>();
   const { session, isGuest, exitGuest } = useAuth();
-  const posts = useHomePosts();
+  
+  const [activeTab, setActiveTab] = useState<Tab>('communities');
+  
+  const homePosts = useHomePosts();
+  const followingPosts = useFollowingPosts();
   const setHomePosts = usePostsStore((state) => state.setHomePosts);
+  const setFollowingPosts = usePostsStore((state) => state.setFollowingPosts);
   const updatePost = usePostsStore((state) => state.updatePost);
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
+
+  const [homePage, setHomePage] = useState(0);
+  const [homeHasMore, setHomeHasMore] = useState(true);
+  const [homeLoading, setHomeLoading] = useState(false);
+
+  const [followingPage, setFollowingPage] = useState(0);
+  const [followingHasMore, setFollowingHasMore] = useState(true);
+  const [followingLoading, setFollowingLoading] = useState(false);
+
   const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const likeInFlightRef = useRef<Set<number>>(new Set());
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -62,9 +75,9 @@ export default function HomeScreen() {
       .catch(() => setProfilePhoto(null));
   }, [session?.user?.id, userRepository]);
 
-  const loadPage = useCallback(
+  const loadHomeFeed = useCallback(
     async (pageToLoad: number, replace = false) => {
-      setLoading(true);
+      setHomeLoading(true);
       setError(null);
       try {
         const data = isGuest
@@ -73,33 +86,76 @@ export default function HomeScreen() {
             ? await repository.getUserFeed(session.user.id, pageToLoad)
             : [];
         setHomePosts(data, !replace);
-        setPage(pageToLoad);
-        setHasMore(data.length > 0);
+        setHomePage(pageToLoad);
+        setHomeHasMore(data.length > 0);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
         }
       } finally {
-        setLoading(false);
+        setHomeLoading(false);
         setRefreshing(false);
       }
     },
     [isGuest, repository, session?.user?.id, setHomePosts]
   );
 
+  const loadFollowingFeed = useCallback(
+    async (pageToLoad: number, replace = false) => {
+      if (isGuest || !session?.user?.id) {
+        setFollowingLoading(false);
+        setRefreshing(false);
+        setFollowingHasMore(false);
+        return;
+      }
+
+      setFollowingLoading(true);
+      setError(null);
+      try {
+        const data = await repository.getFollowingFeed(session.user.id, pageToLoad);
+        setFollowingPosts(data, !replace);
+        setFollowingPage(pageToLoad);
+        setFollowingHasMore(data.length > 0);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        }
+      } finally {
+        setFollowingLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [isGuest, repository, session?.user?.id, setFollowingPosts]
+  );
+
   useEffect(() => {
     if (!session?.user?.id && !isGuest) return;
-    loadPage(0, true);
-  }, [isGuest, loadPage, session?.user?.id]);
+    loadHomeFeed(0, true);
+  }, [isGuest, loadHomeFeed, session?.user?.id]);
+
+  useEffect(() => {
+    if (session?.user?.id && activeTab === 'people' && followingPosts.length === 0 && followingHasMore) {
+      loadFollowingFeed(0, true);
+    }
+  }, [activeTab, followingHasMore, followingPosts.length, loadFollowingFeed, session?.user?.id]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadPage(0, true);
+    if (activeTab === 'communities') {
+      loadHomeFeed(0, true);
+    } else {
+      loadFollowingFeed(0, true);
+    }
   };
 
   const handleLoadMore = () => {
-    if (loading || refreshing || !hasMore || posts.length === 0) return;
-    loadPage(page + 1);
+    if (activeTab === 'communities') {
+      if (homeLoading || refreshing || !homeHasMore || homePosts.length === 0) return;
+      loadHomeFeed(homePage + 1);
+    } else {
+      if (followingLoading || refreshing || !followingHasMore || followingPosts.length === 0) return;
+      loadFollowingFeed(followingPage + 1);
+    }
   };
 
   const handleToggleLike = async (post: Post) => {
@@ -190,57 +246,118 @@ export default function HomeScreen() {
     }
   };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyGlowTop} />
-      <View style={styles.emptyGlowBottom} />
-      <View style={styles.emptyContent}>
-        <View style={styles.planetStack}>
-          <View style={styles.planet}>
-            <View style={styles.planetIconWrap}>
-              <MaterialIcons name="groups" size={54} color={theme.onSurfaceVariant} />
-              <MaterialIcons name="chat-bubble" size={20} color={theme.onSurfaceVariant} style={styles.iconBubble} />
-              <MaterialIcons name="favorite" size={24} color={theme.primaryContainer} style={styles.iconHeart} />
-              <MaterialIcons name="bolt" size={18} color={theme.onSurfaceVariant} style={styles.iconBolt} />
-            </View>
-          </View>
-          <View style={styles.planetShadow} />
-        </View>
-        <Text style={styles.emptyTitle}>{homeCopy.emptyTitle}</Text>
-        <Text style={styles.emptyBody}>{homeCopy.emptyBody}</Text>
-        <View style={styles.emptyCtas}>
-            <Pressable
-              style={styles.primaryCta}
-              onPress={() => navigation.navigate('Explore')}
-              testID={homeCopy.testIds.explore}
-              accessibilityLabel={homeCopy.testIds.explore}
-            >
-            <MaterialIcons name="explore" size={20} color={theme.onPrimary} />
-            <Text style={styles.primaryCtaText}>{homeCopy.primaryCta}</Text>
-          </Pressable>
-          <Pressable
-            style={styles.secondaryCta}
-            onPress={() => navigation.navigate('Explore')}
-            testID={homeCopy.testIds.connections}
-            accessibilityLabel={homeCopy.testIds.connections}
-          >
-            <MaterialIcons name="person-add" size={20} color={theme.onSurfaceVariant} />
-            <Text style={styles.secondaryCtaText}>{homeCopy.secondaryCta}</Text>
-          </Pressable>
-        </View>
-      </View>
-      <View style={styles.tagsSection}>
-        <Text style={styles.tagsTitle}>{homeCopy.tagsTitle}</Text>
-        <View style={styles.tagsRow}>
-          {homeCopy.tags.map((tag) => (
-            <View key={tag} style={styles.tagChip}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
+  const renderTabBar = () => (
+    <View style={styles.tabContainer}>
+      <Pressable
+        onPress={() => setActiveTab('communities')}
+        style={[styles.tab, activeTab === 'communities' && styles.activeTab]}
+      >
+        <Text style={[styles.tabText, activeTab === 'communities' && styles.activeTabText]}>
+          {homeCopy.tabs.communities}
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => setActiveTab('people')}
+        style={[styles.tab, activeTab === 'people' && styles.activeTab]}
+      >
+        <Text style={[styles.tabText, activeTab === 'people' && styles.activeTabText]}>
+          {homeCopy.tabs.people}
+        </Text>
+      </Pressable>
     </View>
   );
+
+  const renderEmptyState = () => {
+    const isFollowingTab = activeTab === 'people';
+    const title = isFollowingTab ? homeCopy.followingEmptyTitle : homeCopy.emptyTitle;
+    const body = isFollowingTab
+      ? isGuest
+        ? homeCopy.followingGuestBody
+        : homeCopy.followingEmptyBody
+      : homeCopy.emptyBody;
+
+    return (
+      <View style={styles.emptyState}>
+        <View style={styles.emptyGlowTop} />
+        <View style={styles.emptyGlowBottom} />
+        <View style={styles.emptyContent}>
+          <View style={styles.planetStack}>
+            <View style={styles.planet}>
+              <View style={styles.planetIconWrap}>
+                <MaterialIcons
+                  name={isFollowingTab ? 'person-add' : 'groups'}
+                  size={54}
+                  color={theme.onSurfaceVariant}
+                />
+                <MaterialIcons
+                  name="chat-bubble"
+                  size={20}
+                  color={theme.onSurfaceVariant}
+                  style={styles.iconBubble}
+                />
+                <MaterialIcons
+                  name="favorite"
+                  size={24}
+                  color={theme.primaryContainer}
+                  style={styles.iconHeart}
+                />
+                <MaterialIcons
+                  name="bolt"
+                  size={18}
+                  color={theme.onSurfaceVariant}
+                  style={styles.iconBolt}
+                />
+              </View>
+            </View>
+            <View style={styles.planetShadow} />
+          </View>
+          <Text style={styles.emptyTitle}>{title}</Text>
+          <Text style={styles.emptyBody}>{body}</Text>
+          <View style={styles.emptyCtas}>
+            {isFollowingTab && isGuest ? (
+              <Pressable style={styles.primaryCta} onPress={() => exitGuest()}>
+                <MaterialIcons name="login" size={20} color={theme.onPrimary} />
+                <Text style={styles.primaryCtaText}>{homeCopy.alerts.signInRequired.title}</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={styles.primaryCta}
+                onPress={() => navigation.navigate('Explore')}
+                testID={homeCopy.testIds.explore}
+                accessibilityLabel={homeCopy.testIds.explore}
+              >
+                <MaterialIcons name="explore" size={20} color={theme.onPrimary} />
+                <Text style={styles.primaryCtaText}>{homeCopy.primaryCta}</Text>
+              </Pressable>
+            )}
+            {!isFollowingTab && (
+              <Pressable
+                style={styles.secondaryCta}
+                onPress={() => navigation.navigate('Explore')}
+                testID={homeCopy.testIds.connections}
+                accessibilityLabel={homeCopy.testIds.connections}
+              >
+                <MaterialIcons name="person-add" size={20} color={theme.onSurfaceVariant} />
+                <Text style={styles.secondaryCtaText}>{homeCopy.secondaryCta}</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+        {!isFollowingTab && (
+          <View style={styles.tagsSection}>
+            <Text style={styles.tagsTitle}>{homeCopy.tagsTitle}</Text>
+            <View style={styles.tagsRow}>
+              {homeCopy.tags.map((tag) => (
+                <View key={tag} style={styles.tagChip}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -263,43 +380,91 @@ export default function HomeScreen() {
         }}
       />
       {isGuest ? <GuestBanner onSignIn={() => void exitGuest()} /> : null}
+      {renderTabBar()}
       <ScreenFade onlyOnTabSwitch>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <FlatList
-          testID={homeCopy.testIds.feedList}
-          data={posts}
-          keyExtractor={(item) => `${item.id}`}
-          renderItem={({ item }) => (
-            <PostCard
-              post={item}
-              onToggleLike={() => handleToggleLike(item)}
-              onToggleSave={() => handleToggleSave(item)}
-              onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+        <View style={styles.flex1}>
+          <View style={[styles.flex1, activeTab !== 'communities' && styles.hidden]}>
+            <FlatList
+              testID={homeCopy.testIds.feedList}
+              data={homePosts}
+              keyExtractor={(item) => `home-${item.id}`}
+              renderItem={({ item }) => (
+                <PostCard
+                  post={item}
+                  onToggleLike={() => handleToggleLike(item)}
+                  onToggleSave={() => handleToggleSave(item)}
+                  onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+                />
+              )}
+              refreshing={refreshing && activeTab === 'communities'}
+              onRefresh={handleRefresh}
+              onEndReachedThreshold={0.3}
+              onEndReached={homeHasMore && homePosts.length > 0 ? handleLoadMore : undefined}
+              ListEmptyComponent={
+                homeLoading ? (
+                  <View style={styles.center}>
+                    <ActivityIndicator size="large" color={theme.primary} />
+                  </View>
+                ) : (
+                  renderEmptyState()
+                )
+              }
+              ListFooterComponent={
+                homeLoading && homePosts.length > 0 ? (
+                  <View style={styles.footer}>
+                    <ActivityIndicator size="small" color={theme.primary} />
+                  </View>
+                ) : null
+              }
+              style={styles.list}
+              contentContainerStyle={
+                homePosts.length === 0 ? styles.emptyContainer : { paddingBottom: tabBarHeight }
+              }
             />
-          )}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          onEndReachedThreshold={0.3}
-          onEndReached={hasMore && posts.length > 0 ? handleLoadMore : undefined}
-          ListEmptyComponent={
-            loading ? (
-              <View style={styles.center}>
-                <ActivityIndicator size="large" color={theme.primary} />
-              </View>
-            ) : (
-              renderEmptyState()
-            )
-          }
-          ListFooterComponent={
-            loading && posts.length > 0 ? (
-              <View style={styles.footer}>
-                <ActivityIndicator size="small" color={theme.primary} />
-              </View>
-            ) : null
-          }
-          style={styles.list}
-          contentContainerStyle={posts.length === 0 ? styles.emptyContainer : { paddingBottom: tabBarHeight }}
-        />
+          </View>
+          <View style={[styles.flex1, activeTab !== 'people' && styles.hidden]}>
+            <FlatList
+              testID="following-feed-list"
+              data={followingPosts}
+              keyExtractor={(item) => `following-${item.id}`}
+              renderItem={({ item }) => (
+                <PostCard
+                  post={item}
+                  onToggleLike={() => handleToggleLike(item)}
+                  onToggleSave={() => handleToggleSave(item)}
+                  onOpenComments={() => navigation.navigate('PostDetail', { post: item })}
+                />
+              )}
+              refreshing={refreshing && activeTab === 'people'}
+              onRefresh={handleRefresh}
+              onEndReachedThreshold={0.3}
+              onEndReached={
+                followingHasMore && followingPosts.length > 0 ? handleLoadMore : undefined
+              }
+              ListEmptyComponent={
+                followingLoading ? (
+                  <View style={styles.center}>
+                    <ActivityIndicator size="large" color={theme.primary} />
+                  </View>
+                ) : (
+                  renderEmptyState()
+                )
+              }
+              ListFooterComponent={
+                followingLoading && followingPosts.length > 0 ? (
+                  <View style={styles.footer}>
+                    <ActivityIndicator size="small" color={theme.primary} />
+                  </View>
+                ) : null
+              }
+              style={styles.list}
+              contentContainerStyle={
+                followingPosts.length === 0 ? styles.emptyContainer : { paddingBottom: tabBarHeight }
+              }
+            />
+          </View>
+        </View>
       </ScreenFade>
     </SafeAreaView>
   );
@@ -310,6 +475,37 @@ const createStyles = (theme: ThemeColors) =>
     safeArea: {
       flex: 1,
       backgroundColor: theme.background,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      backgroundColor: theme.background,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.outlineVariant,
+    },
+    tab: {
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginRight: 8,
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
+    },
+    activeTab: {
+      borderBottomColor: theme.primary,
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.onSurfaceVariant,
+    },
+    activeTabText: {
+      color: theme.primary,
+    },
+    flex1: {
+      flex: 1,
+    },
+    hidden: {
+      display: 'none',
     },
     list: {
       backgroundColor: theme.background,

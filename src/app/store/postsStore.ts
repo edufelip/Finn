@@ -9,11 +9,13 @@ import type { Post } from '../../domain/models/post';
 type PostsState = {
   postsById: Record<number, Post>;
   homeIds: number[];
+  followingIds: number[];
   communityIds: Record<number, number[]>;
   profileIds: Record<string, number[]>;
   savedIds: Record<string, number[]>;
   upsertPosts: (posts: Post[]) => void;
   setHomePosts: (posts: Post[], append?: boolean) => void;
+  setFollowingPosts: (posts: Post[], append?: boolean) => void;
   setCommunityPosts: (communityId: number, posts: Post[], append?: boolean) => void;
   setProfilePosts: (userId: string, posts: Post[], append?: boolean) => void;
   setSavedPosts: (userId: string, posts: Post[], append?: boolean) => void;
@@ -40,6 +42,7 @@ export const usePostsStore = create<PostsState>()(
     (set) => ({
       postsById: {},
       homeIds: [],
+      followingIds: [],
       communityIds: {},
       profileIds: {},
       savedIds: {},
@@ -62,6 +65,19 @@ export const usePostsStore = create<PostsState>()(
           return {
             postsById: nextPosts,
             homeIds: mergeIds(state.homeIds, ids, append),
+          };
+        });
+      },
+      setFollowingPosts: (posts, append) => {
+        set((state) => {
+          const nextPosts = { ...state.postsById };
+          const ids = posts.map((post) => post.id);
+          posts.forEach((post) => {
+            nextPosts[post.id] = { ...nextPosts[post.id], ...post };
+          });
+          return {
+            postsById: nextPosts,
+            followingIds: mergeIds(state.followingIds, ids, append),
           };
         });
       },
@@ -151,6 +167,7 @@ export const usePostsStore = create<PostsState>()(
         set({
           postsById: {},
           homeIds: [],
+          followingIds: [],
           communityIds: {},
           profileIds: {},
           savedIds: {},
@@ -163,6 +180,7 @@ export const usePostsStore = create<PostsState>()(
       partialize: (state) => ({
         postsById: state.postsById,
         homeIds: state.homeIds,
+        followingIds: state.followingIds,
         communityIds: state.communityIds,
         profileIds: state.profileIds,
         savedIds: state.savedIds,
@@ -177,6 +195,15 @@ export const useHomePosts = () =>
   usePostsStore(
     useShallow((state) =>
       state.homeIds.map((id) => state.postsById[id]).filter((post): post is Post => Boolean(post))
+    )
+  );
+
+export const useFollowingPosts = () =>
+  usePostsStore(
+    useShallow((state) =>
+      state.followingIds
+        .map((id) => state.postsById[id])
+        .filter((post): post is Post => Boolean(post))
     )
   );
 

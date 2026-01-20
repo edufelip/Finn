@@ -2,8 +2,15 @@ import { t, tList } from '../i18n';
 
 export const homeCopy = {
   searchPlaceholder: t('home.searchPlaceholder'),
+  tabs: {
+    communities: t('home.tabs.communities'),
+    people: t('home.tabs.people'),
+  },
   emptyTitle: t('home.emptyTitle'),
   emptyBody: t('home.emptyBody'),
+  followingEmptyTitle: t('home.followingEmptyTitle'),
+  followingEmptyBody: t('home.followingEmptyBody'),
+  followingGuestBody: t('home.followingGuestBody'),
   primaryCta: t('home.primaryCta'),
   secondaryCta: t('home.secondaryCta'),
   tagsTitle: t('home.tagsTitle'),
