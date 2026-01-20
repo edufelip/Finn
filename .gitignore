@@ -1,5 +1,6 @@
 .expo/
 .expo-shared/
+.DS_Store
 node_modules/
 ios/build/
 android/build/
