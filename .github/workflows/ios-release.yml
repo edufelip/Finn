@@ -84,6 +84,46 @@ jobs:
           mkdir -p FinnDev
           echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > FinnDev/GoogleService-Info.plist
 
+      - name: Sync Google Sign-In scheme (prod)
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          import sys
+
+          info_path = "ios/FinnDev/Info.plist"
+          gservice_path = "ios/FinnDev/GoogleService-Info.plist"
+
+          with open(gservice_path, "rb") as f:
+            gservice = plistlib.load(f)
+          scheme = gservice.get("REVERSED_CLIENT_ID")
+          if not scheme:
+            print("REVERSED_CLIENT_ID missing in GoogleService-Info.plist", file=sys.stderr)
+            sys.exit(1)
+
+          with open(info_path, "rb") as f:
+            info = plistlib.load(f)
+
+          url_types = info.get("CFBundleURLTypes", [])
+          google_entry = None
+          for entry in url_types:
+            schemes = entry.get("CFBundleURLSchemes", [])
+            if any(s.startswith("com.googleusercontent.apps.") for s in schemes):
+              google_entry = entry
+              break
+
+          if google_entry is None:
+            url_types.append({"CFBundleURLSchemes": [scheme]})
+          else:
+            google_entry["CFBundleURLSchemes"] = [scheme]
+
+          info["CFBundleURLTypes"] = url_types
+
+          with open(info_path, "wb") as f:
+            plistlib.dump(info, f)
+
+          print(f"Updated Google Sign-In scheme to {scheme}")
+          PY
+
       - name: Validate Google Sign-In scheme
         run: |
           PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/FinnDev/GoogleService-Info.plist)

@@ -279,16 +279,21 @@ jobs:
 
       - name: Write Firebase service account
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > "$RUNNER_TEMP/firebase-service-account.json"
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > firebase-service-account.json
 
       - name: Upload to Firebase App Distribution
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: firebase-service-account.json
         run: |
           npx --yes firebase-tools@latest appdistribution:distribute "$IPA_PATH" \
             --app "${{ secrets.FIREBASE_APP_ID_IOS_DEV }}" \
             --groups "base-group" \
             --release-notes "$RELEASE_NOTES"
+
+      - name: Clean Firebase service account
+        if: always()
+        run: |
+          rm -f firebase-service-account.json
 
       - name: Clean keychain and profiles
         if: always()

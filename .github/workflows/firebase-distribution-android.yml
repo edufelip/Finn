@@ -123,14 +123,20 @@ jobs:
 
       - name: Write Firebase service account
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > "$RUNNER_TEMP/firebase-service-account.json"
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > firebase-service-account.json
         working-directory: .
 
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID_ANDROID_DEV }}
-          serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
+          serviceCredentialsFile: firebase-service-account.json
           groups: base-group
           file: android/app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: ${{ env.RELEASE_NOTES }}
+
+      - name: Clean Firebase service account
+        if: always()
+        run: |
+          rm -f firebase-service-account.json
+        working-directory: .
