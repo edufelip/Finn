@@ -85,7 +85,6 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
-        working-directory: .
 
       - name: Install JS deps
         run: npm ci
