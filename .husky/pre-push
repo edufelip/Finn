@@ -1,5 +1,12 @@
 #!/bin/sh
+set -e
 
-cd mobile || exit 1
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [ -d "$ROOT_DIR/mobile" ]; then
+  cd "$ROOT_DIR/mobile"
+else
+  cd "$ROOT_DIR"
+fi
+
 npm run typecheck
 npm test
