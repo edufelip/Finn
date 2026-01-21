@@ -42,7 +42,7 @@ describe('PostCard', () => {
 
     expect(getByTestId('post-user-image-1')).toBeTruthy();
     expect(getByText('Tester')).toBeTruthy();
-    expect(getByText('Posted in General')).toBeTruthy();
+    expect(getByText('General')).toBeTruthy();
     expect(getByText(postCardCopy.share)).toBeTruthy();
   });
 
