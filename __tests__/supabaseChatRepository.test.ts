@@ -127,7 +127,8 @@ describe('SupabaseChatRepository', () => {
       error: null,
     });
     const order = jest.fn().mockReturnValue({ limit });
-    const eq = jest.fn().mockReturnValue({ order });
+    const gte = jest.fn().mockReturnValue({ order });
+    const eq = jest.fn().mockReturnValue({ gte });
     const select = jest.fn().mockReturnValue({ eq });
 
     supabase.from.mockImplementation((table: string) => {
@@ -140,6 +141,7 @@ describe('SupabaseChatRepository', () => {
     const repo = new SupabaseChatRepository();
     const messages = await repo.getMessages('thread-1', 2);
 
+    expect(gte).toHaveBeenCalledWith('created_at', expect.any(String));
     expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
     expect(messages[0].id).toBe(1);
     expect(messages[1].id).toBe(2);
