@@ -610,7 +610,7 @@ export default function ProfileScreen() {
               post={item}
               onPressUser={() => {
                 if (session?.user?.id === item.userId) {
-                  navigation.navigate('Tabs', { screen: 'Profile' });
+                  navigation.navigate('Profile');
                 } else {
                   navigation.navigate('UserProfile', { userId: item.userId });
                 }

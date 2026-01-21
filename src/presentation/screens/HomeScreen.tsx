@@ -463,7 +463,7 @@ export default function HomeScreen() {
                   isFirst={index === 0}
                   onPressUser={() => {
                     if (session?.user?.id === item.userId) {
-                      navigation.navigate('Tabs', { screen: 'Profile' });
+                      navigation.navigate('Profile');
                     } else {
                       navigation.navigate('UserProfile', { userId: item.userId });
                     }
@@ -517,7 +517,7 @@ export default function HomeScreen() {
                   isFirst={index === 0}
                   onPressUser={() => {
                     if (session?.user?.id === item.userId) {
-                      navigation.navigate('Tabs', { screen: 'Profile' });
+                      navigation.navigate('Profile');
                     } else {
                       navigation.navigate('UserProfile', { userId: item.userId });
                     }

@@ -271,7 +271,7 @@ export default function PostDetailScreen() {
               onPressCommunity={() => navigation.navigate('CommunityDetail', { communityId: post.communityId })}
               onPressUser={() => {
                 if (session?.user?.id === post.userId) {
-                  navigation.navigate('Tabs', { screen: 'Profile' });
+                  navigation.navigate('Profile');
                 } else {
                   navigation.navigate('UserProfile', { userId: post.userId });
                 }

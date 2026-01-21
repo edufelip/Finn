@@ -325,7 +325,7 @@ export default function CommunityDetailScreen() {
         onOpenComments={() => handleOpenComments(item)}
         onPressUser={() => {
           if (session?.user?.id === item.userId) {
-            navigation.navigate('Tabs', { screen: 'Profile' });
+            navigation.navigate('Profile');
           } else {
             navigation.navigate('UserProfile', { userId: item.userId });
           }

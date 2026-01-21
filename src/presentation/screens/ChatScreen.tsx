@@ -406,6 +406,14 @@ const createStyles = (theme: ThemeColors) =>
       color: '#64748B',
       letterSpacing: 1,
     },
+    loadingState: {
+      alignItems: 'center',
+      paddingVertical: 24,
+    },
+    loadingText: {
+      fontSize: 13,
+      color: '#64748B',
+    },
     messageRow: {
       flexDirection: 'row',
       marginBottom: 20,

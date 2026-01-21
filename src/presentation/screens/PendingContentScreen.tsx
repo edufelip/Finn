@@ -215,7 +215,7 @@ export default function PendingContentScreen() {
             post={item}
             onPressUser={() => {
               if (session?.user?.id === item.userId) {
-                navigation.navigate('Tabs', { screen: 'Profile' });
+                navigation.navigate('Profile');
               } else {
                 navigation.navigate('UserProfile', { userId: item.userId });
               }
