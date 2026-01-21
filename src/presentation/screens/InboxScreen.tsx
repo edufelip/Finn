@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -10,7 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -19,24 +24,39 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { inboxCopy, type InboxMessage, type InboxTabKey } from '../content/inboxCopy';
+import { inboxCopy, type InboxTabKey } from '../content/inboxCopy';
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import ScreenFade from '../components/ScreenFade';
 import { useAuth } from '../../app/providers/AuthProvider';
+import { useInboxBadge } from '../../app/providers/InboxBadgeProvider';
+import { useRepositories } from '../../app/providers/RepositoryProvider';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
+import type { ChatThread } from '../../domain/models/chat';
+import type { User } from '../../domain/models/user';
+import type { MainStackParamList } from '../navigation/MainStack';
+import { supabase } from '../../data/supabase/client';
+import { isMockMode } from '../../config/appConfig';
 
 type SectionKey = 'unread' | 'earlier';
+
+type ThreadWithUser = ChatThread & {
+  peer: User | null;
+  unread: boolean;
+};
 
 type Section = {
   key: SectionKey;
   title: string;
-  data: InboxMessage[];
+  data: ThreadWithUser[];
 };
 
 export default function InboxScreen() {
-  const { isGuest, exitGuest } = useAuth();
+  const { isGuest, exitGuest, session } = useAuth();
+  const { chats: chatRepository, users: userRepository } = useRepositories();
+  const { setHasUnread } = useInboxBadge();
+  const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const theme = useThemeColors();
   const { isDark } = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
@@ -53,19 +73,175 @@ export default function InboxScreen() {
     archived?: { center: number; width: number };
   }>({});
   const [query, setQuery] = useState('');
+  const [allThreads, setAllThreads] = useState<ThreadWithUser[]>([]); // Cache all threads
+  const [loading, setLoading] = useState(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // Refetch function to update threads
+  const refetchThreads = useCallback(async () => {
+    if (!session?.user?.id || isGuest) return;
+
+    try {
+      // Fetch threads from all three tabs
+      const [primaryThreads, requestThreads, archivedThreads] = await Promise.all([
+        chatRepository.getThreadsForUser(session.user.id, 'primary'),
+        chatRepository.getThreadsForUser(session.user.id, 'requests'),
+        chatRepository.getThreadsForUser(session.user.id, 'archived'),
+      ]);
+
+      // Combine all threads (use a Set to avoid duplicates)
+      const allRawThreads = [...primaryThreads, ...requestThreads, ...archivedThreads];
+      const uniqueThreads = Array.from(
+        new Map(allRawThreads.map((t) => [t.id, t])).values()
+      );
+
+      // Extract unique peer IDs
+      const peerIds = uniqueThreads.map((thread) =>
+        thread.participantA === session.user.id ? thread.participantB : thread.participantA
+      );
+
+      // Batch fetch all peer users
+      const peerMap = await userRepository.getUsersBatch(peerIds);
+
+      // Fetch member status for unread detection
+      const threadsWithUsers = await Promise.all(
+        uniqueThreads.map(async (thread) => {
+          const peerId =
+            thread.participantA === session.user.id ? thread.participantB : thread.participantA;
+          const peer = peerMap.get(peerId) ?? null;
+          const memberStatus = await chatRepository.getMemberStatus(thread.id, session.user.id);
+
+          // Calculate unread status
+          let unread = false;
+          if (thread.lastMessageAt) {
+            const lastReadAt = memberStatus?.lastReadAt;
+            if (!lastReadAt) {
+              // Never read, so it's unread
+              unread = true;
+            } else {
+              // Compare timestamps - unread if last message is newer than last read
+              unread = new Date(thread.lastMessageAt) > new Date(lastReadAt);
+            }
+          }
+
+          return {
+            ...thread,
+            peer,
+            unread,
+          };
+        })
+      );
+
+      setAllThreads(threadsWithUsers);
+    } catch (error) {
+      console.error('Failed to refetch threads:', error);
+    }
+  }, [session?.user?.id, isGuest, chatRepository, userRepository]);
+
+  // Fetch ALL threads once on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAllThreads = async () => {
+      if (!session?.user?.id || isGuest) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await refetchThreads();
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchAllThreads();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.user?.id, isGuest, refetchThreads]);
+
+  // Real-time subscription for new messages and thread updates
+  useEffect(() => {
+    if (!session?.user?.id || isGuest || isMockMode()) return;
+
+    const channel = supabase
+      .channel('inbox-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_threads',
+          filter: `participant_a=eq.${session.user.id},participant_b=eq.${session.user.id}`,
+        },
+        () => {
+          // Refetch threads when any thread is updated
+          void refetchThreads();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+        },
+        () => {
+          // Refetch threads when new messages arrive
+          void refetchThreads();
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        void channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
+    };
+  }, [session?.user?.id, isGuest, refetchThreads]);
+
+  // Filter threads based on active tab (client-side filtering)
+  const filteredThreads = useMemo(() => {
+    if (!session?.user?.id) return [];
+
+    return allThreads.filter((thread) => {
+      if (activeTab === 'primary') {
+        // Primary: accepted threads not archived by user
+        return thread.requestStatus === 'accepted' && !thread.archivedBy.includes(session.user.id);
+      } else if (activeTab === 'requests') {
+        // Requests: pending threads where user is recipient (not creator) and not archived
+        return (
+          thread.requestStatus === 'pending' &&
+          thread.createdBy !== session.user.id &&
+          !thread.archivedBy.includes(session.user.id)
+        );
+      } else if (activeTab === 'archived') {
+        // Archived: threads archived by user
+        return thread.archivedBy.includes(session.user.id);
+      }
+      return false;
+    });
+  }, [allThreads, activeTab, session?.user?.id]);
 
   const messages = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return inboxCopy.messages.filter((item) => {
-      if (item.category !== activeTab) return false;
+    return filteredThreads.filter((thread) => {
       if (!normalized) return true;
+      const peerName = thread.peer?.name || '';
+      const preview = thread.lastMessagePreview || '';
       return (
-        item.name.toLowerCase().includes(normalized) ||
-        item.role.toLowerCase().includes(normalized) ||
-        item.message.toLowerCase().includes(normalized)
+        peerName.toLowerCase().includes(normalized) ||
+        preview.toLowerCase().includes(normalized)
       );
     });
-  }, [activeTab, query]);
+  }, [filteredThreads, query]);
 
   const sections = useMemo<Section[]>(() => {
     const unread = messages.filter((item) => item.unread);
@@ -77,9 +253,49 @@ export default function InboxScreen() {
   }, [messages]);
 
   const unreadCount = useMemo(
-    () => inboxCopy.messages.filter((item) => item.category === 'primary' && item.unread).length,
-    []
+    () => {
+      if (activeTab === 'primary') {
+        return filteredThreads.filter((thread) => thread.unread).length;
+      }
+      return 0;
+    },
+    [filteredThreads, activeTab]
   );
+
+  const requestCount = useMemo(
+    () => {
+      // Count pending requests (for badge on Requests tab)
+      if (activeTab === 'requests') {
+        return filteredThreads.length; // All threads in requests tab are pending
+      }
+      return 0;
+    },
+    [filteredThreads, activeTab]
+  );
+
+  // Update global badge state whenever we have unread messages or requests
+  useEffect(() => {
+    const totalUnread = allThreads.filter((thread) => {
+      if (!session?.user?.id) return false;
+      // Count unread in primary (accepted, not archived)
+      if (thread.requestStatus === 'accepted' && !thread.archivedBy.includes(session.user.id)) {
+        return thread.unread;
+      }
+      return false;
+    }).length;
+
+    const totalRequests = allThreads.filter((thread) => {
+      if (!session?.user?.id) return false;
+      // Count pending requests (not creator, not archived)
+      return (
+        thread.requestStatus === 'pending' &&
+        thread.createdBy !== session.user.id &&
+        !thread.archivedBy.includes(session.user.id)
+      );
+    }).length;
+
+    setHasUnread(totalUnread > 0 || totalRequests > 0);
+  }, [allThreads, session?.user?.id, setHasUnread]);
 
   const animateIndicator = (key: InboxTabKey) => {
     const target = tabLayouts[key];
@@ -124,40 +340,67 @@ export default function InboxScreen() {
     );
   }
 
-  const renderSection = (section: Section) => (
-    <View key={section.key}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{section.title}</Text>
-      </View>
-      {section.data.map((item) => (
-        <Pressable key={item.id} style={({ pressed }) => [styles.messageRow, pressed && styles.messageRowPressed]}>
-          {item.unread ? <View style={styles.unreadIndicator} /> : null}
-          <View style={styles.avatarWrap}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
-            </View>
-            {item.online ? <View style={styles.onlineDot} /> : null}
-          </View>
-          <View style={styles.messageBody}>
-            <View style={styles.messageHeader}>
-              <Text style={styles.messageName} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={[styles.messageTime, item.unread && styles.messageTimeUnread]}>{item.time}</Text>
-            </View>
-            <Text style={styles.messageRole} numberOfLines={1}>
-              {item.role}
-            </Text>
-            <Text style={styles.messagePreview} numberOfLines={1}>
-              {item.message}
-            </Text>
-          </View>
-        </Pressable>
-      ))}
-    </View>
-  );
+  const renderSection = (section: Section) => {
+    const handleThreadPress = (thread: ThreadWithUser) => {
+      if (!thread.peer) return;
+      
+      navigation.navigate('Chat', {
+        userId: thread.peer.id,
+        user: thread.peer,
+        threadId: thread.id,
+        isRequest: activeTab === 'requests',
+      });
+    };
 
-  const showEmpty = messages.length === 0;
+    return (
+      <View key={section.key}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+        </View>
+        {section.data.map((thread) => {
+          const peerName = thread.peer?.name || 'Unknown User';
+          const peerPhoto = thread.peer?.photoUrl;
+          const isOnline = thread.peer?.lastSeenAt && new Date(thread.peer.lastSeenAt) > new Date(Date.now() - 5 * 60 * 1000);
+          const timeAgo = thread.lastMessageAt ? formatTimeAgo(thread.lastMessageAt) : '';
+          
+          return (
+            <Pressable 
+              key={thread.id} 
+              style={({ pressed }) => [styles.messageRow, pressed && styles.messageRowPressed]}
+              onPress={() => handleThreadPress(thread)}
+            >
+              {thread.unread ? <View style={styles.unreadIndicator} /> : null}
+              <View style={styles.avatarWrap}>
+                {peerPhoto ? (
+                  <Image source={{ uri: peerPhoto }} style={styles.avatarCircle} />
+                ) : (
+                  <View style={styles.avatarCircle}>
+                    <Text style={styles.avatarText}>{getInitials(peerName)}</Text>
+                  </View>
+                )}
+                {isOnline ? <View style={styles.onlineDot} /> : null}
+              </View>
+              <View style={styles.messageBody}>
+                <View style={styles.messageHeader}>
+                  <Text style={styles.messageName} numberOfLines={1}>
+                    {peerName}
+                  </Text>
+                  <Text style={[styles.messageTime, thread.unread && styles.messageTimeUnread]}>
+                    {timeAgo}
+                  </Text>
+                </View>
+                <Text style={styles.messagePreview} numberOfLines={2}>
+                  {thread.lastMessagePreview || 'No messages yet'}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const showEmpty = !loading && messages.length === 0;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -232,6 +475,11 @@ export default function InboxScreen() {
               <Animated.Text style={[styles.tabLabel, requestsLabelStyle]}>
                 {inboxCopy.tabs.requests}
               </Animated.Text>
+              {requestCount > 0 && activeTab === 'requests' ? (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>{requestCount}</Text>
+                </View>
+              ) : null}
             </Pressable>
             <Pressable
               testID={inboxCopy.testIds.tabArchived}
@@ -267,7 +515,11 @@ export default function InboxScreen() {
             renderItem={({ item }) => renderSection(item)}
             contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight }]}
             ListEmptyComponent={
-              showEmpty ? (
+              loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={theme.primary} />
+                </View>
+              ) : showEmpty ? (
                 <View style={styles.emptyState}>
                   <MaterialIcons name="mail-outline" size={40} color={theme.onSurfaceVariant} />
                   <Text style={styles.emptyTitle}>{inboxCopy.empty.title}</Text>
@@ -288,6 +540,22 @@ const getInitials = (name: string) => {
   const first = parts[0]?.[0] ?? '';
   const second = parts.length > 1 ? parts[1][0] : '';
   return `${first}${second}`.toUpperCase();
+};
+
+const formatTimeAgo = (timestamp: string): string => {
+  const now = Date.now();
+  const then = new Date(timestamp).getTime();
+  const diff = now - then;
+  
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+  return new Date(timestamp).toLocaleDateString();
 };
 
 const createStyles = (theme: ThemeColors) =>
@@ -481,6 +749,11 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 13,
       color: theme.onSurface,
       fontWeight: '600',
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
     },
     emptyState: {
       alignItems: 'center',

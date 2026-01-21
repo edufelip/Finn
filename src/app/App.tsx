@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { AuthProvider } from './providers/AuthProvider';
+import { InboxBadgeProvider } from './providers/InboxBadgeProvider';
 import { PresenceProvider } from './providers/PresenceProvider';
 import { RepositoryProvider } from './providers/RepositoryProvider';
 import { ThemeProvider, useTheme } from './providers/ThemeProvider';
@@ -21,10 +22,12 @@ export default function App() {
         <ThemeProvider>
           <RepositoryProvider>
             <AuthProvider>
-              <PresenceProvider>
-                <RootNavigator />
-                <ThemedStatusBar />
-              </PresenceProvider>
+              <InboxBadgeProvider>
+                <PresenceProvider>
+                  <RootNavigator />
+                  <ThemedStatusBar />
+                </PresenceProvider>
+              </InboxBadgeProvider>
             </AuthProvider>
           </RepositoryProvider>
         </ThemeProvider>

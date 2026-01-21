@@ -3,6 +3,7 @@ import type { Notification } from '../models/notification';
 
 export interface UserRepository {
   getUser(id: string): Promise<User | null>;
+  getUsersBatch(userIds: string[]): Promise<Map<string, User>>;
   createUser(user: User): Promise<User>;
   deleteUser(id: string): Promise<void>;
   setOnlineVisibility(id: string, visible: boolean): Promise<void>;

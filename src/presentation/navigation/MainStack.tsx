@@ -45,7 +45,7 @@ export type MainStackParamList = {
   ModerationLogs: { communityId: number };
   ManageModerators: { communityId: number };
   UserProfile: { userId: string };
-  Chat: { userId: string; user?: User };
+  Chat: { userId: string; user?: User; threadId?: string; isRequest?: boolean };
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();

@@ -19,6 +19,14 @@ export class MockUserRepository implements UserRepository {
     return mockUser;
   }
 
+  async getUsersBatch(userIds: string[]): Promise<Map<string, User>> {
+    const map = new Map<string, User>();
+    userIds.forEach((id) => {
+      map.set(id, { ...mockUser, id });
+    });
+    return map;
+  }
+
   async createUser(user: User): Promise<User> {
     return user;
   }

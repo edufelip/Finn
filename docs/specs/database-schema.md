@@ -37,9 +37,25 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 - **Subscriptions (`subscriptions`)**: `community_id` -> `user_id` (Unique pair).
 
 ### 6. Messaging (Direct)
-- **Threads (`chat_threads`)**: `participant_a`, `participant_b` (ordered unique pair, no self), `last_message_at`, `last_message_preview`.
+- **Threads (`chat_threads`)**: 
+  - `participant_a`, `participant_b` (ordered unique pair, no self)
+  - `created_by` (UUID, references the user who initiated the thread)
+  - `last_message_at`, `last_message_preview`
+  - **`request_status`** (TEXT): 'pending' | 'accepted' | 'refused'
+  - **`archived_by`** (UUID[]): Array of user IDs who archived this thread
 - **Members (`chat_members`)**: `thread_id`, `user_id`, `last_read_at` (seen up to).
 - **Messages (`chat_messages`)**: `thread_id`, `sender_id` (non-null), `content`, `created_at`.
+
+**Request Status Logic:**
+- New threads default to 'pending' if sender doesn't follow recipient
+- Auto-upgraded to 'accepted' if follow relationship exists
+- Recipient can accept or refuse pending requests via ChatScreen
+- Refused threads are hidden from recipient but remain accessible to sender
+
+**Archive Logic:**
+- Users can independently archive threads via `archived_by` array
+- Archived threads move to separate "Archived" tab but continue receiving messages
+- Un-archiving removes user from `archived_by` array, returns thread to Primary tab
 
 ### 7. Moderation
 - **Moderators (`community_moderators`)**: `community_id` -> `user_id`.

@@ -173,6 +173,42 @@ export class SupabaseUserRepository implements UserRepository {
     return cached ?? null;
   }
 
+  async getUsersBatch(userIds: string[]): Promise<Map<string, User>> {
+    if (userIds.length === 0) {
+      return new Map();
+    }
+
+    // Fetch all users in a single query
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .select('*')
+      .in('id', userIds);
+
+    if (error) {
+      throw error;
+    }
+
+    const userMap = new Map<string, User>();
+    
+    // Convert rows to domain objects and cache them
+    const rows = (data ?? []) as UserRow[];
+    await Promise.all(
+      rows.map(async (row) => {
+        const cacheKey = CacheKey.user(row.id);
+        const cachedUser = await getCache<User>(cacheKey, { allowExpired: true });
+        const base = toDomain(row);
+        const user = mergeFollowCounts(base, cachedUser);
+        
+        // Update cache
+        await setCache(cacheKey, user, CACHE_TTL_MS.profiles);
+        
+        userMap.set(row.id, user);
+      })
+    );
+
+    return userMap;
+  }
+
   async createUser(user: User): Promise<User> {
     const now = new Date().toISOString();
     const { data, error } = await supabase

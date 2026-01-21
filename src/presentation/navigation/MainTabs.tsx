@@ -15,6 +15,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { tabCopy } from '../content/tabCopy';
 import { useAuth } from '../../app/providers/AuthProvider';
+import { useInboxBadge } from '../../app/providers/InboxBadgeProvider';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 
 export type MainTabParamList = {
@@ -35,6 +36,7 @@ const isPad = Platform.OS === 'ios' && Platform.isPad;
 export default function MainTabs() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const { isGuest, exitGuest } = useAuth();
+  const { hasUnread } = useInboxBadge();
   const [createOpen, setCreateOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
@@ -114,7 +116,12 @@ export default function MainTabs() {
           component={InboxScreen}
           options={{
             tabBarLabel: tabCopy.inbox,
-            tabBarIcon: ({ color }) => <MaterialIcons name="inbox" size={24} color={color} />,
+            tabBarIcon: ({ color }) => (
+              <View style={styles.iconContainer}>
+                <MaterialIcons name="inbox" size={24} color={color} />
+                {hasUnread && <View style={styles.badge} />}
+              </View>
+            ),
             tabBarAccessibilityLabel: tabCopy.testIds.inbox,
           }}
         />
@@ -181,5 +188,21 @@ const createStyles = (theme: ThemeColors) =>
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 6 },
       elevation: 6,
+    },
+    iconContainer: {
+      position: 'relative',
+      width: 24,
+      height: 24,
+    },
+    badge: {
+      position: 'absolute',
+      top: -2,
+      right: -6,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#EF4444',
+      borderWidth: 2,
+      borderColor: theme.surface,
     },
   });
