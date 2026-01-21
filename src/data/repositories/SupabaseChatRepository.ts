@@ -3,6 +3,9 @@ import type { ChatRepository } from '../../domain/repositories/ChatRepository';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
 
+// Message retention policy: messages older than this many days are automatically deleted
+const MESSAGE_RETENTION_DAYS = 14;
+
 type ChatThreadRow = {
   id: string;
   participant_a: string;
@@ -105,10 +108,16 @@ export class SupabaseChatRepository implements ChatRepository {
   }
 
   async getMessages(threadId: string, limit = 50): Promise<ChatMessage[]> {
+    // Calculate the cutoff date based on retention policy
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - MESSAGE_RETENTION_DAYS);
+    const cutoffISO = cutoffDate.toISOString();
+
     const { data, error } = await supabase
       .from(TABLES.chatMessages)
       .select('*')
       .eq('thread_id', threadId)
+      .gte('created_at', cutoffISO)
       .order('created_at', { ascending: false })
       .limit(limit);
 

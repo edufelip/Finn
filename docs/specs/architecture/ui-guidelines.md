@@ -27,6 +27,21 @@ Ensures a cohesive visual identity and consistent user experience across the ent
 - **Structure**: Uses a `KeyboardAvoidingView` with a fixed-height header and flexible-height message list.
 - **Bubbles**: Semantic differentiation between sender (Primary blue, sharp corner) and receiver (Surface white, sharp corner).
 - **Attachments**: Standardized attachment cards with icons and metadata.
+- **Input Constraints**: 
+    - Text input limited to 100 characters with visible counter (format: "X/100").
+    - Character counter displayed below input field, right-aligned, 10px font, grey color (#64748B).
+- **Status Indicators**:
+    - Online status: Green dot (#22C55E) on avatar + green text (#16A34A) "Online now".
+    - Offline status: No dot on avatar + grey text (#64748B) "Offline".
+    - Message states: "sending" (0.7 opacity), "sent" (default), "failed" (red bubble with retry).
+- **Spacing**: Minimum 32px bottom padding above safe area for input container.
+- **Header**: Back button + avatar + name/status (no additional action buttons).
+- **Empty State**:
+    - Icon: 96x96 circular container with light blue background (#EFF6FF) containing forum icon.
+    - Title: "Start a conversation" (18px, semibold, #0F172A).
+    - Body: Dynamic text mentioning peer's name (14px, #64748B).
+    - Disclaimer: "Messages will disappear after 14 days" (12px, italic, #94A3B8).
+    - Layout: Centered with 32px horizontal padding and 48px vertical padding.
 
 ## Accessibility & Platforms
 - **Test IDs**: Interactive components use the `testID` prop.

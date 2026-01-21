@@ -49,6 +49,7 @@ export default function ChatScreen() {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [peer, setPeer] = useState(initialUser ?? null);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -175,12 +176,13 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!session?.user?.id) {
+    if (isSending || !session?.user?.id) {
       return;
     }
     if (!threadId || !message.trim()) {
       return;
     }
+    setIsSending(true);
     const content = message.trim();
     const localId = `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const optimisticMessage: ChatMessageState = {
@@ -197,8 +199,11 @@ export default function ChatScreen() {
     try {
       const created = await chatRepository.sendMessage(threadId, session.user.id, content);
       replaceMessage(localId, created);
-    } catch {
+    } catch (error) {
+      console.error('Failed to send message:', error);
       updateMessageStatus(localId, 'failed');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -235,12 +240,9 @@ export default function ChatScreen() {
                 <Text style={styles.headerName}>{displayName}</Text>
                 <MaterialIcons name="verified" size={14} color="#3B82F6" />
               </View>
-              <Text style={styles.statusText}>{isOnline ? 'Online now' : 'Offline'}</Text>
+              <Text style={isOnline ? styles.statusText : styles.offlineStatusText}>{isOnline ? 'Online now' : 'Offline'}</Text>
             </View>
           </View>
-          <Pressable style={styles.infoButton} hitSlop={8}>
-            <MaterialIcons name="info-outline" size={24} color="#64748B" />
-          </Pressable>
         </View>
       </SafeAreaView>
 
@@ -262,8 +264,13 @@ export default function ChatScreen() {
               <Text style={styles.loadingText}>{chatCopy.loading}</Text>
             </View>
           ) : (
-            <View style={styles.loadingState}>
-              <Text style={styles.loadingText}>{chatCopy.empty}</Text>
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <MaterialIcons name="forum" size={48} color="#3B82F640" />
+              </View>
+              <Text style={styles.emptyTitle}>{chatCopy.emptyState.title}</Text>
+              <Text style={styles.emptyBody}>{chatCopy.emptyState.body(displayName)}</Text>
+              <Text style={styles.emptyDisclaimer}>{chatCopy.emptyState.disclaimer}</Text>
             </View>
           )
         }
@@ -273,7 +280,7 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
@@ -281,8 +288,10 @@ export default function ChatScreen() {
               placeholderTextColor="#64748B"
               value={message}
               onChangeText={setMessage}
+              maxLength={100}
               multiline
             />
+            <Text style={styles.charCounter}>{message.length}/100</Text>
           </View>
           <Pressable style={styles.sendButton} onPress={handleSend} disabled={!message.trim()}>
             <MaterialIcons name="send" size={20} color="#FFF" />
@@ -377,11 +386,10 @@ const createStyles = (theme: ThemeColors) =>
       color: '#16A34A',
       fontWeight: '500',
     },
-    infoButton: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
+    offlineStatusText: {
+      fontSize: 11,
+      color: '#64748B',
+      fontWeight: '500',
     },
     listContent: {
       paddingHorizontal: 16,
@@ -413,6 +421,42 @@ const createStyles = (theme: ThemeColors) =>
     loadingText: {
       fontSize: 13,
       color: '#64748B',
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      paddingVertical: 48,
+    },
+    emptyIconContainer: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: '#EFF6FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 24,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#0F172A',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    emptyBody: {
+      fontSize: 14,
+      color: '#64748B',
+      lineHeight: 21,
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    emptyDisclaimer: {
+      fontSize: 12,
+      color: '#94A3B8',
+      textAlign: 'center',
+      fontStyle: 'italic',
     },
     messageRow: {
       flexDirection: 'row',
@@ -530,6 +574,12 @@ const createStyles = (theme: ThemeColors) =>
       color: '#0F172A',
       paddingTop: 0,
       paddingBottom: 0,
+    },
+    charCounter: {
+      fontSize: 10,
+      color: '#64748B',
+      alignSelf: 'flex-end',
+      marginTop: 4,
     },
     sendButton: {
       width: 40,

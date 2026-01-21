@@ -13,3 +13,4 @@ android/app/build/
 !.env.example
 .npm-cache/
 .temp/
+*.save
