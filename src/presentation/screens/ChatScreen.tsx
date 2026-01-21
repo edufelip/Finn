@@ -293,7 +293,14 @@ export default function ChatScreen() {
             />
             <Text style={styles.charCounter}>{message.length}/100</Text>
           </View>
-          <Pressable style={styles.sendButton} onPress={handleSend} disabled={!message.trim()}>
+          <Pressable 
+            style={[
+              styles.sendButton, 
+              (!message.trim() || isSending) && styles.sendButtonDisabled
+            ]} 
+            onPress={handleSend} 
+            disabled={!message.trim() || isSending}
+          >
             <MaterialIcons name="send" size={20} color="#FFF" />
           </Pressable>
         </View>
@@ -594,6 +601,12 @@ const createStyles = (theme: ThemeColors) =>
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 4,
+    },
+    sendButtonDisabled: {
+      backgroundColor: '#94A3B8',
+      opacity: 0.5,
+      shadowOpacity: 0,
+      elevation: 0,
     },
     shadowSoft: {
       shadowColor: '#000',
