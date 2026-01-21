@@ -29,7 +29,6 @@
 - TypeScript + React Native (Expo). Use 2-space indentation and semicolons.
 - Components/screens in PascalCase; hooks `useX`; `testID`s are kebab-case.
 - Keep domain interfaces in `src/domain`, concrete implementations in `src/data`, UI in `src/presentation`.
-- **No hardcoded resources**: copy lives in `src/presentation/content`, design tokens in `src/presentation/theme`, and assets in `assets/`.
 
 ## Testing Guidelines
 - Frameworks: Jest, `jest-expo`, `@testing-library/react-native`.

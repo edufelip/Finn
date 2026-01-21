@@ -37,9 +37,9 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 - **Subscriptions (`subscriptions`)**: `community_id` -> `user_id` (Unique pair).
 
 ### 6. Messaging (Direct)
-- **Threads (`chat_threads`)**: `participant_a`, `participant_b` (unique pair, no self), `last_message_at`, `last_message_preview`.
+- **Threads (`chat_threads`)**: `participant_a`, `participant_b` (ordered unique pair, no self), `last_message_at`, `last_message_preview`.
 - **Members (`chat_members`)**: `thread_id`, `user_id`, `last_read_at` (seen up to).
-- **Messages (`chat_messages`)**: `thread_id`, `sender_id`, `content`, `created_at`.
+- **Messages (`chat_messages`)**: `thread_id`, `sender_id` (non-null), `content`, `created_at`.
 
 ### 7. Moderation
 - **Moderators (`community_moderators`)**: `community_id` -> `user_id`.

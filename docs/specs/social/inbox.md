@@ -36,7 +36,7 @@ The messaging system consists of:
     - Receiver online status and verified badge.
     - Right-aligned blue bubbles for user messages.
     - Left-aligned white bubbles for contact messages.
-    - "Seen up to" read state per thread.
+    - "Seen up to" read state per thread (read receipts hidden until `last_read_at` comparison is wired).
     - Modern input bar for text-only messages.
     - `KeyboardAvoidingView` integration for seamless typing experience.
 
