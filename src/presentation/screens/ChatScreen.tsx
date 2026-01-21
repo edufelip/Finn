@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -37,7 +38,7 @@ type ChatMessageState = ChatMessage & {
 export default function ChatScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute<RouteProp<MainStackParamList, 'Chat'>>();
-  const { userId, user: initialUser } = route.params;
+  const { userId, user: initialUser, threadId: routeThreadId, isRequest } = route.params;
   const { session, isGuest, exitGuest } = useAuth();
   const { chats: chatRepository, users: userRepository } = useRepositories();
   const theme = useThemeColors();
@@ -46,10 +47,18 @@ export default function ChatScreen() {
 
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessageState[]>([]);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(routeThreadId || null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [paginationError, setPaginationError] = useState(false);
   const [peer, setPeer] = useState(initialUser ?? null);
   const [isSending, setIsSending] = useState(false);
+  const [threadStatus, setThreadStatus] = useState<'pending' | 'accepted' | 'refused'>('accepted');
+  const [isHandlingRequest, setIsHandlingRequest] = useState(false);
+
+  const loadingMoreRef = useRef(false);
+  const PAGE_SIZE = 30;
 
   useEffect(() => {
     let isMounted = true;
@@ -62,12 +71,14 @@ export default function ChatScreen() {
         const thread = await chatRepository.getOrCreateDirectThread(session.user.id, userId);
         if (!isMounted) return;
         setThreadId(thread.id);
+        setThreadStatus(thread.requestStatus);
         const [threadMessages, user] = await Promise.all([
-          chatRepository.getMessages(thread.id, 50),
+          chatRepository.getMessages(thread.id, PAGE_SIZE),
           userRepository.getUser(userId),
         ]);
         if (!isMounted) return;
         setMessages(threadMessages);
+        setHasMoreMessages(threadMessages.length === PAGE_SIZE);
         if (user) {
           setPeer(user);
         }
@@ -120,6 +131,81 @@ export default function ChatScreen() {
       replaceMessage(failed.localId, created);
     } catch {
       updateMessageStatus(failed.localId, 'failed');
+    }
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!threadId || !session?.user?.id) return;
+    setIsHandlingRequest(true);
+    try {
+      await chatRepository.acceptThreadRequest(threadId, session.user.id);
+      setThreadStatus('accepted');
+    } catch (error) {
+      console.error('Failed to accept request:', error);
+      Alert.alert(
+        'Unable to Accept Request',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsHandlingRequest(false);
+    }
+  };
+
+  const handleRefuseRequest = async () => {
+    if (!threadId || !session?.user?.id) return;
+    setIsHandlingRequest(true);
+    try {
+      await chatRepository.refuseThreadRequest(threadId, session.user.id);
+      navigation.goBack(); // Return to inbox
+    } catch (error) {
+      console.error('Failed to refuse request:', error);
+      Alert.alert(
+        'Unable to Refuse Request',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsHandlingRequest(false);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    // Use ref to prevent race conditions from multiple rapid scroll events
+    if (!threadId || loadingMoreRef.current || !hasMoreMessages || messages.length === 0) {
+      return;
+    }
+    
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    setPaginationError(false);
+    
+    try {
+      // Use the oldest message's timestamp as cursor
+      const oldestMessage = messages[0];
+      const olderMessages = await chatRepository.getMessages(
+        threadId, 
+        PAGE_SIZE, 
+        oldestMessage.createdAt
+      );
+      
+      if (olderMessages.length < PAGE_SIZE) {
+        setHasMoreMessages(false);
+      }
+      
+      // Prepend older messages with deduplication to prevent duplicates
+      // from concurrent inserts or network issues
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map(m => m.id));
+        const newMessages = olderMessages.filter(m => !existingIds.has(m.id));
+        return [...newMessages, ...prev];
+      });
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+      setPaginationError(true);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
     }
   };
 
@@ -236,10 +322,7 @@ export default function ChatScreen() {
               {isOnline ? <View style={styles.onlineDot} /> : null}
             </View>
             <View style={styles.headerInfo}>
-              <View style={styles.nameRow}>
-                <Text style={styles.headerName}>{displayName}</Text>
-                <MaterialIcons name="verified" size={14} color="#3B82F6" />
-              </View>
+              <Text style={styles.headerName}>{displayName}</Text>
               <Text style={isOnline ? styles.statusText : styles.offlineStatusText}>{isOnline ? 'Online now' : 'Offline'}</Text>
             </View>
           </View>
@@ -251,12 +334,26 @@ export default function ChatScreen() {
         renderItem={renderMessage}
         keyExtractor={(item) => item.localId ?? `${item.id}`}
         contentContainerStyle={styles.listContent}
+        onEndReached={loadMoreMessages}
+        onEndReachedThreshold={0.5}
         ListHeaderComponent={
-          <View style={styles.dateSeparator}>
-            <View style={styles.dateLine} />
-            <Text style={styles.dateText}>{chatCopy.todayLabel}</Text>
-            <View style={styles.dateLine} />
-          </View>
+          <>
+            {paginationError ? (
+              <Pressable onPress={loadMoreMessages} style={styles.errorRetryContainer}>
+                <MaterialIcons name="error-outline" size={20} color="#EF4444" />
+                <Text style={styles.errorRetryText}>{chatCopy.paginationError}</Text>
+              </Pressable>
+            ) : loadingMore && hasMoreMessages ? (
+              <View style={styles.loadingMoreContainer}>
+                <Text style={styles.loadingMoreText}>{chatCopy.loadingMore}</Text>
+              </View>
+            ) : null}
+            <View style={styles.dateSeparator}>
+              <View style={styles.dateLine} />
+              <Text style={styles.dateText}>{chatCopy.todayLabel}</Text>
+              <View style={styles.dateLine} />
+            </View>
+          </>
         }
         ListEmptyComponent={
           loading ? (
@@ -276,6 +373,39 @@ export default function ChatScreen() {
         }
       />
 
+      {isRequest && threadStatus === 'pending' ? (
+        <View style={styles.requestContainer}>
+          <View style={styles.requestDisclaimerBox}>
+            <MaterialIcons name="info-outline" size={20} color="#64748B" />
+            <Text style={styles.requestDisclaimerText}>
+              {chatCopy.request.disclaimer}
+            </Text>
+          </View>
+          
+          <View style={styles.requestActions}>
+            <Pressable 
+              style={[styles.requestButton, styles.refuseButton]}
+              onPress={handleRefuseRequest}
+              disabled={isHandlingRequest}
+            >
+              <Text style={styles.refuseButtonText}>
+                {chatCopy.request.refuse}
+              </Text>
+            </Pressable>
+            
+            <Pressable 
+              style={[styles.requestButton, styles.acceptButton]}
+              onPress={handleAcceptRequest}
+              disabled={isHandlingRequest}
+            >
+              <Text style={styles.acceptButtonText}>
+                {chatCopy.request.accept}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
@@ -284,22 +414,23 @@ export default function ChatScreen() {
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
-              placeholder={chatCopy.inputPlaceholder}
+              placeholder={threadStatus === 'accepted' ? chatCopy.inputPlaceholder : chatCopy.request.cannotSend}
               placeholderTextColor="#64748B"
               value={message}
               onChangeText={setMessage}
               maxLength={100}
               multiline
+              editable={threadStatus === 'accepted'}
             />
             <Text style={styles.charCounter}>{message.length}/100</Text>
           </View>
           <Pressable 
             style={[
               styles.sendButton, 
-              (!message.trim() || isSending) && styles.sendButtonDisabled
+              (!message.trim() || isSending || threadStatus !== 'accepted') && styles.sendButtonDisabled
             ]} 
             onPress={handleSend} 
-            disabled={!message.trim() || isSending}
+            disabled={!message.trim() || isSending || threadStatus !== 'accepted'}
           >
             <MaterialIcons name="send" size={20} color="#FFF" />
           </Pressable>
@@ -378,11 +509,6 @@ const createStyles = (theme: ThemeColors) =>
     headerInfo: {
       gap: 2,
     },
-    nameRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
     headerName: {
       fontSize: 14,
       fontWeight: 'bold',
@@ -402,6 +528,34 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 16,
       paddingBottom: 24,
       flexGrow: 1,
+    },
+    loadingMoreContainer: {
+      alignItems: 'center',
+      paddingVertical: 12,
+      marginBottom: 8,
+    },
+    loadingMoreText: {
+      fontSize: 12,
+      color: '#64748B',
+      fontStyle: 'italic',
+    },
+    errorRetryContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      marginBottom: 8,
+      gap: 8,
+      backgroundColor: '#FEF2F2',
+      marginHorizontal: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#FEE2E2',
+    },
+    errorRetryText: {
+      fontSize: 12,
+      color: '#DC2626',
+      fontWeight: '500',
     },
     dateSeparator: {
       flexDirection: 'row',
@@ -467,7 +621,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     messageRow: {
       flexDirection: 'row',
-      marginBottom: 20,
+      marginBottom: 8,
       maxWidth: '85%',
     },
     myMessageRow: {
@@ -621,5 +775,59 @@ const createStyles = (theme: ThemeColors) =>
       shadowOpacity: 0.2,
       shadowRadius: 10,
       elevation: 4,
+    },
+    requestContainer: {
+      backgroundColor: '#FFF',
+      borderTopWidth: 1,
+      borderTopColor: '#F1F5F9',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      gap: 12,
+    },
+    requestDisclaimerBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      backgroundColor: '#F8FAFC',
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#E2E8F0',
+    },
+    requestDisclaimerText: {
+      flex: 1,
+      fontSize: 13,
+      color: '#475569',
+      lineHeight: 18,
+    },
+    requestActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    requestButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    refuseButton: {
+      backgroundColor: '#FFF',
+      borderWidth: 1,
+      borderColor: '#E2E8F0',
+    },
+    acceptButton: {
+      backgroundColor: '#3B82F6',
+    },
+    refuseButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#64748B',
+    },
+    acceptButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#FFF',
     },
   });

@@ -1,5 +1,5 @@
 import type { ChatMessage, ChatThread } from '../../domain/models/chat';
-import type { ChatRepository } from '../../domain/repositories/ChatRepository';
+import type { ChatRepository, InboxFilter } from '../../domain/repositories/ChatRepository';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
 
@@ -10,9 +10,12 @@ type ChatThreadRow = {
   id: string;
   participant_a: string;
   participant_b: string;
+  created_by?: string;
   created_at?: string;
   last_message_at?: string | null;
   last_message_preview?: string | null;
+  request_status: string;
+  archived_by: string[];
 };
 
 type ChatMessageRow = {
@@ -23,15 +26,18 @@ type ChatMessageRow = {
   created_at: string;
 };
 
-const THREAD_FIELDS = 'id, participant_a, participant_b, created_at, last_message_at, last_message_preview';
+const THREAD_FIELDS = 'id, participant_a, participant_b, created_by, created_at, last_message_at, last_message_preview, request_status, archived_by';
 
 const toThread = (row: ChatThreadRow): ChatThread => ({
   id: row.id,
   participantA: row.participant_a,
   participantB: row.participant_b,
+  createdBy: row.created_by,
   createdAt: row.created_at,
   lastMessageAt: row.last_message_at ?? null,
   lastMessagePreview: row.last_message_preview ?? null,
+  requestStatus: (row.request_status || 'accepted') as 'pending' | 'accepted' | 'refused',
+  archivedBy: row.archived_by || [],
 });
 
 const toMessage = (row: ChatMessageRow): ChatMessage => ({
@@ -107,19 +113,27 @@ export class SupabaseChatRepository implements ChatRepository {
     return toThread(created);
   }
 
-  async getMessages(threadId: string, limit = 50): Promise<ChatMessage[]> {
+  async getMessages(threadId: string, limit = 50, beforeTimestamp?: string): Promise<ChatMessage[]> {
     // Calculate the cutoff date based on retention policy
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - MESSAGE_RETENTION_DAYS);
     const cutoffISO = cutoffDate.toISOString();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from(TABLES.chatMessages)
       .select('*')
       .eq('thread_id', threadId)
       .gte('created_at', cutoffISO)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    // Add cursor-based pagination if beforeTimestamp is provided
+    if (beforeTimestamp) {
+      query = query.lt('created_at', beforeTimestamp);
+    }
+
+    query = query.limit(limit);
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;
@@ -168,6 +182,156 @@ export class SupabaseChatRepository implements ChatRepository {
       .update({ last_read_at: timestamp })
       .eq('thread_id', threadId)
       .eq('user_id', userId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async getMemberStatus(threadId: string, userId: string): Promise<{ lastReadAt: string | null } | null> {
+    const { data, error } = await supabase
+      .from(TABLES.chatMembers)
+      .select('last_read_at')
+      .eq('thread_id', threadId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? { lastReadAt: data.last_read_at } : null;
+  }
+
+  async getThreadsForUser(userId: string, filter: InboxFilter): Promise<ChatThread[]> {
+    let query = supabase
+      .from(TABLES.chatThreads)
+      .select(THREAD_FIELDS)
+      .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
+      .order('last_message_at', { ascending: false, nullsFirst: false });
+
+    if (filter === 'primary') {
+      // Primary: accepted threads that are not archived by this user
+      query = query
+        .eq('request_status', 'accepted')
+        .not('archived_by', 'cs', `{${userId}}`);
+    } else if (filter === 'requests') {
+      // Requests: pending threads where user is recipient (not creator) and not archived
+      query = query
+        .eq('request_status', 'pending')
+        .neq('created_by', userId)
+        .not('archived_by', 'cs', `{${userId}}`);
+    } else if (filter === 'archived') {
+      // Archived: threads archived by this user
+      query = query.contains('archived_by', [userId]);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const rows = (data ?? []) as ChatThreadRow[];
+    return rows.map((row) => toThread(row));
+  }
+
+  async acceptThreadRequest(threadId: string, userId: string): Promise<void> {
+    // Only the recipient (non-creator) can accept a request
+    const { data: thread, error: fetchError } = await supabase
+      .from(TABLES.chatThreads)
+      .select('participant_a, participant_b, created_by, request_status')
+      .eq('id', threadId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (!thread) {
+      throw new Error('Thread not found');
+    }
+
+    // Validate user is a participant
+    if (thread.participant_a !== userId && thread.participant_b !== userId) {
+      throw new Error('User is not a participant in this thread');
+    }
+
+    if (thread.created_by === userId) {
+      throw new Error('Cannot accept own message request');
+    }
+
+    if (thread.request_status !== 'pending') {
+      throw new Error('Thread is not in pending status');
+    }
+
+    const { error } = await supabase
+      .from(TABLES.chatThreads)
+      .update({ request_status: 'accepted' })
+      .eq('id', threadId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async refuseThreadRequest(threadId: string, userId: string): Promise<void> {
+    // Only the recipient (non-creator) can refuse a request
+    const { data: thread, error: fetchError } = await supabase
+      .from(TABLES.chatThreads)
+      .select('participant_a, participant_b, created_by, request_status')
+      .eq('id', threadId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (!thread) {
+      throw new Error('Thread not found');
+    }
+
+    // Validate user is a participant
+    if (thread.participant_a !== userId && thread.participant_b !== userId) {
+      throw new Error('User is not a participant in this thread');
+    }
+
+    if (thread.created_by === userId) {
+      throw new Error('Cannot refuse own message request');
+    }
+
+    if (thread.request_status !== 'pending') {
+      throw new Error('Thread is not in pending status');
+    }
+
+    const { error } = await supabase
+      .from(TABLES.chatThreads)
+      .update({ request_status: 'refused' })
+      .eq('id', threadId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async archiveThread(threadId: string, userId: string): Promise<void> {
+    // Use atomic RPC function to prevent race conditions
+    const { error } = await supabase.rpc('append_to_archived_by', {
+      thread_id_param: threadId,
+      user_id_param: userId,
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async unarchiveThread(threadId: string, userId: string): Promise<void> {
+    // Use atomic RPC function to prevent race conditions
+    const { error } = await supabase.rpc('remove_from_archived_by', {
+      thread_id_param: threadId,
+      user_id_param: userId,
+    });
 
     if (error) {
       throw error;

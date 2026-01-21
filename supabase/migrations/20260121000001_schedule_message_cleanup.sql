@@ -21,7 +21,7 @@ begin
   perform cron.schedule(
     'cleanup-old-chat-messages',     -- Job name
     '0 2 * * *',                      -- Cron schedule: Daily at 2 AM UTC
-    $$select public.delete_old_chat_messages();$$  -- SQL command to execute
+    $CRON$select public.delete_old_chat_messages();$CRON$  -- SQL command to execute
   );
   raise notice 'Successfully scheduled cleanup-old-chat-messages job';
 exception when others then

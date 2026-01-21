@@ -623,6 +623,8 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     // Chat
     'chat.input.placeholder': 'Message...',
     'chat.loading': 'Loading messages...',
+    'chat.loadingMore': 'Loading older messages...',
+    'chat.paginationError': 'Failed to load. Tap to retry',
     'chat.empty': 'No messages yet.',
     'chat.emptyState.title': 'Start a conversation',
     'chat.emptyState.body': 'No messages yet. Send a message to start a conversation with {name}.',
@@ -630,6 +632,10 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'chat.todayLabel': 'TODAY',
     'chat.status.sending': 'Sending...',
     'chat.status.failed': 'Failed - Tap to retry',
+    'chat.request.disclaimer': "This person isn't in your network. Accept to start chatting, or refuse to ignore.",
+    'chat.request.accept': 'Accept',
+    'chat.request.refuse': 'Refuse',
+    'chat.request.cannotSend': 'Accept the request to send messages',
 
     // Onboarding
     'onboarding.skip': 'Skip',
