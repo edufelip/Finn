@@ -346,6 +346,7 @@ create table if not exists public.chat_threads (
   created_at timestamptz not null default now(),
   last_message_at timestamptz,
   last_message_preview text,
+  last_message_sender_id uuid references public.profiles(id) on delete set null,
   constraint chat_threads_no_self check (participant_a <> participant_b),
   constraint chat_threads_ordered check (participant_a < participant_b),
   unique (participant_a, participant_b)

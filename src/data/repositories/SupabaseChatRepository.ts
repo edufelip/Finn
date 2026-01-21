@@ -14,6 +14,7 @@ type ChatThreadRow = {
   created_at?: string;
   last_message_at?: string | null;
   last_message_preview?: string | null;
+  last_message_sender_id?: string | null;
   request_status: string;
   archived_by: string[];
 };
@@ -26,7 +27,8 @@ type ChatMessageRow = {
   created_at: string;
 };
 
-const THREAD_FIELDS = 'id, participant_a, participant_b, created_by, created_at, last_message_at, last_message_preview, request_status, archived_by';
+const THREAD_FIELDS =
+  'id, participant_a, participant_b, created_by, created_at, last_message_at, last_message_preview, last_message_sender_id, request_status, archived_by';
 
 const toThread = (row: ChatThreadRow): ChatThread => ({
   id: row.id,
@@ -36,6 +38,7 @@ const toThread = (row: ChatThreadRow): ChatThread => ({
   createdAt: row.created_at,
   lastMessageAt: row.last_message_at ?? null,
   lastMessagePreview: row.last_message_preview ?? null,
+  lastMessageSenderId: row.last_message_sender_id ?? null,
   requestStatus: (row.request_status || 'accepted') as 'pending' | 'accepted' | 'refused',
   archivedBy: row.archived_by || [],
 });
@@ -163,6 +166,7 @@ export class SupabaseChatRepository implements ChatRepository {
       .update({
         last_message_at: data.created_at,
         last_message_preview: content.slice(0, 120),
+        last_message_sender_id: senderId,
       })
       .eq('id', threadId);
 

@@ -40,7 +40,7 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 - **Threads (`chat_threads`)**: 
   - `participant_a`, `participant_b` (ordered unique pair, no self)
   - `created_by` (UUID, references the user who initiated the thread)
-  - `last_message_at`, `last_message_preview`
+  - `last_message_at`, `last_message_preview`, `last_message_sender_id`
   - **`request_status`** (TEXT): 'pending' | 'accepted' | 'refused'
   - **`archived_by`** (UUID[]): Array of user IDs who archived this thread
 - **Members (`chat_members`)**: `thread_id`, `user_id`, `last_read_at` (seen up to).

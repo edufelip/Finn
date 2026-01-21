@@ -35,6 +35,7 @@ export class MockChatRepository implements ChatRepository {
       createdAt: new Date().toISOString(),
       lastMessageAt: null,
       lastMessagePreview: null,
+      lastMessageSenderId: null,
       requestStatus: hasFollow ? 'accepted' : 'pending',
       archivedBy: [],
     };
@@ -64,6 +65,7 @@ export class MockChatRepository implements ChatRepository {
       if (thread.id === threadId) {
         thread.lastMessageAt = message.createdAt;
         thread.lastMessagePreview = content.slice(0, 120);
+        thread.lastMessageSenderId = senderId;
         threads.set(key, thread);
       }
     });

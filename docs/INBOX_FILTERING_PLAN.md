@@ -260,24 +260,23 @@ useEffect(() => {
 >
 ```
 
-4. **Update badge count calculation:**
+4. **Update badge indicator logic (Inbox tab icon):**
 ```typescript
-const requestCount = useMemo(() => {
-  // Fetch count of pending requests for this user
-  return threads.filter(t => 
-    t.requestStatus === 'pending' && 
-    t.createdBy !== session?.user?.id
-  ).length;
+const hasUnread = useMemo(() => {
+  // Only unread incoming messages should trigger the badge
+  return threads.some(t =>
+    t.requestStatus === 'accepted' &&
+    !t.archivedBy.includes(session?.user?.id ?? '') &&
+    t.lastMessageSenderId &&
+    t.lastMessageSenderId !== session?.user?.id &&
+    isUnread(t)
+  );
 }, [threads, session?.user?.id]);
 ```
 
-5. **Display request badge on Requests tab:**
+5. **Remove request count badge on Requests tab:**
 ```typescript
-{requestCount > 0 && activeTab === 'requests' ? (
-  <View style={styles.unreadBadge}>
-    <Text style={styles.unreadBadgeText}>{requestCount}</Text>
-  </View>
-) : null}
+// Requests tab no longer shows a numeric badge
 ```
 
 #### 4.2 Add swipe actions for archiving (Future Enhancement)

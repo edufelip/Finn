@@ -111,16 +111,19 @@ export default function InboxScreen() {
           const peer = peerMap.get(peerId) ?? null;
           const memberStatus = await chatRepository.getMemberStatus(thread.id, session.user.id);
 
-          // Calculate unread status
+          // Calculate unread status (only when the last message is from someone else)
           let unread = false;
           if (thread.lastMessageAt) {
             const lastReadAt = memberStatus?.lastReadAt;
-            if (!lastReadAt) {
-              // Never read, so it's unread
-              unread = true;
-            } else {
-              // Compare timestamps - unread if last message is newer than last read
-              unread = new Date(thread.lastMessageAt) > new Date(lastReadAt);
+            const lastSenderId = thread.lastMessageSenderId;
+            if (lastSenderId && lastSenderId !== session.user.id) {
+              if (!lastReadAt) {
+                // Never read, so it's unread
+                unread = true;
+              } else {
+                // Compare timestamps - unread if last message is newer than last read
+                unread = new Date(thread.lastMessageAt) > new Date(lastReadAt);
+              }
             }
           }
 
@@ -252,27 +255,6 @@ export default function InboxScreen() {
     return result;
   }, [messages]);
 
-  const unreadCount = useMemo(
-    () => {
-      if (activeTab === 'primary') {
-        return filteredThreads.filter((thread) => thread.unread).length;
-      }
-      return 0;
-    },
-    [filteredThreads, activeTab]
-  );
-
-  const requestCount = useMemo(
-    () => {
-      // Count pending requests (for badge on Requests tab)
-      if (activeTab === 'requests') {
-        return filteredThreads.length; // All threads in requests tab are pending
-      }
-      return 0;
-    },
-    [filteredThreads, activeTab]
-  );
-
   // Update global badge state whenever we have unread messages or requests
   useEffect(() => {
     const totalUnread = allThreads.filter((thread) => {
@@ -284,17 +266,7 @@ export default function InboxScreen() {
       return false;
     }).length;
 
-    const totalRequests = allThreads.filter((thread) => {
-      if (!session?.user?.id) return false;
-      // Count pending requests (not creator, not archived)
-      return (
-        thread.requestStatus === 'pending' &&
-        thread.createdBy !== session.user.id &&
-        !thread.archivedBy.includes(session.user.id)
-      );
-    }).length;
-
-    setHasUnread(totalUnread > 0 || totalRequests > 0);
+    setHasUnread(totalUnread > 0);
   }, [allThreads, session?.user?.id, setHasUnread]);
 
   const animateIndicator = (key: InboxTabKey) => {
@@ -446,11 +418,6 @@ export default function InboxScreen() {
               <Animated.Text style={[styles.tabLabel, primaryLabelStyle]}>
                 {inboxCopy.tabs.primary}
               </Animated.Text>
-              {unreadCount > 0 && activeTab === 'primary' ? (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-                </View>
-              ) : null}
             </Pressable>
             <Pressable
               testID={inboxCopy.testIds.tabRequests}
@@ -475,11 +442,6 @@ export default function InboxScreen() {
               <Animated.Text style={[styles.tabLabel, requestsLabelStyle]}>
                 {inboxCopy.tabs.requests}
               </Animated.Text>
-              {requestCount > 0 && activeTab === 'requests' ? (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadBadgeText}>{requestCount}</Text>
-                </View>
-              ) : null}
             </Pressable>
             <Pressable
               testID={inboxCopy.testIds.tabArchived}
@@ -633,23 +595,6 @@ const createStyles = (theme: ThemeColors) =>
       backgroundColor: theme.primary,
       borderRadius: 1,
       pointerEvents: 'none',
-    },
-    unreadBadge: {
-      position: 'absolute',
-      top: -6,
-      right: -18,
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: theme.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 4,
-    },
-    unreadBadgeText: {
-      fontSize: 10,
-      color: theme.onPrimary,
-      fontWeight: '700',
     },
     listContent: {
       backgroundColor: theme.background,

@@ -9,7 +9,7 @@ Provides a UI for users to view and manage their direct messages, message reques
   - **Requests**: Pending message requests from non-followed users  
   - **Archived**: Conversations archived by the user
 - **FR-INBX-02**: The system shall allow users to search for conversations by name or message content.
-- **FR-INBX-03**: The system shall display unread indicators for new messages.
+- **FR-INBX-03**: The system shall display unread indicators for new messages from other users (not the current user's own messages).
 - **FR-INBX-04**: The system shall show the online status of conversation participants.
 - **FR-INBX-05**: The system shall restrict inbox access to authenticated users.
 - **FR-INBX-06**: The system shall support 1:1 direct message threads only (no group chats).
@@ -31,7 +31,7 @@ Provides a UI for users to view and manage their direct messages, message reques
 3. System filters the conversation list in real-time based on the query.
 
 ### UC-INBX-02: View Unread Messages
-1. User sees a badge on the "Primary" tab indicating the number of unread conversations.
+1. User sees a red dot on the Inbox tab icon when unread incoming messages exist.
 2. User identifies unread conversations by a vertical blue bar.
 
 ### UC-INBX-03: Direct Message from Profile
@@ -92,7 +92,7 @@ The messaging system consists of:
     - Empty state with forum icon, conversation prompt, and 14-day retention disclaimer.
 
 Data model (direct messages):
-- `chat_threads`: stores the 1:1 participant pair, last message preview, **request_status**, and **archived_by** array.
+- `chat_threads`: stores the 1:1 participant pair, last message preview, **last_message_sender_id**, **request_status**, and **archived_by** array.
 - `chat_members`: stores per-user `last_read_at` (seen up to).
 - `chat_messages`: stores message content and sender per thread.
 
@@ -117,5 +117,5 @@ Data model (direct messages):
     - Empty state displays: "Messages will disappear after 14 days"
     - Users are informed upfront about the ephemeral nature of messages.
 - **Thread Management**: 
-    - When all messages in a thread are deleted, the thread's `last_message_preview` is cleared.
+    - When all messages in a thread are deleted, the thread's `last_message_preview` and `last_message_sender_id` are cleared.
     - Empty threads remain visible to preserve conversation history metadata.

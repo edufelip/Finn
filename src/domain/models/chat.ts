@@ -8,6 +8,7 @@ export type ChatThread = {
   createdAt?: string;
   lastMessageAt?: string | null;
   lastMessagePreview?: string | null;
+  lastMessageSenderId?: string | null;
   requestStatus: ChatThreadStatus;
   archivedBy: string[];
 };

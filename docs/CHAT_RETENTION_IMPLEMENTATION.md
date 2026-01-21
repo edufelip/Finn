@@ -40,6 +40,7 @@ This document summarizes the implementation of the 14-day chat message retention
 - Created `delete_old_chat_messages()` function that:
   - Deletes messages older than 14 days
   - Updates thread previews for affected threads
+  - Updates `last_message_sender_id` for affected threads
   - Returns count of deleted messages
 - Added index on `created_at` for query optimization
 - Includes setup instructions for pg_cron scheduling

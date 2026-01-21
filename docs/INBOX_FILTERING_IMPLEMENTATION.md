@@ -122,6 +122,10 @@ This document tracks the implementation of message request filtering and convers
   - Added `getUsersBatch()` method to UserRepository
   - Batch fetches all peer users in single query
   - Reduced from N queries to 1 query (50x improvement for 50 threads)
+- [x] **P0-6**: Correct unread badge for incoming-only messages
+  - Added `last_message_sender_id` to chat_threads
+  - Unread badge ignores messages sent by the current user
+  - Created migration `20260121123000_chat_threads_last_message_sender.sql`
 
 ### Phase 11: UX Enhancements ✅
 - [x] **Loading State**: Added centered ActivityIndicator during data fetch
@@ -129,7 +133,7 @@ This document tracks the implementation of message request filtering and convers
 - [x] **Real-Time Updates**: Supabase realtime subscription for new messages/requests
 - [x] **Unread Badge**: Red dot indicator on Inbox tab icon when unread messages exist
   - Created InboxBadgeProvider context
-  - Badge shows for unread primary messages OR pending requests
+  - Badge shows only for unread incoming messages
   - Updates in real-time as messages arrive
 
 ---
@@ -168,6 +172,7 @@ This document tracks the implementation of message request filtering and convers
 -- New columns
 request_status TEXT DEFAULT 'accepted' NOT NULL  -- 'pending', 'accepted', 'refused'
 archived_by UUID[] DEFAULT '{}' NOT NULL         -- Array of user IDs
+last_message_sender_id UUID                     -- Sender of latest message
 
 -- New indexes
 idx_chat_threads_request_status (request_status)
@@ -210,6 +215,7 @@ idx_chat_threads_participant_b (participant_b)
 ### Database
 - `supabase/migrations/20260121010000_inbox_filtering.sql`
 - `supabase/migrations/20260121020000_atomic_array_operations.sql` (new - atomic operations)
+- `supabase/migrations/20260121123000_chat_threads_last_message_sender.sql` (new - sender tracking)
 
 ### Documentation
 - `docs/specs/social/inbox.md`

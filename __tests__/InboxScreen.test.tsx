@@ -6,6 +6,8 @@ import { inboxCopy } from '../src/presentation/content/inboxCopy';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { InboxBadgeProvider } from '../src/app/providers/InboxBadgeProvider';
 
+const mockSetHasUnread = jest.fn();
+
 jest.mock('@react-navigation/native', () => ({
   useIsFocused: () => true,
   useNavigation: () => ({
@@ -27,6 +29,13 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
   }),
 }));
 
+jest.mock('../src/app/providers/InboxBadgeProvider', () => ({
+  useInboxBadge: () => ({
+    setHasUnread: mockSetHasUnread,
+  }),
+  InboxBadgeProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 const mockChatRepo = {
   getThreadsForUser: jest.fn().mockResolvedValue([]),
   getMessages: jest.fn().mockResolvedValue([]),
@@ -41,6 +50,10 @@ const mockUserRepo = {
 };
 
 describe('InboxScreen', () => {
+  beforeEach(() => {
+    mockSetHasUnread.mockClear();
+  });
+
   it('renders header and tabs', () => {
     const { getByText, getByTestId } = render(
       <RepositoryProvider overrides={{ chats: mockChatRepo, users: mockUserRepo }}>
@@ -76,6 +89,51 @@ describe('InboxScreen', () => {
     await waitFor(() => {
       expect(getByText(inboxCopy.empty.title)).toBeTruthy();
       expect(getByText(inboxCopy.empty.body)).toBeTruthy();
+    });
+  });
+
+  it('does not set unread badge when last message is from the current user', async () => {
+    const now = new Date().toISOString();
+    const chatRepo = {
+      ...mockChatRepo,
+      getThreadsForUser: jest.fn().mockImplementation((_userId, filter) => {
+        if (filter === 'primary') {
+          return Promise.resolve([
+            {
+              id: 'thread-1',
+              participantA: 'user-1',
+              participantB: 'user-2',
+              createdBy: 'user-1',
+              createdAt: now,
+              lastMessageAt: now,
+              lastMessagePreview: 'Hello',
+              lastMessageSenderId: 'user-1',
+              requestStatus: 'accepted',
+              archivedBy: [],
+            },
+          ]);
+        }
+        return Promise.resolve([]);
+      }),
+      getMemberStatus: jest.fn().mockResolvedValue({ lastReadAt: null }),
+    };
+
+    const userRepo = {
+      ...mockUserRepo,
+      getUsersBatch: jest.fn().mockResolvedValue(new Map([['user-2', { id: 'user-2', name: 'User 2' }]])),
+    };
+
+    render(
+      <RepositoryProvider overrides={{ chats: chatRepo, users: userRepo }}>
+        <InboxBadgeProvider>
+          <InboxScreen />
+        </InboxBadgeProvider>
+      </RepositoryProvider>
+    );
+
+    await waitFor(() => {
+      expect(mockSetHasUnread).toHaveBeenCalled();
+      expect(mockSetHasUnread).not.toHaveBeenCalledWith(true);
     });
   });
 });
