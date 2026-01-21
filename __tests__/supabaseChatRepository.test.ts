@@ -105,4 +105,43 @@ describe('SupabaseChatRepository', () => {
     expect(updateThread).toHaveBeenCalled();
     expect(updateMember).toHaveBeenCalled();
   });
+
+  it('returns messages in chronological order', async () => {
+    const limit = jest.fn().mockResolvedValue({
+      data: [
+        {
+          id: 2,
+          thread_id: 'thread-1',
+          sender_id: 'user-1',
+          content: 'newer',
+          created_at: '2024-01-02T00:00:00.000Z',
+        },
+        {
+          id: 1,
+          thread_id: 'thread-1',
+          sender_id: 'user-1',
+          content: 'older',
+          created_at: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+    const order = jest.fn().mockReturnValue({ limit });
+    const eq = jest.fn().mockReturnValue({ order });
+    const select = jest.fn().mockReturnValue({ eq });
+
+    supabase.from.mockImplementation((table: string) => {
+      if (table === TABLES.chatMessages) {
+        return { select };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const repo = new SupabaseChatRepository();
+    const messages = await repo.getMessages('thread-1', 2);
+
+    expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(messages[0].id).toBe(1);
+    expect(messages[1].id).toBe(2);
+  });
 });

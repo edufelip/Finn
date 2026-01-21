@@ -620,6 +620,14 @@ export const strings: Record<Locale, Record<string, TranslationValue>> = {
     'postComments.alert.offline.message': 'Your comment will be posted when you are back online.',
     'postComments.alert.commentFailed.title': 'Failed to comment',
 
+    // Chat
+    'chat.input.placeholder': 'Message...',
+    'chat.loading': 'Loading messages...',
+    'chat.empty': 'No messages yet.',
+    'chat.todayLabel': 'TODAY',
+    'chat.status.sending': 'Sending...',
+    'chat.status.failed': 'Failed - Tap to retry',
+
     // Onboarding
     'onboarding.skip': 'Skip',
     'onboarding.slides.discover.title': 'Discover Your Circle',

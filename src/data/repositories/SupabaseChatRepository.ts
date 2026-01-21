@@ -109,14 +109,15 @@ export class SupabaseChatRepository implements ChatRepository {
       .from(TABLES.chatMessages)
       .select('*')
       .eq('thread_id', threadId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) {
       throw error;
     }
 
-    return (data ?? []).map((row) => toMessage(row as ChatMessageRow));
+    const rows = (data ?? []) as ChatMessageRow[];
+    return rows.reverse().map((row) => toMessage(row));
   }
 
   async sendMessage(threadId: string, senderId: string, content: string): Promise<ChatMessage> {
@@ -134,13 +135,17 @@ export class SupabaseChatRepository implements ChatRepository {
       throw error;
     }
 
-    await supabase
+    const { error: threadError } = await supabase
       .from(TABLES.chatThreads)
       .update({
         last_message_at: data.created_at,
         last_message_preview: content.slice(0, 120),
       })
       .eq('id', threadId);
+
+    if (threadError) {
+      throw threadError;
+    }
 
     await this.markThreadRead(threadId, senderId, data.created_at);
 

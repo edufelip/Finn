@@ -23,19 +23,29 @@ import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { isUserOnline } from '../../domain/presence';
 import type { ChatMessage } from '../../domain/models/chat';
+import GuestGateScreen from '../components/GuestGateScreen';
+import { guestCopy } from '../content/guestCopy';
+import { chatCopy } from '../content/chatCopy';
+
+type MessageStatus = 'sending' | 'sent' | 'failed';
+
+type ChatMessageState = ChatMessage & {
+  localId?: string;
+  status?: MessageStatus;
+};
 
 export default function ChatScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute<RouteProp<MainStackParamList, 'Chat'>>();
   const { userId, user: initialUser } = route.params;
-  const { session } = useAuth();
+  const { session, isGuest, exitGuest } = useAuth();
   const { chats: chatRepository, users: userRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
 
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessageState[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [peer, setPeer] = useState(initialUser ?? null);
@@ -53,7 +63,7 @@ export default function ChatScreen() {
         setThreadId(thread.id);
         const [threadMessages, user] = await Promise.all([
           chatRepository.getMessages(thread.id, 50),
-          peer ? Promise.resolve(peer) : userRepository.getUser(userId),
+          userRepository.getUser(userId),
         ]);
         if (!isMounted) return;
         setMessages(threadMessages);
@@ -71,14 +81,60 @@ export default function ChatScreen() {
     return () => {
       isMounted = false;
     };
-  }, [chatRepository, session?.user?.id, userId, userRepository, peer]);
+  }, [chatRepository, session?.user?.id, userId, userRepository]);
 
   const displayName = peer?.name || commonCopy.userFallback;
   const displayPhoto = peer?.photoUrl;
   const isOnline = peer ? isUserOnline(peer) : false;
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const formatTime = (timestamp: string) =>
+    new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const updateMessageStatus = (localId: string | undefined, status: MessageStatus) => {
+    if (!localId) return;
+    setMessages((prev) =>
+      prev.map((current) => (current.localId === localId ? { ...current, status } : current))
+    );
+  };
+
+  const replaceMessage = (localId: string | undefined, created: ChatMessage) => {
+    if (!localId) return;
+    setMessages((prev) =>
+      prev.map((current) =>
+        current.localId === localId ? { ...created, status: 'sent' } : current
+      )
+    );
+  };
+
+  const handleRetry = async (failed: ChatMessageState) => {
+    if (!session?.user?.id || !threadId) {
+      return;
+    }
+    if (failed.status !== 'failed') {
+      return;
+    }
+    updateMessageStatus(failed.localId, 'sending');
+    try {
+      const created = await chatRepository.sendMessage(threadId, session.user.id, failed.content);
+      replaceMessage(failed.localId, created);
+    } catch {
+      updateMessageStatus(failed.localId, 'failed');
+    }
+  };
+
+  const renderMessage = ({ item }: { item: ChatMessageState }) => {
     const isMe = item.senderId === session?.user?.id;
+    const status: MessageStatus = item.status ?? 'sent';
+    const showFailure = isMe && status === 'failed';
+    const showSending = isMe && status === 'sending';
+    let statusLabel = formatTime(item.createdAt);
+    if (isMe) {
+      if (showSending) {
+        statusLabel = chatCopy.status.sending;
+      } else if (showFailure) {
+        statusLabel = chatCopy.status.failed;
+      }
+    }
     return (
       <View style={[styles.messageRow, isMe ? styles.myMessageRow : styles.otherMessageRow]}>
         {!isMe && (
@@ -93,24 +149,25 @@ export default function ChatScreen() {
           </View>
         )}
         <View style={styles.bubbleStack}>
-          <View
+          <Pressable
+            disabled={!showFailure}
+            onPress={() => handleRetry(item)}
             style={[
               styles.bubble,
               isMe ? styles.myBubble : styles.otherBubble,
               isMe ? styles.shadowMyBubble : styles.shadowSoft,
+              showSending && styles.sendingBubble,
+              showFailure && styles.failedBubble,
             ]}
           >
             <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.otherMessageText]}>
               {item.content}
             </Text>
-          </View>
+          </Pressable>
           <View style={[styles.timeRow, isMe && styles.myTimeRow]}>
-            <Text style={styles.timeText}>
-              {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <Text style={[styles.timeText, showFailure && styles.failedText]}>
+              {statusLabel}
             </Text>
-            {isMe && (
-              <MaterialIcons name="done-all" size={14} color="#3B82F6" style={styles.readReceipt} />
-            )}
           </View>
         </View>
       </View>
@@ -125,14 +182,35 @@ export default function ChatScreen() {
       return;
     }
     const content = message.trim();
+    const localId = `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const optimisticMessage: ChatMessageState = {
+      id: -Date.now(),
+      threadId,
+      senderId: session.user.id,
+      content,
+      createdAt: new Date().toISOString(),
+      status: 'sending',
+      localId,
+    };
     setMessage('');
+    setMessages((prev) => [...prev, optimisticMessage]);
     try {
       const created = await chatRepository.sendMessage(threadId, session.user.id, content);
-      setMessages((prev) => [...prev, created]);
+      replaceMessage(localId, created);
     } catch {
-      setMessage(content);
+      updateMessageStatus(localId, 'failed');
     }
   };
+
+  if (isGuest) {
+    return (
+      <GuestGateScreen
+        title={guestCopy.restricted.title(guestCopy.features.inbox)}
+        body={guestCopy.restricted.body(guestCopy.features.inbox)}
+        onSignIn={() => void exitGuest()}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -169,23 +247,23 @@ export default function ChatScreen() {
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => `${item.id}`}
+        keyExtractor={(item) => item.localId ?? `${item.id}`}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.dateSeparator}>
             <View style={styles.dateLine} />
-            <Text style={styles.dateText}>TODAY</Text>
+            <Text style={styles.dateText}>{chatCopy.todayLabel}</Text>
             <View style={styles.dateLine} />
           </View>
         }
         ListEmptyComponent={
           loading ? (
             <View style={styles.loadingState}>
-              <Text style={styles.loadingText}>Loading messages...</Text>
+              <Text style={styles.loadingText}>{chatCopy.loading}</Text>
             </View>
           ) : (
             <View style={styles.loadingState}>
-              <Text style={styles.loadingText}>No messages yet.</Text>
+              <Text style={styles.loadingText}>{chatCopy.empty}</Text>
             </View>
           )
         }
@@ -199,7 +277,7 @@ export default function ChatScreen() {
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
-              placeholder="Message..."
+              placeholder={chatCopy.inputPlaceholder}
               placeholderTextColor="#64748B"
               value={message}
               onChangeText={setMessage}
@@ -407,8 +485,17 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 10,
       color: '#64748B',
     },
-    readReceipt: {
-      marginLeft: 2,
+    sendingBubble: {
+      opacity: 0.7,
+    },
+    failedBubble: {
+      backgroundColor: '#FEE2E2',
+      borderWidth: 1,
+      borderColor: '#FCA5A5',
+    },
+    failedText: {
+      color: '#DC2626',
+      fontWeight: '600',
     },
     inputContainer: {
       backgroundColor: '#FFF',

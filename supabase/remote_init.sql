@@ -347,6 +347,7 @@ create table if not exists public.chat_threads (
   last_message_at timestamptz,
   last_message_preview text,
   constraint chat_threads_no_self check (participant_a <> participant_b),
+  constraint chat_threads_ordered check (participant_a < participant_b),
   unique (participant_a, participant_b)
 );
 
@@ -360,7 +361,7 @@ create table if not exists public.chat_members (
 create table if not exists public.chat_messages (
   id bigserial primary key,
   thread_id uuid not null references public.chat_threads(id) on delete cascade,
-  sender_id uuid references public.profiles(id) on delete set null,
+  sender_id uuid not null references public.profiles(id) on delete cascade,
   content text not null,
   created_at timestamptz not null default now()
 );
@@ -419,10 +420,12 @@ create policy "chat_members_insert_creator"
   to authenticated
   with check (
     auth.uid() = user_id
-    or auth.uid() = (
-      select created_by
+    or exists (
+      select 1
       from public.chat_threads
       where chat_threads.id = thread_id
+        and chat_threads.created_by = auth.uid()
+        and user_id in (chat_threads.participant_a, chat_threads.participant_b)
     )
   );
 
