@@ -39,6 +39,14 @@ jest.mock('../src/app/providers/RepositoryProvider', () => ({
   }),
 }));
 
+// Mock InboxBadgeProvider
+jest.mock('../src/app/providers/InboxBadgeProvider', () => ({
+  useInboxBadge: () => ({
+    hasUnread: false,
+    setHasUnread: jest.fn(),
+  }),
+}));
+
 // Mock UserStore for ProfileScreen
 jest.mock('../src/app/store/userStore', () => ({
   useUserStore: (selector: any) => selector({ currentUser: null }),

@@ -28,12 +28,22 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
 }));
 
 // Mock repositories
-const mockUsersRepo = { getUser: jest.fn().mockResolvedValue({ id: 'user-1' }) };
+const mockUsersRepo = { getUser: jest.fn().mockResolvedValue({ id: 'user-1' }), getUsersBatch: jest.fn().mockResolvedValue(new Map()) };
 const mockPostsRepo = { getPostsFromUser: jest.fn().mockResolvedValue([]), getSavedPosts: jest.fn().mockResolvedValue([]) };
+const mockChatRepo = { getThreadsForUser: jest.fn().mockResolvedValue([]), getMemberStatus: jest.fn().mockResolvedValue(null) };
 jest.mock('../src/app/providers/RepositoryProvider', () => ({
   useRepositories: () => ({
     users: mockUsersRepo,
     posts: mockPostsRepo,
+    chats: mockChatRepo,
+  }),
+}));
+
+// Mock InboxBadgeProvider
+jest.mock('../src/app/providers/InboxBadgeProvider', () => ({
+  useInboxBadge: () => ({
+    hasUnread: false,
+    setHasUnread: jest.fn(),
   }),
 }));
 
