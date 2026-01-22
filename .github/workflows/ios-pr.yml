@@ -21,6 +21,7 @@ jobs:
           cat <<'EOF' > .env
           ${{ secrets.ENV_FILE }}
           EOF
+          echo "EXPO_PUBLIC_APP_MODE=mock" >> .env
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -47,15 +48,23 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64_DEV }}
         run: |
           if [ -n "$GOOGLE_SERVICE_INFO_PLIST_BASE64" ]; then
-            echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > ios/FinnDev/GoogleService-Info-Dev.plist
+            echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > ios/FinnDev/GoogleService-Info.plist
           fi
-      - name: Build (simulator debug)
+      - name: Install Maestro
         run: |
-          cd ios
-          xcodebuild \
-            -workspace FinnDev.xcworkspace \
-            -scheme FinnDev \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            build
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Boot simulator
+        run: |
+          xcrun simctl boot "iPhone 15" || true
+          open -a Simulator
+          xcrun simctl bootstatus "iPhone 15" -b
+
+      - name: Build and run app
+        run: |
+          EXPO_PUBLIC_APP_MODE=mock npx expo run:ios --device "iPhone 15" --no-interactive
+        working-directory: .
+
+      - name: Run Maestro tests
+        run: maestro test e2e/maestro
