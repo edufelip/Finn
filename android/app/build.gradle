@@ -89,7 +89,7 @@ android {
 
     namespace 'com.edufelip.finn.dev'
     defaultConfig {
-        applicationId 'com.edufelip.finn.dev'
+        applicationId 'com.edufelip.finn'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         def resolvedVersionCode = (findProperty('CI_VERSION_CODE') ?: "1").toString().trim()
@@ -112,6 +112,7 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            applicationIdSuffix ".dev"
         }
         release {
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
