@@ -92,7 +92,11 @@ android {
         applicationId 'com.edufelip.finn.dev'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (findProperty('CI_VERSION_CODE') ?: "1").toInteger()
+        def resolvedVersionCode = (findProperty('CI_VERSION_CODE') ?: "1").toString().trim()
+        if (!resolvedVersionCode.isInteger()) {
+            throw new GradleException("CI_VERSION_CODE must be an integer (got '${resolvedVersionCode}')")
+        }
+        versionCode = resolvedVersionCode.toInteger()
         versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
