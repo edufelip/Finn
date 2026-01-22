@@ -202,6 +202,7 @@ jobs:
             -configuration Release \
             -archivePath "$PWD/build/FinnDev.xcarchive" \
             archive \
+            PRODUCT_BUNDLE_IDENTIFIER="com.edufelip.finn" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=${{ secrets.IOS_TEAM_ID }} \
