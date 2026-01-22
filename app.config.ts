@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: isDev ? 'Finn Dev' : 'Finn',
     slug: isDev ? 'finn-dev' : 'finn',
-    version: '1.0.0',
+    version: '2.0.0',
     orientation: 'portrait',
     scheme: isDev ? 'finn-dev' : 'finn',
     icon: './assets/icon.png',
