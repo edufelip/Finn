@@ -131,7 +131,7 @@ jobs:
         with:
           appId: ${{ secrets.FIREBASE_APP_ID_ANDROID_DEV }}
           serviceCredentialsFile: firebase-service-account.json
-          groups: base-group
+          groups: default
           file: android/app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: ${{ env.RELEASE_NOTES }}
 
