@@ -287,7 +287,7 @@ jobs:
         run: |
           npx --yes firebase-tools@latest appdistribution:distribute "$IPA_PATH" \
             --app "${{ secrets.FIREBASE_APP_ID_IOS_DEV }}" \
-            --groups "base-group" \
+            --groups "default" \
             --release-notes "$RELEASE_NOTES"
 
       - name: Clean Firebase service account
