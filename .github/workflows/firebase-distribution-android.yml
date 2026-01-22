@@ -111,7 +111,7 @@ jobs:
           arguments: |
             clean
             assembleDebug
-            -PCI_VERSION_CODE=$CI_VERSION_CODE
+            -PCI_VERSION_CODE=${{ env.CI_VERSION_CODE }}
 
       - name: Release notes
         run: |
