@@ -5,6 +5,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import DrawerContent from '../src/presentation/navigation/DrawerContent';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { drawerCopy } from '../src/presentation/content/drawerCopy';
+import { useUserStore } from '../src/app/store/userStore';
 
 jest.mock('@react-navigation/drawer', () => {
   const React = require('react');
@@ -12,6 +13,7 @@ jest.mock('@react-navigation/drawer', () => {
   return {
     DrawerContentScrollView: ({ children }: { children: React.ReactNode }) =>
       React.createElement(React.Fragment, null, children),
+    useDrawerStatus: () => 'open',
   };
 });
 
@@ -33,6 +35,7 @@ jest.mock('../src/app/providers/PresenceProvider', () => ({
 describe('DrawerContent', () => {
   beforeEach(() => {
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    useUserStore.getState().clearUser();
   });
 
   it('renders drawer labels', async () => {
@@ -56,6 +59,8 @@ describe('DrawerContent', () => {
     } as any;
 
     const descriptors = {} as any;
+
+    useUserStore.getState().setUser({ id: 'user-1', name: 'Jane Doe' } as any);
 
     const { getByText, getByTestId } = render(
       <RepositoryProvider overrides={{ users: usersRepo, posts: postsRepo }}>

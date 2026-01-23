@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { DrawerContentScrollView } from '@react-navigation/drawer';
+import { DrawerContentScrollView, useDrawerStatus } from '@react-navigation/drawer';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { MaterialIcons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
@@ -11,12 +11,12 @@ import { usePresence } from '../../app/providers/PresenceProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { supabase } from '../../data/supabase/client';
-import type { User } from '../../domain/models/user';
 import type { ThemeColors } from '../theme/colors';
 import { drawerCopy } from '../content/drawerCopy';
 import { commonCopy } from '../content/commonCopy';
 import { links } from '../../config/links';
 import { guestCopy } from '../content/guestCopy';
+import { useUserStore } from '../../app/store/userStore';
 
 const iconSize = 20;
 
@@ -29,29 +29,47 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
   const { toggleTheme, isDark } = useTheme();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const [user, setUser] = useState<User | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const currentUser = useUserStore((state) => state.currentUser);
+  const drawerStatus = useDrawerStatus();
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || currentUser) return;
     let mounted = true;
     userRepository
       .getUser(session.user.id)
       .then((data) => {
-        if (mounted) {
-          setUser(data);
+        if (mounted && data) {
+          useUserStore.getState().setUser(data);
         }
       })
       .catch(() => {
-        if (mounted) {
-          setUser(null);
-        }
+        // Ignore fetch errors; fallback UI remains.
       });
 
     return () => {
       mounted = false;
     };
-  }, [session?.user?.id, userRepository]);
+  }, [session?.user?.id, userRepository, currentUser]);
+
+  useEffect(() => {
+    if (!session?.user?.id || drawerStatus !== 'open') return;
+    let mounted = true;
+    userRepository
+      .getUser(session.user.id)
+      .then((data) => {
+        if (mounted && data) {
+          useUserStore.getState().setUser(data);
+        }
+      })
+      .catch(() => {
+        // Ignore fetch errors; keep existing store data.
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.user?.id, userRepository, drawerStatus]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -74,7 +92,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
     };
   }, [session?.user?.id, postRepository]);
 
-  const displayName = isGuest ? guestCopy.userLabel : user?.name ?? session?.user?.email ?? commonCopy.userFallback;
+  const displayName = isGuest ? guestCopy.userLabel : currentUser?.name ?? session?.user?.email ?? commonCopy.userFallback;
   const email = isGuest ? guestCopy.banner.title : session?.user?.email ?? commonCopy.emptyDash;
   const avatarInitial = (displayName ?? commonCopy.userFallback).charAt(0).toUpperCase();
   const statusColor = isOnline && isOnlineVisible ? theme.secondary : theme.outlineVariant;
@@ -117,8 +135,8 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
       >
         <View style={styles.header}>
           <View style={styles.avatarWrapper}>
-            {user?.photoUrl ? (
-              <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
+            {currentUser?.photoUrl ? (
+              <Image source={{ uri: currentUser.photoUrl }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarText}>{avatarInitial}</Text>
