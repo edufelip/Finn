@@ -80,6 +80,7 @@ export default function AuthScreen() {
     return makeRedirectUri({
       scheme: appScheme,
       path: 'auth/callback',
+      isTripleSlashed: true,
     });
   }, [appScheme]);
 
@@ -197,8 +198,7 @@ export default function AuthScreen() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: redirectUri,
-            queryParams: { state: createOAuthState() },
+            redirectTo: redirectUri
           },
         });
         if (error) {
@@ -212,8 +212,7 @@ export default function AuthScreen() {
         provider: 'google',
         options: {
           redirectTo: redirectUri,
-          skipBrowserRedirect: true,
-          queryParams: { state: oauthState },
+          skipBrowserRedirect: true
         },
       });
 

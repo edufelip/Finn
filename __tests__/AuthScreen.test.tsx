@@ -184,8 +184,14 @@ describe('AuthScreen', () => {
   });
 
   it('shows google missing token alert', async () => {
-    mockUseAuthRequest.mockReturnValue([null, { type: 'success', authentication: {} }, jest.fn()]);
-    render(<AuthScreen />);
+    supabase.auth.signInWithOAuth = jest.fn().mockResolvedValue({
+      data: {},
+      error: null,
+    });
+    
+    const { getByText } = render(<AuthScreen />);
+
+    fireEvent.press(getByText(authCopy.google));
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(
