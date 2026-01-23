@@ -49,6 +49,8 @@ jobs:
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_ENV=dev" >> "$GITHUB_ENV"
+          echo "APP_ENV=dev" >> "$GITHUB_ENV"
 
       - name: Set Finn environment
         run: |
