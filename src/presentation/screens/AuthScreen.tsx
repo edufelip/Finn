@@ -79,8 +79,7 @@ export default function AuthScreen() {
     }
     return makeRedirectUri({
       scheme: appScheme,
-      path: 'auth/callback',
-      isTripleSlashed: true,
+      path: 'callback',
     });
   }, [appScheme]);
 

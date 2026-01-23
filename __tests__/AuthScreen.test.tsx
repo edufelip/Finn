@@ -17,7 +17,7 @@ jest.mock('expo-auth-session/providers/google', () => ({
 }));
 
 jest.mock('expo-auth-session', () => ({
-  makeRedirectUri: jest.fn(() => 'finn://auth/callback'),
+  makeRedirectUri: jest.fn(() => 'finn://callback'),
 }));
 
 jest.mock('expo-web-browser', () => ({
