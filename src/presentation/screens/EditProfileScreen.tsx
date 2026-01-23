@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { compressImageUri } from '../utils/imageProcessing';
 import * as Network from 'expo-network';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -157,7 +158,7 @@ export default function EditProfileScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'] as ImagePicker.MediaType[],
       quality: 0.8,
       allowsMultipleSelection: false,
       selectionLimit: 1,
@@ -166,7 +167,9 @@ export default function EditProfileScreen() {
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setPhotoUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      const processed = await compressImageUri(asset.uri, asset.width, { maxWidth: 1080 });
+      setPhotoUri(processed);
     }
   };
 
@@ -183,14 +186,16 @@ export default function EditProfileScreen() {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'] as ImagePicker.MediaType[],
         quality: 0.8,
         allowsEditing: true,
         aspect: [1, 1],
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
-        setPhotoUri(result.assets[0].uri);
+        const asset = result.assets[0];
+        const processed = await compressImageUri(asset.uri, asset.width, { maxWidth: 1080 });
+        setPhotoUri(processed);
       }
     } catch {
       Alert.alert(
@@ -242,7 +247,11 @@ export default function EditProfileScreen() {
     try {
       let nextPhotoUrl = originalPhotoUrl;
       if (photoUri && photoUri !== originalPhotoUrl) {
-        const updatedUser = await userRepository.updateProfilePhoto(session.user.id, photoUri);
+        const updatedUser = await userRepository.updateProfilePhoto(
+          session.user.id,
+          photoUri,
+          originalPhotoUrl
+        );
         useUserStore.getState().setUser(updatedUser);
         nextPhotoUrl = updatedUser.photoUrl ?? null;
         setPhotoUri(updatedUser.photoUrl ?? null);

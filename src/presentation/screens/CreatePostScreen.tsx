@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import * as Network from 'expo-network';
 import * as ImagePicker from 'expo-image-picker';
+import { compressImageUri } from '../utils/imageProcessing';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -166,14 +167,16 @@ export default function CreatePostScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'] as ImagePicker.MediaType[],
       quality: 0.8,
       allowsMultipleSelection: false,
       selectionLimit: 1,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      const processed = await compressImageUri(asset.uri, asset.width, { maxWidth: 1080 });
+      setImageUri(processed);
     }
   };
 
@@ -190,12 +193,14 @@ export default function CreatePostScreen() {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'] as ImagePicker.MediaType[],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
-        setImageUri(result.assets[0].uri);
+        const asset = result.assets[0];
+      const processed = await compressImageUri(asset.uri, asset.width, { maxWidth: 1080 });
+        setImageUri(processed);
       }
     } catch {
       Alert.alert(

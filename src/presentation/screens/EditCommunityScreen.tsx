@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { compressImageUri } from '../utils/imageProcessing';
 import * as Network from 'expo-network';
 
 import type { MainStackParamList } from '../navigation/MainStack';
@@ -120,14 +121,16 @@ export default function EditCommunityScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'] as ImagePicker.MediaType[],
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      const processed = await compressImageUri(asset.uri, asset.width, { maxWidth: 1280 });
+      setImageUri(processed);
     }
   };
 
@@ -139,13 +142,16 @@ export default function EditCommunityScreen() {
     }
 
     const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'] as ImagePicker.MediaType[],
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      const processed = await compressImageUri(asset.uri, asset.width, { maxWidth: 1280 });
+      setImageUri(processed);
     }
   };
 

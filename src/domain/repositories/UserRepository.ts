@@ -13,7 +13,7 @@ export interface UserRepository {
   getNotifications(userId: string): Promise<Notification[]>;
   markNotificationRead(notificationId: number): Promise<void>;
   markAllNotificationsRead(userId: string): Promise<void>;
-  updateProfilePhoto(userId: string, imageUri: string): Promise<User>;
+  updateProfilePhoto(userId: string, imageUri: string, previousPhotoUrl?: string | null): Promise<User>;
   updateProfile(userId: string, updates: { name?: string; bio?: string | null; location?: string | null }): Promise<User>;
   followUser(followerId: string, followingId: string): Promise<void>;
   unfollowUser(followerId: string, followingId: string): Promise<void>;

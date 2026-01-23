@@ -6,6 +6,7 @@ import { cacheFirst } from '../cache/cacheHelpers';
 import { clearCache, setCache } from '../cache/cacheStore';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
+import { readUploadBytes } from '../supabase/storageUpload';
 
 const COMMUNITY_IMAGE_BUCKET = 'community-images';
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
@@ -79,17 +80,19 @@ async function uploadCommunityImage(imageUri: string, ownerId: string): Promise<
     return { path: imageUri, wasUploaded: false };
   }
 
-  const response = await fetch(imageUri);
-  const blob = await response.blob();
+  const bytes = await readUploadBytes(imageUri);
+  if (bytes.length === 0) {
+    throw new Error('Image upload failed: empty file payload.');
+  }
   const extension = imageUri.split('?')[0]?.split('.').pop()?.toLowerCase() || 'jpg';
   const normalizedExtension = extension === 'jpeg' ? 'jpg' : extension;
   const contentType =
-    blob.type || (normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`);
+    normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`;
   const filePath = `${ownerId}/${Date.now()}.${normalizedExtension}`;
 
   const { data, error } = await supabase.storage
     .from(COMMUNITY_IMAGE_BUCKET)
-    .upload(filePath, blob, { upsert: true, contentType });
+    .upload(filePath, bytes, { upsert: true, contentType });
 
   if (error) {
     throw error;
@@ -308,18 +311,29 @@ export class SupabaseCommunityRepository implements CommunityRepository {
     },
     imageUri?: string | null
   ): Promise<Community> {
+    let previousImagePath: string | null = null;
     let resolvedImageUrl = settings.imageUrl;
     let uploadedPath: string | null = null;
 
     // Handle image upload if imageUri is provided
     if (imageUri) {
-      const community = await this.getCommunity(communityId);
-      if (!community) {
-        throw new Error('Community not found');
+      const { data: communityRow, error: communityError } = await supabase
+        .from(TABLES.communities)
+        .select('owner_id, image_url')
+        .eq('id', communityId)
+        .single<Pick<CommunityRow, 'owner_id' | 'image_url'>>();
+
+      if (communityError) {
+        throw communityError;
       }
 
+      if (!communityRow) {
+        throw new Error('Community not found');
+      }
+      previousImagePath = communityRow.image_url ?? null;
+
       try {
-        const upload = await uploadCommunityImage(imageUri, community.ownerId);
+        const upload = await uploadCommunityImage(imageUri, communityRow.owner_id);
         resolvedImageUrl = upload.path;
         uploadedPath = upload.wasUploaded ? upload.path : null;
       } catch (error) {
@@ -362,6 +376,15 @@ export class SupabaseCommunityRepository implements CommunityRepository {
       // Clear cache
       await clearCache(CacheKey.community(communityId));
       await clearCache(CacheKey.communities(null));
+
+      if (previousImagePath && resolvedImageUrl && previousImagePath !== resolvedImageUrl) {
+        const { error: removeError } = await supabase.storage
+          .from(COMMUNITY_IMAGE_BUCKET)
+          .remove([previousImagePath]);
+        if (removeError) {
+          console.warn('[updateCommunitySettings] failed to delete previous image', removeError.message);
+        }
+      }
 
       return updated;
     } catch (error) {

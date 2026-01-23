@@ -51,7 +51,7 @@ export class MockUserRepository implements UserRepository {
     mockUser.lastSeenAt = timestamp;
   }
 
-  async updateProfilePhoto(_userId: string, imageUri: string): Promise<User> {
+  async updateProfilePhoto(_userId: string, imageUri: string, _previousPhotoUrl?: string | null): Promise<User> {
     mockUser.photoUrl = imageUri;
     return mockUser;
   }

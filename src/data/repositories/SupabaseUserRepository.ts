@@ -6,6 +6,7 @@ import { cacheFirst } from '../cache/cacheHelpers';
 import { clearCache, getCache, setCache } from '../cache/cacheStore';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
+import { readUploadBytes } from '../supabase/storageUpload';
 
 const USER_AVATAR_BUCKET = 'user-avatars';
 const POST_IMAGE_BUCKET = 'post-images';
@@ -70,6 +71,21 @@ function resolveUserPhotoUrl(photoUrl?: string | null): string | null {
   return data?.publicUrl ?? null;
 }
 
+function resolveUserAvatarPath(photoUrl?: string | null): string | null {
+  if (!photoUrl) {
+    return null;
+  }
+  if (!isRemoteUrl(photoUrl)) {
+    return photoUrl;
+  }
+  const marker = `/storage/v1/object/public/${USER_AVATAR_BUCKET}/`;
+  const index = photoUrl.indexOf(marker);
+  if (index === -1) {
+    return null;
+  }
+  return photoUrl.slice(index + marker.length);
+}
+
 function resolvePostImageUrl(imageUrl?: string | null): string | null {
   if (!imageUrl) {
     return null;
@@ -98,17 +114,22 @@ function toDomain(row: UserRow): User {
 }
 
 async function uploadUserAvatar(imageUri: string, userId: string): Promise<string> {
-  const response = await fetch(imageUri);
-  const blob = await response.blob();
+  console.info('[uploadUserAvatar] uri', imageUri);
+  const bytes = await readUploadBytes(imageUri);
+  console.info('[uploadUserAvatar] byte length', bytes.length);
+  if (bytes.length === 0) {
+    throw new Error('Image upload failed: empty file payload.');
+  }
   const extension = imageUri.split('?')[0]?.split('.').pop()?.toLowerCase() || 'jpg';
   const normalizedExtension = extension === 'jpeg' ? 'jpg' : extension;
   const contentType =
-    blob.type || (normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`);
+    normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`;
   const filePath = `${userId}/${Date.now()}.${normalizedExtension}`;
+  console.info('[uploadUserAvatar] upload path', filePath, 'contentType', contentType);
 
   const { data, error } = await supabase.storage
     .from(USER_AVATAR_BUCKET)
-    .upload(filePath, blob, { upsert: true, contentType });
+    .upload(filePath, bytes, { upsert: true, contentType });
 
   if (error) {
     throw error;
@@ -317,8 +338,9 @@ export class SupabaseUserRepository implements UserRepository {
     );
   }
 
-  async updateProfilePhoto(userId: string, imageUri: string): Promise<User> {
+  async updateProfilePhoto(userId: string, imageUri: string, previousPhotoUrl?: string | null): Promise<User> {
     const shouldUpload = isLocalFile(imageUri) || isRemoteUrl(imageUri);
+    const previousPath = resolveUserAvatarPath(previousPhotoUrl ?? null);
     const path = shouldUpload ? await uploadUserAvatar(imageUri, userId) : imageUri;
     const { data, error } = await supabase
       .from(TABLES.users)
@@ -333,6 +355,14 @@ export class SupabaseUserRepository implements UserRepository {
     const cachedUser = await getCache<User>(CacheKey.user(userId), { allowExpired: true });
     const payload = mergeFollowCounts(toDomain(data), cachedUser);
     await setCache(CacheKey.user(userId), payload, CACHE_TTL_MS.profiles);
+    if (previousPath && previousPath !== path) {
+      const { error: removeError } = await supabase.storage
+        .from(USER_AVATAR_BUCKET)
+        .remove([previousPath]);
+      if (removeError) {
+        console.warn('[updateProfilePhoto] failed to delete previous avatar', removeError.message);
+      }
+    }
     return payload;
   }
 

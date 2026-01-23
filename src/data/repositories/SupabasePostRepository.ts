@@ -5,6 +5,7 @@ import { cacheFirst } from '../cache/cacheHelpers';
 import { clearCache } from '../cache/cacheStore';
 import { supabase } from '../supabase/client';
 import { TABLES } from '../supabase/tables';
+import { readUploadBytes } from '../supabase/storageUpload';
 
 const PAGE_SIZE = 20;
 const COMMUNITY_IMAGE_BUCKET = 'community-images';
@@ -137,17 +138,19 @@ async function uploadPostImage(imageUri: string, userId: string): Promise<Upload
     return { path: imageUri, wasUploaded: false };
   }
 
-  const response = await fetch(imageUri);
-  const blob = await response.blob();
+  const bytes = await readUploadBytes(imageUri);
+  if (bytes.length === 0) {
+    throw new Error('Image upload failed: empty file payload.');
+  }
   const extension = imageUri.split('?')[0]?.split('.').pop()?.toLowerCase() || 'jpg';
   const normalizedExtension = extension === 'jpeg' ? 'jpg' : extension;
   const contentType =
-    blob.type || (normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`);
+    normalizedExtension === 'jpg' ? 'image/jpeg' : `image/${normalizedExtension}`;
   const filePath = `${userId}/${Date.now()}.${normalizedExtension}`;
 
   const { data, error } = await supabase.storage
     .from(POST_IMAGE_BUCKET)
-    .upload(filePath, blob, { upsert: true, contentType });
+    .upload(filePath, bytes, { upsert: true, contentType });
 
   if (error) {
     throw error;
