@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { makeRedirectUri } from 'expo-auth-session';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import * as Network from 'expo-network';
 import Constants from 'expo-constants';
@@ -70,18 +71,18 @@ export default function AuthScreen() {
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Use dynamic scheme from Expo config to support both dev (finn-dev) and prod (finn) environments
-  const configScheme = Constants.expoConfig?.scheme;
-  const appScheme = Array.isArray(configScheme) ? configScheme[0] : configScheme ?? 'finn';
+  const appScheme = Constants.expoConfig?.scheme;
+  const scheme = Array.isArray(appScheme) ? (appScheme.includes('finn-dev') ? 'finn-dev' : 'finn') : (appScheme ?? 'finn');
 
   const redirectUri = useMemo(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       return `${window.location.origin}/auth/callback`;
     }
     return makeRedirectUri({
-      scheme: appScheme,
+      scheme,
       path: 'callback',
     });
-  }, [appScheme]);
+  }, [scheme]);
 
   useEffect(() => {
     let mounted = true;
@@ -95,56 +96,47 @@ export default function AuthScreen() {
     };
   }, []);
 
-  const createOAuthState = () => {
-    try {
-      const bytes = new Uint8Array(16);
-      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-        crypto.getRandomValues(bytes);
-        return Array.from(bytes)
-          .map((value) => value.toString(16).padStart(2, '0'))
-          .join('');
-      }
-    } catch {
-      // Fall through to Math.random-based state.
-    }
-    return `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
-  };
 
   const completeOAuthIfNeeded = useCallback(async (callbackUrl: string) => {
-    if (__DEV__) {
-      try {
-        const parsed = new URL(callbackUrl);
-        const code = parsed.searchParams.get('code');
-        const state = parsed.searchParams.get('state');
-        console.log('[Auth][OAuth] callback url received', {
-          hasCode: Boolean(code),
-          hasState: Boolean(state),
-          codePrefix: code ? code.slice(0, 8) : null,
-          statePrefix: state ? state.slice(0, 8) : null,
-          path: parsed.pathname,
-        });
-      } catch (error) {
-        console.log('[Auth][OAuth] callback url parse failed', { error, callbackUrl });
+    try {
+      const { params, errorCode } = QueryParams.getQueryParams(callbackUrl);
+
+      if (errorCode) {
+        Alert.alert(authCopy.alerts.googleFailed.title, errorCode);
+        return false;
       }
-      console.log('[Auth][OAuth] callback raw url', callbackUrl);
-    }
-    const { error } = await supabase.auth.exchangeCodeForSession(callbackUrl);
-    if (error) {
-      Alert.alert(authCopy.alerts.googleFailed.title, error.message);
+
+      const { access_token, refresh_token } = params;
+
+      if (!access_token) {
+        Alert.alert(authCopy.alerts.googleFailed.title, 'No access token received');
+        return false;
+      }
+
+      const { error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (error) {
+        Alert.alert(authCopy.alerts.googleFailed.title, error.message);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert(authCopy.alerts.googleFailed.title, error.message);
+      }
       return false;
     }
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-      window.history.replaceState({}, '', cleanUrl);
-    }
-    return true;
   }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     if (typeof window === 'undefined') return;
     const url = window.location.href;
-    if (!url.includes('code=')) return;
+    if (!url.includes('access_token=')) return;
 
     setLoading(true);
     completeOAuthIfNeeded(url)
@@ -206,12 +198,11 @@ export default function AuthScreen() {
         return;
       }
 
-      const oauthState = createOAuthState();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUri,
-          skipBrowserRedirect: true
+          skipBrowserRedirect: true,
         },
       });
 
@@ -239,6 +230,7 @@ export default function AuthScreen() {
             queryKeys,
             searchLength: authUrl.search.length,
             hashLength: authUrl.hash.length,
+            flowType: 'implicit',
           });
         } catch (error) {
           console.log('[Auth][OAuth] authorize url parse failed', { error, url: data.url });
