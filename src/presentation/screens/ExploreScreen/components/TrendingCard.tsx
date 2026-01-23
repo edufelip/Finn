@@ -109,7 +109,8 @@ const createStyles = (theme: ThemeColors) =>
     },
     meta: {
       fontSize: 11,
-      color: theme.onSurfaceVariant,
+      color: theme.onScrim,
+      fontWeight: '500',
     },
   });
 

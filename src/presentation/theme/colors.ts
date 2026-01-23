@@ -29,6 +29,7 @@ export type ColorRoles = {
   surfaceTint: string;
   scrim: string;
   shadow: string;
+  onScrim: string;
 };
 
 export type ThemeColors = ColorRoles;
@@ -64,6 +65,7 @@ export const lightColors: ColorRoles = {
   surfaceTint: '#44A2D6',
   scrim: 'rgba(0, 0, 0, 0.35)',
   shadow: 'rgba(0, 0, 0, 0.2)',
+  onScrim: '#E5E7EB',
 };
 
 export const darkColors: ColorRoles = {
@@ -97,4 +99,5 @@ export const darkColors: ColorRoles = {
   surfaceTint: '#44A2D6',
   scrim: 'rgba(0, 0, 0, 0.6)',
   shadow: 'rgba(0, 0, 0, 0.6)',
+  onScrim: '#CBD5E1',
 };
