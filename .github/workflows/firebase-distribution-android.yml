@@ -35,10 +35,12 @@ jobs:
 
       - name: Export env vars
         run: |
-          set -a
-          source .env
-          set +a
-          env | grep '^EXPO_PUBLIC_' >> "$GITHUB_ENV" || true
+          while IFS= read -r line; do
+            case "$line" in
+              ''|\#*) continue ;;
+              EXPO_PUBLIC_*=*) echo "$line" >> "$GITHUB_ENV" ;;
+            esac
+          done < <(sed -e 's/\r$//' .env)
         working-directory: .
 
       - name: Set debug API flag
