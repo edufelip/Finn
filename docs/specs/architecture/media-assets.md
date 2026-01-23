@@ -8,11 +8,20 @@ Manages the selection, processing, and resolution of visual assets (images) with
 - **FR-MEDA-06**: The system shall optimize images (resize, compress) before uploading to reduce bandwidth usage.
 
 ## Implementation Details (Optimization)
-- **Library**: `expo-image-manipulator`.
-- **Strategy**: 
+- **Library**: `expo-image-manipulator` (contextual API via `ImageManipulator.manipulate`).
+- **Strategy**:
     - Resize images to a maximum dimension (e.g., 1080px).
     - Apply JPEG compression (e.g., quality 0.7).
     - Convert to consistent format (JPEG).
+- **Shared Helper**: `src/presentation/utils/imageProcessing.ts` provides `compressImageUri` for reuse across screens.
+
+## Implementation Details (Storage Uploads)
+- **Upload Payload**: Read local files via `expo-file-system` and send `Uint8Array` to Supabase Storage.
+- **Helper**: `src/data/supabase/storageUpload.ts` centralizes byte reads for local and remote URIs.
+
+## Asset Lifecycle
+- **Profile Avatars**: When a user uploads a new avatar, the previous storage object is deleted after the profile update succeeds.
+- **Community Images**: When a community image is updated, the previous storage object is deleted after the update succeeds.
 
 ## Use Cases
 ...### UC-MEDA-01: Pick a Profile Photo
