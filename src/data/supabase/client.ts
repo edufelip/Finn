@@ -7,6 +7,37 @@ import env from '../../config/env';
 const supabaseBaseUrl = env.supabaseUrl.replace(/\/$/, '');
 let requestCounter = 0;
 
+const shouldLogPkceKey = (key: string) => __DEV__ && key.endsWith('-code-verifier');
+
+const authStorage = {
+  getItem: async (key: string) => {
+    const value = await AsyncStorage.getItem(key);
+    if (shouldLogPkceKey(key)) {
+      console.log('[Supabase][PKCE][storage] get', {
+        key,
+        hasValue: Boolean(value),
+        valuePrefix: value ? value.slice(0, 8) : null,
+      });
+    }
+    return value;
+  },
+  setItem: async (key: string, value: string) => {
+    if (shouldLogPkceKey(key)) {
+      console.log('[Supabase][PKCE][storage] set', {
+        key,
+        valuePrefix: value ? value.slice(0, 8) : null,
+      });
+    }
+    return AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    if (shouldLogPkceKey(key)) {
+      console.log('[Supabase][PKCE][storage] remove', { key });
+    }
+    return AsyncStorage.removeItem(key);
+  },
+};
+
 const describeBody = async (body: unknown) => {
   if (body == null) return null;
   if (typeof body === 'string') return body;
@@ -136,9 +167,10 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     fetch: loggedFetch,
   },
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
+    flowType: 'pkce',
   },
 });

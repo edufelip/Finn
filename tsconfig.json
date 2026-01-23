@@ -1,7 +1,14 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@assets/*": ["assets/*"],
+      "@components/*": ["src/presentation/components/*"],
+      "@screens/*": ["src/presentation/screens/*"],
+      "@utils/*": ["src/utils/*"]
+    }
   },
   "exclude": [
     "supabase/functions"

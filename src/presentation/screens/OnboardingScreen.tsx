@@ -19,6 +19,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import { useAppStore } from '../../app/store/appStore';
 import { spacing, radii } from '../theme/metrics';
 import { onboardingCopy } from '../content/onboardingCopy';
+import { Images } from '@assets/images';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,22 +28,19 @@ const SLIDES = [
     id: '1',
     title: onboardingCopy.slides.discover.title,
     description: onboardingCopy.slides.discover.description,
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuA9uRVrs97YBnNDISgfmigG7AqDoXD6p6eiNeSe0NRJ6_9gsDle-vLuepXjbV3LPqOKGE7Ks2SMdBawxh3XD56ltkcM4YCKARw4_Jtidmn2VJei4cQlkqJpGIPV841XihGoeDk6INwV7pp7c47hE97f6Mb2dXrlspmPeUl8FecRtCDwPvY_ldXuwIZOoOyNnn-a57kzqF7mKlgp6WWpUFwsiixtTjFJn2BOhLGd_Sq7NRS4j0Endajay87rxdciUG028AcPBjSzLLM_',
+    image: Images.onboardingFirst,
   },
   {
     id: '2',
     title: onboardingCopy.slides.share.title,
     description: onboardingCopy.slides.share.description,
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDuBvDAC-c3zc3Cuy9i6OwXe3jZhyC7SZ-NetYXqviLRt5wJCudv-nU-WBnjFUCHBk0wBHpoTqE5CiEnF3NX8IkWVM1C-SmYt_2xczv2TvqbCWiqLcgIwMUUDQ5wFr8_9jyj6KJzhRUDP5hKbYAHEtsuSRjWiJFCDZ87xMgzPXOGXH0t-Lea2nn8Ho_8bZQE5vW3Ch1DEEq7gWY8SzQAHQFUFsnQgedR4GRvh6iLEFOUSS4gUH5pf-lXrLDDONywba3itASp-iJY6Dp',
+    image: Images.onboardingSecond,
   },
   {
     id: '3',
     title: onboardingCopy.slides.connect.title,
     description: onboardingCopy.slides.connect.description,
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBeJ43E6DZc1U2Owj5OMaXdM9UhXeADzTI-dEgJ_YQpxQ5K8snPJoVOjmLkjVYPJvlE1Zai-t1ocpoqLXtE0ytnAboNdEY1WuUJnoa4IS9zzCn6gMNm5P5wfiSPBMN1ZEUR2Qpc83GYOyPh24_FXqiGKvFR2LvMS6M6t3eLOH9i1_sn8S_nnkcbyPsF02t6U-Gys1zFXZjJplG1wIjkeINXazCBQ3JzHWMMbNClJMo1cr_sEDeWNCOA9cMI_gibZZaeMdwWASp6Psz3',
+    image: Images.onboardingThird,
   },
 ];
 
@@ -122,7 +120,7 @@ export default function OnboardingScreen() {
             <View style={styles.imageContainer}>
               <View style={[styles.imageWrapper, { backgroundColor: theme.surfaceVariant }]}>
                 <Image
-                  source={{ uri: slide.image }}
+                  source={slide.image}
                   style={styles.image}
                   resizeMode="cover"
                   testID={onboardingCopy.testIds.slideImage(index)}

@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -13,7 +14,6 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import * as Network from 'expo-network';
 import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
@@ -21,7 +21,6 @@ import type { NavigationProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 
-import env from '../../config/env';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { useAuth } from '../../app/providers/AuthProvider';
@@ -65,6 +64,7 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const isSigningInRef = useRef(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
@@ -73,20 +73,15 @@ export default function AuthScreen() {
   const configScheme = Constants.expoConfig?.scheme;
   const appScheme = Array.isArray(configScheme) ? configScheme[0] : configScheme ?? 'finn';
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: env.googleIosClientId || undefined,
-    androidClientId: env.googleAndroidClientId || undefined,
-    webClientId: env.googleWebClientId || undefined,
-    redirectUri: makeRedirectUri({
+  const redirectUri = useMemo(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return `${window.location.origin}/auth/callback`;
+    }
+    return makeRedirectUri({
       scheme: appScheme,
       path: 'auth/callback',
-    }),
-  });
-
-  const googleReady = useMemo(
-    () => Boolean(env.googleIosClientId || env.googleAndroidClientId || env.googleWebClientId),
-    []
-  );
+    });
+  }, [appScheme]);
 
   useEffect(() => {
     let mounted = true;
@@ -100,45 +95,62 @@ export default function AuthScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!response) return;
-    if (response.type !== 'success') {
-      setLoading(false);
-      return;
-    }
-    if (!response.authentication?.idToken) {
-      Alert.alert(authCopy.alerts.googleFailed.title, authCopy.alerts.googleFailed.missingToken);
-      setLoading(false);
-      return;
-    }
-
-    let mounted = true;
-    const signIn = async () => {
-      setLoading(true);
-      try {
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: response.authentication?.idToken ?? '',
-        });
-        if (error) {
-          Alert.alert(authCopy.alerts.googleFailed.title, error.message);
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          Alert.alert(authCopy.alerts.googleFailed.title, error.message);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+  const createOAuthState = () => {
+    try {
+      const bytes = new Uint8Array(16);
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes)
+          .map((value) => value.toString(16).padStart(2, '0'))
+          .join('');
       }
-    };
+    } catch {
+      // Fall through to Math.random-based state.
+    }
+    return `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  };
 
-    signIn();
-    return () => {
-      mounted = false;
-    };
-  }, [response]);
+  const completeOAuthIfNeeded = useCallback(async (callbackUrl: string) => {
+    if (__DEV__) {
+      try {
+        const parsed = new URL(callbackUrl);
+        const code = parsed.searchParams.get('code');
+        const state = parsed.searchParams.get('state');
+        console.log('[Auth][OAuth] callback url received', {
+          hasCode: Boolean(code),
+          hasState: Boolean(state),
+          codePrefix: code ? code.slice(0, 8) : null,
+          statePrefix: state ? state.slice(0, 8) : null,
+          path: parsed.pathname,
+        });
+      } catch (error) {
+        console.log('[Auth][OAuth] callback url parse failed', { error, callbackUrl });
+      }
+      console.log('[Auth][OAuth] callback raw url', callbackUrl);
+    }
+    const { error } = await supabase.auth.exchangeCodeForSession(callbackUrl);
+    if (error) {
+      Alert.alert(authCopy.alerts.googleFailed.title, error.message);
+      return false;
+    }
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+    return true;
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (typeof window === 'undefined') return;
+    const url = window.location.href;
+    if (!url.includes('code=')) return;
+
+    setLoading(true);
+    completeOAuthIfNeeded(url)
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [completeOAuthIfNeeded]);
 
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -177,18 +189,75 @@ export default function AuthScreen() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!request || !googleReady || loading) return;
+    if (loading || isSigningInRef.current) return;
     try {
+      isSigningInRef.current = true;
       setLoading(true);
-      const result = await promptAsync();
-      if (result.type !== 'success') {
-        setLoading(false);
+      if (Platform.OS === 'web') {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUri,
+            queryParams: { state: createOAuthState() },
+          },
+        });
+        if (error) {
+          Alert.alert(authCopy.alerts.googleFailed.title, error.message);
+        }
+        return;
+      }
+
+      const oauthState = createOAuthState();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
+          queryParams: { state: oauthState },
+        },
+      });
+
+      if (error) {
+        Alert.alert(authCopy.alerts.googleFailed.title, error.message);
+        return;
+      }
+
+      if (!data?.url) {
+        Alert.alert(authCopy.alerts.googleFailed.title, authCopy.alerts.googleFailed.missingToken);
+        return;
+      }
+
+      if (__DEV__) {
+        try {
+          const authUrl = new URL(data.url);
+          const state = authUrl.searchParams.get('state');
+          const queryKeys = Array.from(authUrl.searchParams.keys());
+          console.log('[Auth][OAuth] authorize url prepared', {
+            hasState: Boolean(state),
+            statePrefix: state ? state.slice(0, 8) : null,
+            redirectUri,
+            host: authUrl.host,
+            path: authUrl.pathname,
+            queryKeys,
+            searchLength: authUrl.search.length,
+            hashLength: authUrl.hash.length,
+          });
+        } catch (error) {
+          console.log('[Auth][OAuth] authorize url parse failed', { error, url: data.url });
+        }
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+      if (result.type === 'success' && result.url) {
+        await completeOAuthIfNeeded(result.url);
       }
     } catch (error) {
-      setLoading(false);
       if (error instanceof Error) {
         Alert.alert(authCopy.alerts.googleFailed.title, error.message);
       }
+    } finally {
+      setLoading(false);
+      isSigningInRef.current = false;
     }
   };
 
@@ -324,10 +393,10 @@ export default function AuthScreen() {
             style={[
               styles.socialButton,
               styles.googleButton,
-              (!request || !googleReady || loading) && styles.socialButtonDisabled,
+              loading && styles.socialButtonDisabled,
             ]}
             onPress={handleGoogleSignIn}
-            disabled={!request || !googleReady || loading}
+            disabled={loading}
           >
             <GoogleLogo size={20} />
             <Text style={styles.googleText}>{authCopy.google}</Text>
