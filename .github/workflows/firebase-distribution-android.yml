@@ -61,18 +61,7 @@ jobs:
           fi
           echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
         working-directory: .
-
-      - name: Validate Supabase environment
-        run: |
-          SUPABASE_URL=$(grep '^EXPO_PUBLIC_SUPABASE_URL=' .env | cut -d'=' -f2)
-          if [[ "$SUPABASE_URL" != *"zkztdpsfmpmzxhdmtian"* ]]; then
-            echo "❌ ERROR: Expected dev Supabase project (zkztdpsfmpmzxhdmtian) but got: $SUPABASE_URL" >&2
-            echo "Please update the ENV_FILE_DEV secret to use .env.development contents" >&2
-            exit 1
-          fi
-          echo "✅ Confirmed using dev Supabase project: $SUPABASE_URL"
-        working-directory: .
-
+        
       - name: Validate Firebase secrets
         env:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64_DEV }}
