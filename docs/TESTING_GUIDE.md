@@ -275,6 +275,8 @@ You'll need at least 3 test users:
 
 ---
 
+---
+
 ### Scenario 11: Home Feed Tabs & Following Feed
 **User:** Authenticated User (User A) and Guest
 
@@ -301,6 +303,117 @@ You'll need at least 3 test users:
 - ✅ Scroll state is preserved when switching tabs
 - ✅ Refreshing loads new data for the active tab
 - ✅ Guest sees specific empty state with login CTA
+
+---
+
+### Scenario 12: Internationalization (i18n) & Language Switching
+**User:** Any user (Authenticated or Guest)
+
+**Steps (Language Switching):**
+1. Navigate to Settings screen
+2. **Expected:** See language selection buttons: English, Português, Español, Français, Deutsch, 日本語, العربية
+3. Tap "日本語" (Japanese)
+4. **Expected:** All UI text immediately updates to Japanese
+5. **Expected:** Navigation headers, buttons, labels, placeholders all in Japanese
+6. Tap back to Settings
+7. Tap "Português" (Portuguese)
+8. **Expected:** All UI text immediately updates to Portuguese
+9. Navigate to Home, Search, Profile tabs
+10. **Expected:** All screens display Portuguese text
+
+**Steps (RTL - Arabic):**
+1. Navigate to Settings
+2. Tap "العربية" (Arabic)
+3. **Expected:** Alert appears: "Restart Required - Please restart the app for the layout direction to change"
+4. Tap "OK"
+5. Close and restart the app
+6. **Expected:** App layout is now RTL:
+   - Navigation bar on right side
+   - Text right-aligned
+   - Icons and chevrons flipped horizontally
+   - Tab bar icons remain in same position but labels right-aligned
+7. Navigate through all screens
+8. **Expected:** All layouts respect RTL direction
+9. Go to Settings and select English
+10. **Expected:** Alert to restart app
+11. Restart app
+12. **Expected:** Layout returns to LTR
+
+**Steps (Date Formatting):**
+1. Set language to English
+2. View post timestamps in feed
+3. **Expected:** English format: "5 minutes ago", "Jan 24, 2026"
+4. Set language to Japanese
+5. **Expected:** Japanese format: "5分前", "2026年1月24日"
+6. Set language to Arabic
+7. Restart app for RTL
+8. **Expected:** Arabic format: "منذ ٥ دقائق", "٢٤ يناير ٢٠٢٦" (Arabic numerals)
+
+**Pass Criteria:**
+- ✅ All 7 languages available in Settings
+- ✅ Language switches immediately (no app restart except for RTL)
+- ✅ All screens and components update text
+- ✅ Arabic triggers RTL layout after restart
+- ✅ RTL layout properly reverses all UI elements
+- ✅ Switching from Arabic back to LTR works correctly
+- ✅ Date/time formatting matches locale conventions
+- ✅ No missing translations (no fallback keys displayed)
+- ✅ Interpolation works (e.g., "Posted by {name}" shows actual name)
+
+---
+
+### Scenario 13: Community Search with Pagination
+**User:** Any user (Authenticated or Guest)
+
+**Steps (Basic Search):**
+1. Navigate to Search tab
+2. Type "tech" in search input
+3. **Expected:** First 20 communities matching "tech" appear
+4. **Expected:** Loading indicator during fetch
+5. Scroll to bottom of list
+6. **Expected:** If >20 results exist, next page loads automatically
+7. **Expected:** "Loading more..." indicator appears
+8. **Expected:** Next 20 communities appended to list
+9. Continue scrolling
+10. **Expected:** When fewer than 20 results returned, pagination stops
+
+**Steps (Filter by Topic):**
+1. Clear search input (empty query)
+2. Tap "Filter by Topic" button
+3. Select "Technology" from alert
+4. **Expected:** Results refresh to show only Technology communities
+5. **Expected:** Page resets to 0 (starts from beginning)
+6. **Expected:** Filter chip appears showing "Technology"
+7. Tap X on filter chip
+8. **Expected:** Filter cleared, all communities shown again
+
+**Steps (Sort Order):**
+1. Tap "Sort by" button
+2. Select "Newest" from alert
+3. **Expected:** Results re-sort by creation date (newest first)
+4. **Expected:** Page resets to 0
+5. Scroll down to load more pages
+6. **Expected:** All pages maintain "Newest" sort order
+
+**Steps (Combined Search + Filter + Sort):**
+1. Type "react" in search
+2. Tap "Filter by Topic" → select "Technology"
+3. Tap "Sort by" → select "Most Followed"
+4. **Expected:** Results show React communities in Technology topic, sorted by followers (descending)
+5. Scroll to load multiple pages
+6. **Expected:** All pages maintain combined filters
+
+**Pass Criteria:**
+- ✅ Initial load fetches exactly 20 communities (or fewer if total < 20)
+- ✅ Pagination loads next page when scrolling near bottom
+- ✅ No duplicate communities in paginated results
+- ✅ Loading indicators show during initial load and pagination
+- ✅ Changing any filter (search/topic/sort) resets to page 0
+- ✅ Search is case-insensitive and matches partial titles
+- ✅ Topic filter works correctly
+- ✅ All 4 sort orders work (Most Followed, Least Followed, Newest, Oldest)
+- ✅ Combined filters work together correctly
+- ✅ Guest users can search and paginate without restrictions
 
 ---
 
@@ -435,6 +548,22 @@ Use this for rapid testing:
 - [ ] Success/error messages clear
 - [ ] Empty states display correctly
 
+### Internationalization (i18n)
+- [ ] All 7 languages available in Settings
+- [ ] Language switching updates UI immediately
+- [ ] Arabic enables RTL layout after restart
+- [ ] RTL layout properly reverses UI
+- [ ] Date formatting matches locale
+- [ ] No missing translations visible
+
+### Search & Pagination
+- [ ] Search returns correct results
+- [ ] Pagination loads next page on scroll
+- [ ] No duplicate results
+- [ ] Filter by topic works
+- [ ] Sort orders work correctly
+- [ ] Combined filters work together
+
 ---
 
 ## 📊 Test Results Template
@@ -457,6 +586,9 @@ OS Version: __________
 | 8. Mod/Owner Bypasses Moderation | [ ] | [ ] | |
 | 9. Remove Moderator | [ ] | [ ] | |
 | 10. Non-Mod Authorization | [ ] | [ ] | |
+| 11. Home Feed Tabs & Following | [ ] | [ ] | |
+| 12. i18n & Language Switching | [ ] | [ ] | |
+| 13. Community Search & Pagination | [ ] | [ ] | |
 
 Overall Status: [ ] PASS | [ ] FAIL
 

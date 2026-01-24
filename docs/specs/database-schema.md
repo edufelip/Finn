@@ -67,6 +67,40 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 - **Primary Key**: `id` (BigSerial)
 - **Fields**: `name`, `label`, `icon`, `tone`.
 
+## RPC Functions
+
+### search_communities
+Performs efficient community search with pagination and sorting.
+
+**Signature:**
+```sql
+search_communities(
+  search_text text default '',
+  topic_filter bigint default null,
+  sort_order text default 'mostFollowed',
+  limit_count int default 20,
+  offset_count int default 0
+)
+```
+
+**Returns:** Table with columns:
+- `id` (bigint)
+- `title` (text)
+- `description` (text)
+- `image_url` (text)
+- `owner_id` (uuid)
+- `topic_id` (bigint)
+- `created_at` (timestamptz)
+- `post_permission` (text)
+- `subscribers_count` (bigint)
+
+**Performance:**
+- Uses LEFT JOIN on subscriptions for subscriber counts
+- Aggregates counts in single query (no N+1 problem)
+- Performs sorting at database level
+- Supports pagination with LIMIT/OFFSET
+- Case-insensitive ILIKE search on title
+
 ## Triggers & Automation
 - **Follow Notifications**: `trg_notify_follow` creates a notification for the followed user.
 - **Follow Counters**: `trg_user_follow_counts` maintains follower/following counts on profiles.
