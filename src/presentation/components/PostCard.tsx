@@ -148,15 +148,17 @@ const PostCard = ({
                 )}
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
+                <Text style={styles.authorName} numberOfLines={1} ellipsizeMode="tail">
+                  {post.userName ?? postCardCopy.authorFallback}
+                </Text>
                 {onPressCommunity ? (
                   <Pressable onPress={onPressCommunity} hitSlop={6}>
-                    <Text style={styles.subline}>
+                    <Text style={styles.subline} numberOfLines={1} ellipsizeMode="tail">
                       {post.communityTitle ?? postCardCopy.communityFallback}
                     </Text>
                   </Pressable>
                 ) : (
-                  <Text style={styles.subline}>
+                  <Text style={styles.subline} numberOfLines={1} ellipsizeMode="tail">
                     {post.communityTitle ?? postCardCopy.communityFallback}
                   </Text>
                 )}
@@ -181,15 +183,17 @@ const PostCard = ({
                 )}
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.authorName}>{post.userName ?? postCardCopy.authorFallback}</Text>
+                <Text style={styles.authorName} numberOfLines={1} ellipsizeMode="tail">
+                  {post.userName ?? postCardCopy.authorFallback}
+                </Text>
                 {onPressCommunity ? (
                   <Pressable onPress={onPressCommunity} hitSlop={6}>
-                    <Text style={styles.subline}>
+                    <Text style={styles.subline} numberOfLines={1} ellipsizeMode="tail">
                       {post.communityTitle ?? postCardCopy.communityFallback}
                     </Text>
                   </Pressable>
                 ) : (
-                  <Text style={styles.subline}>
+                  <Text style={styles.subline} numberOfLines={1} ellipsizeMode="tail">
                     {post.communityTitle ?? postCardCopy.communityFallback}
                   </Text>
                 )}
@@ -282,7 +286,35 @@ const PostCard = ({
   );
 };
 
-export default React.memo(PostCard);
+export default React.memo(PostCard, (prevProps, nextProps) => {
+  // Return true to skip re-render, false to re-render
+  const p = prevProps.post;
+  const n = nextProps.post;
+  
+  // If any of these changed, we need to re-render
+  const postChanged = (
+    p.id !== n.id ||
+    p.likesCount !== n.likesCount ||
+    p.commentsCount !== n.commentsCount ||
+    p.isLiked !== n.isLiked ||
+    p.isSaved !== n.isSaved ||
+    p.content !== n.content ||
+    p.imageUrl !== n.imageUrl ||
+    p.userName !== n.userName ||
+    p.userPhotoUrl !== n.userPhotoUrl ||
+    p.communityTitle !== n.communityTitle ||
+    p.communityImageUrl !== n.communityImageUrl
+  );
+  
+  // Other props we check
+  const otherPropsChanged = (
+    prevProps.canModerate !== nextProps.canModerate ||
+    prevProps.isFirst !== nextProps.isFirst
+  );
+  
+  // Return true if nothing changed (skip re-render)
+  return !postChanged && !otherPropsChanged;
+});
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
@@ -342,7 +374,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.onSurface,
     },
     headerText: {
-      flex: 1,
+      flexShrink: 1,
       gap: 2,
     },
     authorName: {
