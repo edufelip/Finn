@@ -5,6 +5,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 
 import { AuthProvider } from './providers/AuthProvider';
 import { InboxBadgeProvider } from './providers/InboxBadgeProvider';
+import { LocalizationProvider } from './providers/LocalizationProvider';
 import { PresenceProvider } from './providers/PresenceProvider';
 import { RepositoryProvider } from './providers/RepositoryProvider';
 import { ThemeProvider, useTheme } from './providers/ThemeProvider';
@@ -19,18 +20,20 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <ThemeProvider>
-          <RepositoryProvider>
-            <AuthProvider>
-              <InboxBadgeProvider>
-                <PresenceProvider>
-                  <RootNavigator />
-                  <ThemedStatusBar />
-                </PresenceProvider>
-              </InboxBadgeProvider>
-            </AuthProvider>
-          </RepositoryProvider>
-        </ThemeProvider>
+        <LocalizationProvider>
+          <ThemeProvider>
+            <RepositoryProvider>
+              <AuthProvider>
+                <InboxBadgeProvider>
+                  <PresenceProvider>
+                    <RootNavigator />
+                    <ThemedStatusBar />
+                  </PresenceProvider>
+                </InboxBadgeProvider>
+              </AuthProvider>
+            </RepositoryProvider>
+          </ThemeProvider>
+        </LocalizationProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
