@@ -17,6 +17,7 @@ import type { ThemeColors } from '../theme/colors';
 import { savedPostsCopy } from '../content/savedPostsCopy';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
+import { usePostsStore } from '../../app/store/postsStore';
 
 export default function SavedPostsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -25,6 +26,8 @@ export default function SavedPostsScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const updatePost = usePostsStore((state) => state.updatePost);
+  const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -77,6 +80,8 @@ export default function SavedPostsScreen() {
     } else {
       setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: true } : item)));
     }
+    updatePost(post.id, { isSaved: nextSaved });
+    setSavedForUser(session.user.id, post.id, nextSaved);
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -98,6 +103,8 @@ export default function SavedPostsScreen() {
       }
     } catch (err) {
       setPosts(previous);
+      updatePost(post.id, { isSaved: post.isSaved });
+      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
       if (err instanceof Error) {
         Alert.alert(savedPostsCopy.alerts.savedFailed.title, err.message);
       }

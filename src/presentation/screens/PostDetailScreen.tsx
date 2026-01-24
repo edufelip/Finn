@@ -40,6 +40,7 @@ export default function PostDetailScreen() {
   const storedPost = usePostsStore((state) => state.postsById[initialPost.id]);
   const updatePost = usePostsStore((state) => state.updatePost);
   const upsertPosts = usePostsStore((state) => state.upsertPosts);
+  const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -126,6 +127,7 @@ export default function PostDetailScreen() {
       isSaved: nextSaved,
     }));
     updatePost(post.id, { isSaved: nextSaved });
+    setSavedForUser(session.user.id, post.id, nextSaved);
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -150,6 +152,7 @@ export default function PostDetailScreen() {
         isSaved: post.isSaved,
       }));
       updatePost(post.id, { isSaved: post.isSaved });
+      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
       if (error instanceof Error) {
         Alert.alert(postDetailCopy.alerts.savedFailed.title, error.message);
       }

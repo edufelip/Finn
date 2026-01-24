@@ -151,7 +151,7 @@ export const usePostsStore = create<PostsState>()(
             return {
               savedIds: {
                 ...state.savedIds,
-                [userId]: [...current, postId],
+                [userId]: [postId, ...current],
               },
             };
           }

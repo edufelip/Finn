@@ -20,6 +20,7 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
   const { session, exitGuest } = useAuth();
   const { posts: postRepository, moderationLogs: logRepository } = useRepositories();
   const updatePost = usePostsStore((state) => state.updatePost);
+  const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
   const likeInFlightRef = useRef<Set<number>>(new Set());
 
   const requireUser = useCallback(() => {
@@ -87,6 +88,9 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
 
       const nextSaved = !post.isSaved;
       updatePost(post.id, { isSaved: nextSaved });
+      if (session?.user?.id) {
+        setSavedForUser(session.user.id, post.id, nextSaved);
+      }
 
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
       if (!status.isConnected) {
@@ -107,6 +111,9 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
         }
       } catch (err) {
         updatePost(post.id, { isSaved: post.isSaved });
+        if (session?.user?.id) {
+          setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
+        }
         if (err instanceof Error) {
           Alert.alert(communityDetailCopy.alerts.savedFailed.title, err.message);
         }

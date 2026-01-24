@@ -36,6 +36,7 @@ import type { Post } from '../../domain/models/post';
 import type { Comment } from '../../domain/models/comment';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { commonCopy } from '../content/commonCopy';
+import { profileCopy } from '../content/profileCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { usePostsStore } from '../../app/store/postsStore';
 import { isMockMode } from '../../config/appConfig';
@@ -52,6 +53,7 @@ export default function UserProfileScreen() {
   const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository, posts: postRepository, comments: commentRepository } = useRepositories();
   const updateStorePost = usePostsStore((state) => state.updatePost);
+  const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
@@ -168,7 +170,7 @@ export default function UserProfileScreen() {
           followersCount: (user.followersCount ?? 0) + (nextFollowing ? -1 : 1),
         });
       }
-      Alert.alert('Error', 'Failed to update follow status.');
+      Alert.alert(commonCopy.error, profileCopy.errorFollowFailed);
     }
   };
 
@@ -232,6 +234,9 @@ export default function UserProfileScreen() {
     setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isSaved: nextSaved } : p));
     // Update global store
     updateStorePost(post.id, { isSaved: nextSaved });
+    if (session?.user?.id) {
+      setSavedForUser(session.user.id, post.id, nextSaved);
+    }
 
     try {
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -254,6 +259,9 @@ export default function UserProfileScreen() {
       // Rollback
       setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isSaved: post.isSaved } : p));
       updateStorePost(post.id, { isSaved: post.isSaved });
+      if (session?.user?.id) {
+        setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
+      }
       if (err instanceof Error) {
         Alert.alert('Error', err.message);
       }
@@ -394,7 +402,7 @@ export default function UserProfileScreen() {
               <View style={styles.badgeRow}>
                 <View style={styles.badge}>
                   <MaterialIcons name="location-on" size={14} color={theme.onSurfaceVariant} />
-                  <Text style={styles.badgeText}>{user?.location || 'Not specified'}</Text>
+                  <Text style={styles.badgeText}>{user?.location || profileCopy.locationNotSpecified}</Text>
                 </View>
               </View>
             </View>
@@ -416,7 +424,7 @@ export default function UserProfileScreen() {
                   style={styles.tabItem}
                   hitSlop={12}
                 >
-                  <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Posts</Text>
+                  <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>{profileCopy.tabLabels.posts}</Text>
                 </Pressable>
                 <Pressable
                   onLayout={(e) => {
@@ -429,7 +437,7 @@ export default function UserProfileScreen() {
                   style={styles.tabItem}
                   hitSlop={12}
                 >
-                  <Text style={[styles.tabText, activeTab === 'comments' && styles.activeTabText]}>Comments</Text>
+                  <Text style={[styles.tabText, activeTab === 'comments' && styles.activeTabText]}>{profileCopy.tabLabels.comments}</Text>
                 </Pressable>
               </View>
             </View>

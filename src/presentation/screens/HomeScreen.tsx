@@ -60,6 +60,7 @@ export default function HomeScreen() {
   const setHomePosts = usePostsStore((state) => state.setHomePosts);
   const setFollowingPosts = usePostsStore((state) => state.setFollowingPosts);
   const updatePost = usePostsStore((state) => state.updatePost);
+  const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
 
   const [homePage, setHomePage] = useState(0);
   const [homeHasMore, setHomeHasMore] = useState(true);
@@ -271,6 +272,7 @@ export default function HomeScreen() {
 
     const nextSaved = !post.isSaved;
     updatePost(post.id, { isSaved: nextSaved });
+    setSavedForUser(session.user.id, post.id, nextSaved);
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -291,6 +293,7 @@ export default function HomeScreen() {
       }
     } catch (error) {
       updatePost(post.id, { isSaved: post.isSaved });
+      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
       if (error instanceof Error) {
         Alert.alert(homeCopy.alerts.savedFailed.title, error.message);
       }
