@@ -1,48 +1,48 @@
 import { t } from '../i18n';
 
 export const pendingContentCopy = {
-  title: t('pendingContent.title'),
+  get title() { return t('pendingContent.title'); },
   emptyState: {
-    title: t('pendingContent.emptyState.title'),
-    message: t('pendingContent.emptyState.message'),
+    get title() { return t('pendingContent.emptyState.title'); },
+    get message() { return t('pendingContent.emptyState.message'); },
   },
-  approveButton: t('pendingContent.approveButton'),
-  rejectButton: t('pendingContent.rejectButton'),
+  get approveButton() { return t('pendingContent.approveButton'); },
+  get rejectButton() { return t('pendingContent.rejectButton'); },
   confirmApprove: {
-    title: t('pendingContent.confirmApprove.title'),
-    message: t('pendingContent.confirmApprove.message'),
-    confirm: t('pendingContent.confirmApprove.confirm'),
-    cancel: t('pendingContent.confirmApprove.cancel'),
+    get title() { return t('pendingContent.confirmApprove.title'); },
+    get message() { return t('pendingContent.confirmApprove.message'); },
+    get confirm() { return t('pendingContent.confirmApprove.confirm'); },
+    get cancel() { return t('pendingContent.confirmApprove.cancel'); },
   },
   confirmReject: {
-    title: t('pendingContent.confirmReject.title'),
-    message: t('pendingContent.confirmReject.message'),
-    confirm: t('pendingContent.confirmReject.confirm'),
-    cancel: t('pendingContent.confirmReject.cancel'),
+    get title() { return t('pendingContent.confirmReject.title'); },
+    get message() { return t('pendingContent.confirmReject.message'); },
+    get confirm() { return t('pendingContent.confirmReject.confirm'); },
+    get cancel() { return t('pendingContent.confirmReject.cancel'); },
   },
   alerts: {
     signInRequired: {
-      title: t('pendingContent.alert.signInRequired.title'),
-      message: t('pendingContent.alert.signInRequired.message'),
+      get title() { return t('pendingContent.alert.signInRequired.title'); },
+      get message() { return t('pendingContent.alert.signInRequired.message'); },
     },
     notAuthorized: {
-      title: t('pendingContent.alert.notAuthorized.title'),
-      message: t('pendingContent.alert.notAuthorized.message'),
+      get title() { return t('pendingContent.alert.notAuthorized.title'); },
+      get message() { return t('pendingContent.alert.notAuthorized.message'); },
     },
     offline: {
-      title: t('pendingContent.alert.offline.title'),
-      message: t('pendingContent.alert.offline.message'),
+      get title() { return t('pendingContent.alert.offline.title'); },
+      get message() { return t('pendingContent.alert.offline.message'); },
     },
     approved: {
-      title: t('pendingContent.alert.approved.title'),
-      message: t('pendingContent.alert.approved.message'),
+      get title() { return t('pendingContent.alert.approved.title'); },
+      get message() { return t('pendingContent.alert.approved.message'); },
     },
     rejected: {
-      title: t('pendingContent.alert.rejected.title'),
-      message: t('pendingContent.alert.rejected.message'),
+      get title() { return t('pendingContent.alert.rejected.title'); },
+      get message() { return t('pendingContent.alert.rejected.message'); },
     },
     failed: {
-      title: t('pendingContent.alert.failed.title'),
+      get title() { return t('pendingContent.alert.failed.title'); },
     },
   },
   testIds: {

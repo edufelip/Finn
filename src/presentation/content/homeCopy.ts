@@ -1,30 +1,30 @@
 import { t, tList } from '../i18n';
 
 export const homeCopy = {
-  searchPlaceholder: t('home.searchPlaceholder'),
+  get searchPlaceholder() { return t('home.searchPlaceholder'); },
   tabs: {
-    communities: t('home.tabs.communities'),
-    people: t('home.tabs.people'),
+    get communities() { return t('home.tabs.communities'); },
+    get people() { return t('home.tabs.people'); },
   },
-  emptyTitle: t('home.emptyTitle'),
-  emptyBody: t('home.emptyBody'),
-  followingEmptyTitle: t('home.followingEmptyTitle'),
-  followingEmptyBody: t('home.followingEmptyBody'),
-  followingGuestBody: t('home.followingGuestBody'),
-  primaryCta: t('home.primaryCta'),
-  secondaryCta: t('home.secondaryCta'),
-  tagsTitle: t('home.tagsTitle'),
-  tags: tList('home.tags'),
+  get emptyTitle() { return t('home.emptyTitle'); },
+  get emptyBody() { return t('home.emptyBody'); },
+  get followingEmptyTitle() { return t('home.followingEmptyTitle'); },
+  get followingEmptyBody() { return t('home.followingEmptyBody'); },
+  get followingGuestBody() { return t('home.followingGuestBody'); },
+  get primaryCta() { return t('home.primaryCta'); },
+  get secondaryCta() { return t('home.secondaryCta'); },
+  get tagsTitle() { return t('home.tagsTitle'); },
+  get tags() { return tList('home.tags'); },
   alerts: {
     signInRequired: {
-      title: t('home.alert.signInRequired.title'),
-      message: t('home.alert.signInRequired.message'),
+      get title() { return t('home.alert.signInRequired.title'); },
+      get message() { return t('home.alert.signInRequired.message'); },
     },
     likeFailed: {
-      title: t('home.alert.likeFailed.title'),
+      get title() { return t('home.alert.likeFailed.title'); },
     },
     savedFailed: {
-      title: t('home.alert.savedFailed.title'),
+      get title() { return t('home.alert.savedFailed.title'); },
     },
   },
   testIds: {

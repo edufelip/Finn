@@ -3,16 +3,16 @@ import { t } from '../i18n';
 export const communityReportCopy = {
   report: {
     error: {
-      title: t('community.report.error.title'),
-      notLoggedIn: t('community.report.error.notLoggedIn'),
+      get title() { return t('community.report.error.title'); },
+      get notLoggedIn() { return t('community.report.error.notLoggedIn'); },
     },
     success: {
-      title: t('community.report.success.title'),
-      message: t('community.report.success.message'),
+      get title() { return t('community.report.success.title'); },
+      get message() { return t('community.report.success.message'); },
     },
     failed: {
-      title: t('community.report.failed.title'),
-      message: t('community.report.failed.message'),
+      get title() { return t('community.report.failed.title'); },
+      get message() { return t('community.report.failed.message'); },
     },
   },
 };

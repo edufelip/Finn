@@ -1,12 +1,12 @@
 import { t } from '../i18n';
 
 export const createBottomSheetCopy = {
-  title: t('createSheet.title'),
-  communityLabel: t('createSheet.community'),
-  communityDescription: t('createSheet.communityDescription'),
-  postLabel: t('createSheet.post'),
-  postDescription: t('createSheet.postDescription'),
-  closeLabel: t('createSheet.close'),
+  get title() { return t('createSheet.title'); },
+  get communityLabel() { return t('createSheet.community'); },
+  get communityDescription() { return t('createSheet.communityDescription'); },
+  get postLabel() { return t('createSheet.post'); },
+  get postDescription() { return t('createSheet.postDescription'); },
+  get closeLabel() { return t('createSheet.close'); },
   testIds: {
     community: 'create-community-action',
     post: 'create-post-action',

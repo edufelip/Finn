@@ -38,7 +38,7 @@ import type { MainStackParamList } from '../navigation/MainStack';
 import { commonCopy } from '../content/commonCopy';
 import { profileCopy } from '../content/profileCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
-import { usePostsStore } from '../../app/store/postsStore';
+import { usePostsStore, useProfilePosts } from '../../app/store/postsStore';
 import { isMockMode } from '../../config/appConfig';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isUserOnline } from '../../domain/presence';
@@ -53,12 +53,13 @@ export default function UserProfileScreen() {
   const { users: userRepository, posts: postRepository, comments: commentRepository } = useRepositories();
   const updateStorePost = usePostsStore((state) => state.updatePost);
   const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
+  const setProfilePosts = usePostsStore((state) => state.setProfilePosts);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<User | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
+  const posts = useProfilePosts(userId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -109,7 +110,7 @@ export default function UserProfileScreen() {
         });
       }
 
-      setPosts(mappedPosts);
+      setProfilePosts(userId, mappedPosts);
       setComments(userComments ?? []);
 
       if (session?.user?.id) {
@@ -121,7 +122,7 @@ export default function UserProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId, userRepository, postRepository, commentRepository, session?.user?.id]);
+  }, [userId, userRepository, postRepository, commentRepository, session?.user?.id, setProfilePosts]);
 
   useEffect(() => {
     loadData();
@@ -229,8 +230,6 @@ export default function UserProfileScreen() {
 
     const nextSaved = !post.isSaved;
     
-    // Update local state
-    setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isSaved: nextSaved } : p));
     // Update global store
     updateStorePost(post.id, { isSaved: nextSaved });
     if (session?.user?.id) {
@@ -256,7 +255,6 @@ export default function UserProfileScreen() {
       }
     } catch (err) {
       // Rollback
-      setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isSaved: post.isSaved } : p));
       updateStorePost(post.id, { isSaved: post.isSaved });
       if (session?.user?.id) {
         setSavedForUser(session.user.id, post.id, post.isSaved ?? false);

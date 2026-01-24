@@ -17,17 +17,18 @@ import type { ThemeColors } from '../theme/colors';
 import { savedPostsCopy } from '../content/savedPostsCopy';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
-import { usePostsStore } from '../../app/store/postsStore';
+import { usePostsStore, useSavedPosts } from '../../app/store/postsStore';
 
 export default function SavedPostsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
   const { posts: postRepository } = useRepositories();
-  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const savedPosts = useSavedPosts(session?.user?.id);
   const updatePost = usePostsStore((state) => state.updatePost);
   const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
+  const setSavedPosts = usePostsStore((state) => state.setSavedPosts);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -41,7 +42,7 @@ export default function SavedPostsScreen() {
     setError(null);
     try {
       const data = await postRepository.getSavedPosts(session.user.id, 0);
-      setPosts(data ?? []);
+      setSavedPosts(session.user.id, data ?? []);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -49,7 +50,7 @@ export default function SavedPostsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [postRepository, session?.user?.id]);
+  }, [postRepository, session?.user?.id, setSavedPosts]);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,13 +74,8 @@ export default function SavedPostsScreen() {
       return;
     }
 
-    const previous = posts;
+    const previous = savedPosts;
     const nextSaved = !post.isSaved;
-    if (!nextSaved) {
-      setPosts((prev) => prev.filter((item) => item.id !== post.id));
-    } else {
-      setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isSaved: true } : item)));
-    }
     updatePost(post.id, { isSaved: nextSaved });
     setSavedForUser(session.user.id, post.id, nextSaved);
 
@@ -102,7 +98,7 @@ export default function SavedPostsScreen() {
         await postRepository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (err) {
-      setPosts(previous);
+      setSavedPosts(session.user.id, previous);
       updatePost(post.id, { isSaved: post.isSaved });
       setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
       if (err instanceof Error) {
@@ -162,7 +158,7 @@ export default function SavedPostsScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
         testID={savedPostsCopy.testIds.list}
-        data={posts}
+        data={savedPosts}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item }) => (
           <PostCard

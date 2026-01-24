@@ -1,11 +1,11 @@
 import { t } from '../i18n';
 
 export const tabCopy = {
-  home: t('tabs.home'),
-  add: t('tabs.add'),
-  explore: t('tabs.explore'),
-  inbox: t('tabs.inbox'),
-  profile: t('tabs.profile'),
+  get home() { return t('tabs.home'); },
+  get add() { return t('tabs.add'); },
+  get explore() { return t('tabs.explore'); },
+  get inbox() { return t('tabs.inbox'); },
+  get profile() { return t('tabs.profile'); },
   testIds: {
     home: 'tab-home',
     add: 'tab-add',

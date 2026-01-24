@@ -1,9 +1,9 @@
 import { t } from '../i18n';
 
 export const commonCopy = {
-  userFallback: t('common.userFallback'),
-  unknownUser: t('common.unknownUser'),
-  emptyDash: t('common.emptyDash'),
-  cancel: t('common.cancel'),
-  error: t('common.error'),
+  get userFallback() { return t('common.userFallback'); },
+  get unknownUser() { return t('common.unknownUser'); },
+  get emptyDash() { return t('common.emptyDash'); },
+  get cancel() { return t('common.cancel'); },
+  get error() { return t('common.error'); },
 };

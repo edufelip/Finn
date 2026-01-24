@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 
 export const webViewCopy = {
-  titleFallback: t('webview.titleFallback'),
-  loading: t('webview.loading'),
-  error: t('webview.error'),
+  get titleFallback() { return t('webview.titleFallback'); },
+  get loading() { return t('webview.loading'); },
+  get error() { return t('webview.error'); },
 };

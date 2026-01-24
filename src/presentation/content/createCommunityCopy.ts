@@ -1,50 +1,50 @@
 import { t } from '../i18n';
 
 export const createCommunityCopy = {
-  headerTitle: t('createCommunity.headerTitle'),
-  titleLabel: t('createCommunity.titleLabel'),
-  titlePlaceholder: t('createCommunity.titlePlaceholder'),
-  descriptionLabel: t('createCommunity.descriptionLabel'),
-  descriptionPlaceholder: t('createCommunity.descriptionPlaceholder'),
+  get headerTitle() { return t('createCommunity.headerTitle'); },
+  get titleLabel() { return t('createCommunity.titleLabel'); },
+  get titlePlaceholder() { return t('createCommunity.titlePlaceholder'); },
+  get descriptionLabel() { return t('createCommunity.descriptionLabel'); },
+  get descriptionPlaceholder() { return t('createCommunity.descriptionPlaceholder'); },
   descriptionCount: (count: number, max: number) =>
     t('createCommunity.descriptionCount', { count, max }),
-  topicLabel: t('createCommunity.topicLabel'),
-  topicPlaceholder: t('createCommunity.topicPlaceholder'),
-  iconLabel: t('createCommunity.iconLabel'),
-  iconHelper: t('createCommunity.iconHelper'),
-  submit: t('createCommunity.submit'),
-  submitLoading: t('createCommunity.submitLoading'),
+  get topicLabel() { return t('createCommunity.topicLabel'); },
+  get topicPlaceholder() { return t('createCommunity.topicPlaceholder'); },
+  get iconLabel() { return t('createCommunity.iconLabel'); },
+  get iconHelper() { return t('createCommunity.iconHelper'); },
+  get submit() { return t('createCommunity.submit'); },
+  get submitLoading() { return t('createCommunity.submitLoading'); },
   alerts: {
     permission: {
-      title: t('createCommunity.alert.permission.title'),
-      message: t('createCommunity.alert.permission.message'),
+      get title() { return t('createCommunity.alert.permission.title'); },
+      get message() { return t('createCommunity.alert.permission.message'); },
     },
     signInRequired: {
-      title: t('createCommunity.alert.signInRequired.title'),
-      message: t('createCommunity.alert.signInRequired.message'),
+      get title() { return t('createCommunity.alert.signInRequired.title'); },
+      get message() { return t('createCommunity.alert.signInRequired.message'); },
     },
     titleRequired: {
-      title: t('createCommunity.alert.titleRequired.title'),
-      message: t('createCommunity.alert.titleRequired.message'),
+      get title() { return t('createCommunity.alert.titleRequired.title'); },
+      get message() { return t('createCommunity.alert.titleRequired.message'); },
     },
     descriptionRequired: {
-      title: t('createCommunity.alert.descriptionRequired.title'),
-      message: t('createCommunity.alert.descriptionRequired.message'),
+      get title() { return t('createCommunity.alert.descriptionRequired.title'); },
+      get message() { return t('createCommunity.alert.descriptionRequired.message'); },
     },
     imageRequired: {
-      title: t('createCommunity.alert.imageRequired.title'),
-      message: t('createCommunity.alert.imageRequired.message'),
+      get title() { return t('createCommunity.alert.imageRequired.title'); },
+      get message() { return t('createCommunity.alert.imageRequired.message'); },
     },
     offline: {
-      title: t('createCommunity.alert.offline.title'),
-      message: t('createCommunity.alert.offline.message'),
+      get title() { return t('createCommunity.alert.offline.title'); },
+      get message() { return t('createCommunity.alert.offline.message'); },
     },
     created: {
-      title: t('createCommunity.alert.created.title'),
-      message: t('createCommunity.alert.created.message'),
+      get title() { return t('createCommunity.alert.created.title'); },
+      get message() { return t('createCommunity.alert.created.message'); },
     },
     failed: {
-      title: t('createCommunity.alert.failed.title'),
+      get title() { return t('createCommunity.alert.failed.title'); },
     },
   },
   testIds: {

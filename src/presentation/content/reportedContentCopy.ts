@@ -1,50 +1,50 @@
 import { t } from '../i18n';
 
 export const reportedContentCopy = {
-  title: t('reportedContent.title'),
+  get title() { return t('reportedContent.title'); },
   emptyState: {
-    title: t('reportedContent.emptyState.title'),
-    message: t('reportedContent.emptyState.message'),
+    get title() { return t('reportedContent.emptyState.title'); },
+    get message() { return t('reportedContent.emptyState.message'); },
   },
   reportedBy: (userName: string) => t('reportedContent.reportedBy', { userName }),
-  reason: t('reportedContent.reason'),
-  deleteButton: t('reportedContent.deleteButton'),
-  markSafeButton: t('reportedContent.markSafeButton'),
+  get reason() { return t('reportedContent.reason'); },
+  get deleteButton() { return t('reportedContent.deleteButton'); },
+  get markSafeButton() { return t('reportedContent.markSafeButton'); },
   confirmDelete: {
-    title: t('reportedContent.confirmDelete.title'),
-    message: t('reportedContent.confirmDelete.message'),
-    confirm: t('reportedContent.confirmDelete.confirm'),
-    cancel: t('reportedContent.confirmDelete.cancel'),
+    get title() { return t('reportedContent.confirmDelete.title'); },
+    get message() { return t('reportedContent.confirmDelete.message'); },
+    get confirm() { return t('reportedContent.confirmDelete.confirm'); },
+    get cancel() { return t('reportedContent.confirmDelete.cancel'); },
   },
   confirmMarkSafe: {
-    title: t('reportedContent.confirmMarkSafe.title'),
-    message: t('reportedContent.confirmMarkSafe.message'),
-    confirm: t('reportedContent.confirmMarkSafe.confirm'),
-    cancel: t('reportedContent.confirmMarkSafe.cancel'),
+    get title() { return t('reportedContent.confirmMarkSafe.title'); },
+    get message() { return t('reportedContent.confirmMarkSafe.message'); },
+    get confirm() { return t('reportedContent.confirmMarkSafe.confirm'); },
+    get cancel() { return t('reportedContent.confirmMarkSafe.cancel'); },
   },
   alerts: {
     signInRequired: {
-      title: t('reportedContent.alert.signInRequired.title'),
-      message: t('reportedContent.alert.signInRequired.message'),
+      get title() { return t('reportedContent.alert.signInRequired.title'); },
+      get message() { return t('reportedContent.alert.signInRequired.message'); },
     },
     notAuthorized: {
-      title: t('reportedContent.alert.notAuthorized.title'),
-      message: t('reportedContent.alert.notAuthorized.message'),
+      get title() { return t('reportedContent.alert.notAuthorized.title'); },
+      get message() { return t('reportedContent.alert.notAuthorized.message'); },
     },
     offline: {
-      title: t('reportedContent.alert.offline.title'),
-      message: t('reportedContent.alert.offline.message'),
+      get title() { return t('reportedContent.alert.offline.title'); },
+      get message() { return t('reportedContent.alert.offline.message'); },
     },
     deleted: {
-      title: t('reportedContent.alert.deleted.title'),
-      message: t('reportedContent.alert.deleted.message'),
+      get title() { return t('reportedContent.alert.deleted.title'); },
+      get message() { return t('reportedContent.alert.deleted.message'); },
     },
     markedSafe: {
-      title: t('reportedContent.alert.markedSafe.title'),
-      message: t('reportedContent.alert.markedSafe.message'),
+      get title() { return t('reportedContent.alert.markedSafe.title'); },
+      get message() { return t('reportedContent.alert.markedSafe.message'); },
     },
     failed: {
-      title: t('reportedContent.alert.failed.title'),
+      get title() { return t('reportedContent.alert.failed.title'); },
     },
   },
   testIds: {

@@ -1,52 +1,52 @@
 import { t } from '../i18n';
 
 export const profileCopy = {
-  title: t('profile.title'),
+  get title() { return t('profile.title'); },
   tabs: {
-    posts: t('profile.tab.posts'),
-    saved: t('profile.tab.saved'),
-    communities: t('profile.tab.communities'),
+    get posts() { return t('profile.tab.posts'); },
+    get saved() { return t('profile.tab.saved'); },
+    get communities() { return t('profile.tab.communities'); },
   },
   stats: {
-    posts: t('profile.stats.posts'),
-    followers: t('profile.stats.followers'),
-    following: t('profile.stats.following'),
+    get posts() { return t('profile.stats.posts'); },
+    get followers() { return t('profile.stats.followers'); },
+    get following() { return t('profile.stats.following'); },
   },
   empty: {
-    title: t('profile.empty.title'),
-    body: t('profile.empty.body'),
-    cta: t('profile.empty.cta'),
+    get title() { return t('profile.empty.title'); },
+    get body() { return t('profile.empty.body'); },
+    get cta() { return t('profile.empty.cta'); },
   },
   savedEmpty: {
-    title: t('profile.savedEmpty.title'),
-    body: t('profile.savedEmpty.body'),
+    get title() { return t('profile.savedEmpty.title'); },
+    get body() { return t('profile.savedEmpty.body'); },
   },
   communitiesEmpty: {
-    title: t('profile.communitiesEmpty.title'),
-    body: t('profile.communitiesEmpty.body'),
+    get title() { return t('profile.communitiesEmpty.title'); },
+    get body() { return t('profile.communitiesEmpty.body'); },
   },
   loading: {
-    title: t('profile.loading.title'),
-    body: t('profile.loading.body'),
+    get title() { return t('profile.loading.title'); },
+    get body() { return t('profile.loading.body'); },
   },
-  errorSignInRequired: t('profile.error.signInRequired'),
-  errorFollowFailed: t('profile.error.failedFollow'),
-  locationNotSpecified: t('profile.location.notSpecified'),
+  get errorSignInRequired() { return t('profile.error.signInRequired'); },
+  get errorFollowFailed() { return t('profile.error.failedFollow'); },
+  get locationNotSpecified() { return t('profile.location.notSpecified'); },
   tabLabels: {
-    posts: t('profile.tabs.posts'),
-    comments: t('profile.tabs.comments'),
+    get posts() { return t('profile.tabs.posts'); },
+    get comments() { return t('profile.tabs.comments'); },
   },
   memberSince: (date: string) => t('profile.memberSince', { date }),
   alerts: {
     signInRequired: {
-      title: t('profile.alert.signInRequired.title'),
-      message: t('profile.alert.signInRequired.message'),
+      get title() { return t('profile.alert.signInRequired.title'); },
+      get message() { return t('profile.alert.signInRequired.message'); },
     },
     likeFailed: {
-      title: t('profile.alert.likeFailed.title'),
+      get title() { return t('profile.alert.likeFailed.title'); },
     },
     savedFailed: {
-      title: t('profile.alert.savedFailed.title'),
+      get title() { return t('profile.alert.savedFailed.title'); },
     },
   },
   testIds: {

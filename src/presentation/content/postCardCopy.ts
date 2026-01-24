@@ -1,26 +1,26 @@
 import { t } from '../i18n';
 
 export const postCardCopy = {
-  optionsTitle: t('post.optionsTitle'),
-  save: t('post.save'),
-  unsave: t('post.unsave'),
-  cancel: t('post.cancel'),
-  share: t('post.share'),
-  communityFallback: t('post.communityFallback'),
-  authorFallback: t('post.authorFallback'),
+  get optionsTitle() { return t('post.optionsTitle'); },
+  get save() { return t('post.save'); },
+  get unsave() { return t('post.unsave'); },
+  get cancel() { return t('post.cancel'); },
+  get share() { return t('post.share'); },
+  get communityFallback() { return t('post.communityFallback'); },
+  get authorFallback() { return t('post.authorFallback'); },
   postedBy: (name: string) => t('post.postedBy', { name }),
   report: {
     error: {
-      title: t('post.report.error.title'),
-      notLoggedIn: t('post.report.error.notLoggedIn'),
+      get title() { return t('post.report.error.title'); },
+      get notLoggedIn() { return t('post.report.error.notLoggedIn'); },
     },
     success: {
-      title: t('post.report.success.title'),
-      message: t('post.report.success.message'),
+      get title() { return t('post.report.success.title'); },
+      get message() { return t('post.report.success.message'); },
     },
     failed: {
-      title: t('post.report.failed.title'),
-      message: t('post.report.failed.message'),
+      get title() { return t('post.report.failed.title'); },
+      get message() { return t('post.report.failed.message'); },
     },
   },
 };

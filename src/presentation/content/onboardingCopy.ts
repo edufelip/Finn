@@ -1,25 +1,25 @@
 import { t } from '../i18n';
 
 export const onboardingCopy = {
-  skip: t('onboarding.skip'),
+  get skip() { return t('onboarding.skip'); },
   slides: {
     discover: {
-      title: t('onboarding.slides.discover.title'),
-      description: t('onboarding.slides.discover.description'),
+      get title() { return t('onboarding.slides.discover.title'); },
+      get description() { return t('onboarding.slides.discover.description'); },
     },
     share: {
-      title: t('onboarding.slides.share.title'),
-      description: t('onboarding.slides.share.description'),
+      get title() { return t('onboarding.slides.share.title'); },
+      get description() { return t('onboarding.slides.share.description'); },
     },
     connect: {
-      title: t('onboarding.slides.connect.title'),
-      description: t('onboarding.slides.connect.description'),
+      get title() { return t('onboarding.slides.connect.title'); },
+      get description() { return t('onboarding.slides.connect.description'); },
     },
   },
   buttons: {
-    next: t('onboarding.buttons.next'),
-    previous: t('onboarding.buttons.previous'),
-    getStarted: t('onboarding.buttons.getStarted'),
+    get next() { return t('onboarding.buttons.next'); },
+    get previous() { return t('onboarding.buttons.previous'); },
+    get getStarted() { return t('onboarding.buttons.getStarted'); },
   },
   testIds: {
     container: 'onboarding-container',

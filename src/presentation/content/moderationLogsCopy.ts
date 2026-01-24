@@ -1,37 +1,37 @@
 import { t } from '../i18n';
 
 export const moderationLogsCopy = {
-  title: t('moderationLogs.title'),
-  unknownModerator: t('moderationLogs.unknownModerator'),
+  get title() { return t('moderationLogs.title'); },
+  get unknownModerator() { return t('moderationLogs.unknownModerator'); },
   emptyState: {
-    title: t('moderationLogs.emptyState.title'),
-    message: t('moderationLogs.emptyState.message'),
+    get title() { return t('moderationLogs.emptyState.title'); },
+    get message() { return t('moderationLogs.emptyState.message'); },
   },
   actions: {
-    post_approved: t('moderationLogs.actions.post_approved'),
-    post_rejected: t('moderationLogs.actions.post_rejected'),
-    post_deleted: t('moderationLogs.actions.post_deleted'),
-    report_resolved_safe: t('moderationLogs.actions.report_resolved_safe'),
-    report_resolved_deleted: t('moderationLogs.actions.report_resolved_deleted'),
-    moderator_added: t('moderationLogs.actions.moderator_added'),
-    moderator_removed: t('moderationLogs.actions.moderator_removed'),
+    get post_approved() { return t('moderationLogs.actions.post_approved'); },
+    get post_rejected() { return t('moderationLogs.actions.post_rejected'); },
+    get post_deleted() { return t('moderationLogs.actions.post_deleted'); },
+    get report_resolved_safe() { return t('moderationLogs.actions.report_resolved_safe'); },
+    get report_resolved_deleted() { return t('moderationLogs.actions.report_resolved_deleted'); },
+    get moderator_added() { return t('moderationLogs.actions.moderator_added'); },
+    get moderator_removed() { return t('moderationLogs.actions.moderator_removed'); },
   },
   by: (moderatorName: string) => t('moderationLogs.by', { moderatorName }),
   alerts: {
     signInRequired: {
-      title: t('moderationLogs.alert.signInRequired.title'),
-      message: t('moderationLogs.alert.signInRequired.message'),
+      get title() { return t('moderationLogs.alert.signInRequired.title'); },
+      get message() { return t('moderationLogs.alert.signInRequired.message'); },
     },
     notAuthorized: {
-      title: t('moderationLogs.alert.notAuthorized.title'),
-      message: t('moderationLogs.alert.notAuthorized.message'),
+      get title() { return t('moderationLogs.alert.notAuthorized.title'); },
+      get message() { return t('moderationLogs.alert.notAuthorized.message'); },
     },
     offline: {
-      title: t('moderationLogs.alert.offline.title'),
-      message: t('moderationLogs.alert.offline.message'),
+      get title() { return t('moderationLogs.alert.offline.title'); },
+      get message() { return t('moderationLogs.alert.offline.message'); },
     },
     failed: {
-      title: t('moderationLogs.alert.failed.title'),
+      get title() { return t('moderationLogs.alert.failed.title'); },
     },
   },
   testIds: {

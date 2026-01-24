@@ -1,43 +1,43 @@
 import { t } from '../i18n';
 
 export const notificationsCopy = {
-  title: t('notifications.title'),
+  get title() { return t('notifications.title'); },
   tabs: {
-    all: t('notifications.tabs.all'),
-    myPosts: t('notifications.tabs.myPosts'),
+    get all() { return t('notifications.tabs.all'); },
+    get myPosts() { return t('notifications.tabs.myPosts'); },
   },
   sections: {
-    new: t('notifications.section.new'),
-    earlier: t('notifications.section.earlier'),
+    get new() { return t('notifications.section.new'); },
+    get earlier() { return t('notifications.section.earlier'); },
   },
   actions: {
-    markAllRead: t('notifications.action.markAllRead'),
-    followBack: t('notifications.action.followBack'),
-    following: t('notifications.action.following'),
+    get markAllRead() { return t('notifications.action.markAllRead'); },
+    get followBack() { return t('notifications.action.followBack'); },
+    get following() { return t('notifications.action.following'); },
   },
   items: {
-    followedYouSuffix: t('notifications.item.followedYouSuffix'),
-    likedPostSuffix: t('notifications.item.likedPostSuffix'),
+    get followedYouSuffix() { return t('notifications.item.followedYouSuffix'); },
+    get likedPostSuffix() { return t('notifications.item.likedPostSuffix'); },
     commentedPostSuffix: (preview: string) => t('notifications.item.commentedPostSuffix', { preview }),
-    commentFallback: t('notifications.item.commentFallback'),
-    likeFallback: t('notifications.item.likeFallback'),
+    get commentFallback() { return t('notifications.item.commentFallback'); },
+    get likeFallback() { return t('notifications.item.likeFallback'); },
   },
   empty: {
-    title: t('notifications.empty.title'),
-    body: t('notifications.empty.body'),
+    get title() { return t('notifications.empty.title'); },
+    get body() { return t('notifications.empty.body'); },
   },
   alerts: {
     loadFailed: {
-      title: t('notifications.error.title'),
-      message: t('notifications.error.message'),
+      get title() { return t('notifications.error.title'); },
+      get message() { return t('notifications.error.message'); },
     },
     followFailed: {
-      title: t('notifications.alert.followFailed.title'),
-      message: t('notifications.alert.followFailed.message'),
+      get title() { return t('notifications.alert.followFailed.title'); },
+      get message() { return t('notifications.alert.followFailed.message'); },
     },
     markReadFailed: {
-      title: t('notifications.alert.markReadFailed.title'),
-      message: t('notifications.alert.markReadFailed.message'),
+      get title() { return t('notifications.alert.markReadFailed.title'); },
+      get message() { return t('notifications.alert.markReadFailed.message'); },
     },
   },
   testIds: {

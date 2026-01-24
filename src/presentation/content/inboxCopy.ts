@@ -14,23 +14,23 @@ export type InboxMessage = {
 };
 
 export const inboxCopy = {
-  title: t('inbox.title'),
-  searchPlaceholder: t('inbox.searchPlaceholder'),
+  get title() { return t('inbox.title'); },
+  get searchPlaceholder() { return t('inbox.searchPlaceholder'); },
   tabs: {
-    primary: t('inbox.tabs.primary'),
-    requests: t('inbox.tabs.requests'),
-    archived: t('inbox.tabs.archived'),
+    get primary() { return t('inbox.tabs.primary'); },
+    get requests() { return t('inbox.tabs.requests'); },
+    get archived() { return t('inbox.tabs.archived'); },
   },
   sections: {
-    unread: t('inbox.section.unread'),
-    earlier: t('inbox.section.earlier'),
+    get unread() { return t('inbox.section.unread'); },
+    get earlier() { return t('inbox.section.earlier'); },
   },
   empty: {
-    title: t('inbox.empty.title'),
-    body: t('inbox.empty.body'),
+    get title() { return t('inbox.empty.title'); },
+    get body() { return t('inbox.empty.body'); },
   },
   actions: {
-    compose: t('inbox.action.compose'),
+    get compose() { return t('inbox.action.compose'); },
   },
   testIds: {
     tabPrimary: 'inbox-tab-primary',

@@ -38,12 +38,15 @@ export default function SearchScreen() {
     sortOrder,
     loading,
     initialLoad,
+    loadingMore,
+    hasMore,
     userSubscriptions,
     isGuest,
     exitGuest,
     searchCommunities,
     applyTopicFilter,
     applySortOrder,
+    loadMore,
     handleToggleSubscription,
   } = useSearchCommunities({
     initialSort: route.params?.sort || 'mostFollowed',
@@ -80,25 +83,25 @@ export default function SearchScreen() {
   );
 
   const handleSortPress = useCallback(() => {
-    Alert.alert('Sort by', '', [
+    Alert.alert(searchCopy.sortBy, '', [
       { text: searchCopy.sortMostFollowed, onPress: () => applySortOrder('mostFollowed') },
       { text: searchCopy.sortLeastFollowed, onPress: () => applySortOrder('leastFollowed') },
       { text: searchCopy.sortNewest, onPress: () => applySortOrder('newest') },
       { text: searchCopy.sortOldest, onPress: () => applySortOrder('oldest') },
-      { text: 'Cancel', style: 'cancel' },
+      { text: searchCopy.cancel, style: 'cancel' },
     ]);
   }, [applySortOrder]);
 
   const handleTopicPress = useCallback(() => {
     const options = [
-      { text: 'All Topics', onPress: () => applyTopicFilter(undefined) },
+      { text: searchCopy.allTopics, onPress: () => applyTopicFilter(undefined) },
       ...topics.map((topic) => ({
         text: topic.label,
         onPress: () => applyTopicFilter(topic.id),
       })),
-      { text: 'Cancel', style: 'cancel' as const },
+      { text: searchCopy.cancel, style: 'cancel' as const },
     ];
-    Alert.alert('Filter by Topic', '', options);
+    Alert.alert(searchCopy.filterByTopic, '', options);
   }, [topics, applyTopicFilter]);
 
   const selectedTopic = useMemo(
@@ -133,13 +136,13 @@ export default function SearchScreen() {
   );
 
   const renderFooter = useCallback(() => {
-    if (communities.length === 0 || !loading) return null;
+    if (!loadingMore || communities.length === 0 || !hasMore) return null;
     return (
       <View style={styles.footerSection}>
         <ActivityIndicator size="small" color={theme.primary} />
       </View>
     );
-  }, [communities.length, loading, styles.footerSection, theme.primary]);
+  }, [communities.length, hasMore, loadingMore, styles.footerSection, theme.primary]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -179,6 +182,8 @@ export default function SearchScreen() {
         renderItem={renderCommunityItem}
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={renderFooter}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
       />
     </SafeAreaView>
   );

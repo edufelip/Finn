@@ -1,40 +1,40 @@
 import { t } from '../i18n';
 
 export const postDetailCopy = {
-  commentsTitle: t('postDetail.commentsTitle'),
-  inputPlaceholder: t('postDetail.inputPlaceholder'),
-  empty: t('postDetail.empty'),
-  commentAge: t('postDetail.commentAge'),
-  commentAuthorFallback: t('postDetail.commentAuthorFallback'),
-  currentUserFallback: t('postDetail.currentUserFallback'),
+  get commentsTitle() { return t('postDetail.commentsTitle'); },
+  get inputPlaceholder() { return t('postDetail.inputPlaceholder'); },
+  get empty() { return t('postDetail.empty'); },
+  get commentAge() { return t('postDetail.commentAge'); },
+  get commentAuthorFallback() { return t('postDetail.commentAuthorFallback'); },
+  get currentUserFallback() { return t('postDetail.currentUserFallback'); },
   alerts: {
     loadFailed: {
-      title: t('postDetail.alert.loadFailed.title'),
+      get title() { return t('postDetail.alert.loadFailed.title'); },
     },
     signInRequired: {
-      title: t('postDetail.alert.signInRequired.title'),
-      message: t('postDetail.alert.signInRequired.message'),
+      get title() { return t('postDetail.alert.signInRequired.title'); },
+      get message() { return t('postDetail.alert.signInRequired.message'); },
     },
     likeFailed: {
-      title: t('postDetail.alert.likeFailed.title'),
+      get title() { return t('postDetail.alert.likeFailed.title'); },
     },
     savedFailed: {
-      title: t('postDetail.alert.savedFailed.title'),
+      get title() { return t('postDetail.alert.savedFailed.title'); },
     },
     shareUnavailable: {
-      title: t('postDetail.alert.shareUnavailable.title'),
-      message: t('postDetail.alert.shareUnavailable.message'),
+      get title() { return t('postDetail.alert.shareUnavailable.title'); },
+      get message() { return t('postDetail.alert.shareUnavailable.message'); },
     },
     contentRequired: {
-      title: t('postDetail.alert.contentRequired.title'),
-      message: t('postDetail.alert.contentRequired.message'),
+      get title() { return t('postDetail.alert.contentRequired.title'); },
+      get message() { return t('postDetail.alert.contentRequired.message'); },
     },
     offline: {
-      title: t('postDetail.alert.offline.title'),
-      message: t('postDetail.alert.offline.message'),
+      get title() { return t('postDetail.alert.offline.title'); },
+      get message() { return t('postDetail.alert.offline.message'); },
     },
     commentFailed: {
-      title: t('postDetail.alert.commentFailed.title'),
+      get title() { return t('postDetail.alert.commentFailed.title'); },
     },
   },
   testIds: {

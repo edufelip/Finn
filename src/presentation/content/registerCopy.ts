@@ -1,52 +1,52 @@
 import { t } from '../i18n';
 
 export const registerCopy = {
-  title: t('register.title'),
+  get title() { return t('register.title'); },
   placeholders: {
-    name: t('register.placeholder.name'),
-    email: t('register.placeholder.email'),
-    password: t('register.placeholder.password'),
-    confirm: t('register.placeholder.confirm'),
+    get name() { return t('register.placeholder.name'); },
+    get email() { return t('register.placeholder.email'); },
+    get password() { return t('register.placeholder.password'); },
+    get confirm() { return t('register.placeholder.confirm'); },
   },
-  submit: t('register.submit'),
-  submitLoading: t('register.submitLoading'),
-  or: t('register.or'),
-  google: t('register.google'),
+  get submit() { return t('register.submit'); },
+  get submitLoading() { return t('register.submitLoading'); },
+  get or() { return t('register.or'); },
+  get google() { return t('register.google'); },
   alerts: {
     nameRequired: {
-      title: t('register.alert.nameRequired.title'),
-      message: t('register.alert.nameRequired.message'),
+      get title() { return t('register.alert.nameRequired.title'); },
+      get message() { return t('register.alert.nameRequired.message'); },
     },
     emailRequired: {
-      title: t('register.alert.emailRequired.title'),
-      message: t('register.alert.emailRequired.message'),
+      get title() { return t('register.alert.emailRequired.title'); },
+      get message() { return t('register.alert.emailRequired.message'); },
     },
     invalidEmail: {
-      title: t('register.alert.invalidEmail.title'),
-      message: t('register.alert.invalidEmail.message'),
+      get title() { return t('register.alert.invalidEmail.title'); },
+      get message() { return t('register.alert.invalidEmail.message'); },
     },
     passwordRequired: {
-      title: t('register.alert.passwordRequired.title'),
-      message: t('register.alert.passwordRequired.message'),
+      get title() { return t('register.alert.passwordRequired.title'); },
+      get message() { return t('register.alert.passwordRequired.message'); },
     },
     confirmRequired: {
-      title: t('register.alert.confirmRequired.title'),
-      message: t('register.alert.confirmRequired.message'),
+      get title() { return t('register.alert.confirmRequired.title'); },
+      get message() { return t('register.alert.confirmRequired.message'); },
     },
     mismatch: {
-      title: t('register.alert.mismatch.title'),
-      message: t('register.alert.mismatch.message'),
+      get title() { return t('register.alert.mismatch.title'); },
+      get message() { return t('register.alert.mismatch.message'); },
     },
     offline: {
-      title: t('register.alert.offline.title'),
-      message: t('register.alert.offline.message'),
+      get title() { return t('register.alert.offline.title'); },
+      get message() { return t('register.alert.offline.message'); },
     },
     failed: {
-      title: t('register.alert.failed.title'),
+      get title() { return t('register.alert.failed.title'); },
     },
     checkEmail: {
-      title: t('register.alert.checkEmail.title'),
-      message: t('register.alert.checkEmail.message'),
+      get title() { return t('register.alert.checkEmail.title'); },
+      get message() { return t('register.alert.checkEmail.message'); },
     },
   },
   testIds: {

@@ -1,30 +1,30 @@
 import { t } from '../i18n';
 
 export const forgotPasswordCopy = {
-  title: t('forgot.title'),
-  subtitle: t('forgot.subtitle'),
-  emailPlaceholder: t('forgot.emailPlaceholder'),
-  submit: t('forgot.submit'),
-  submitLoading: t('forgot.submitLoading'),
+  get title() { return t('forgot.title'); },
+  get subtitle() { return t('forgot.subtitle'); },
+  get emailPlaceholder() { return t('forgot.emailPlaceholder'); },
+  get submit() { return t('forgot.submit'); },
+  get submitLoading() { return t('forgot.submitLoading'); },
   alerts: {
     emailRequired: {
-      title: t('forgot.alert.emailRequired.title'),
-      message: t('forgot.alert.emailRequired.message'),
+      get title() { return t('forgot.alert.emailRequired.title'); },
+      get message() { return t('forgot.alert.emailRequired.message'); },
     },
     invalidEmail: {
-      title: t('forgot.alert.invalidEmail.title'),
-      message: t('forgot.alert.invalidEmail.message'),
+      get title() { return t('forgot.alert.invalidEmail.title'); },
+      get message() { return t('forgot.alert.invalidEmail.message'); },
     },
     offline: {
-      title: t('forgot.alert.offline.title'),
-      message: t('forgot.alert.offline.message'),
+      get title() { return t('forgot.alert.offline.title'); },
+      get message() { return t('forgot.alert.offline.message'); },
     },
     failed: {
-      title: t('forgot.alert.failed.title'),
+      get title() { return t('forgot.alert.failed.title'); },
     },
     success: {
-      title: t('forgot.alert.success.title'),
-      message: t('forgot.alert.success.message'),
+      get title() { return t('forgot.alert.success.title'); },
+      get message() { return t('forgot.alert.success.message'); },
     },
   },
   testIds: {

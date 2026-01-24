@@ -120,6 +120,5 @@ export const tList = (key: string): string[] => {
     value = strings[DEFAULT_LOCALE]?.[key];
   }
   
-  return Array.isArray(value) ? value : [];
+  return Array.isArray(value) ? [...value] : [];
 };
-

@@ -1,31 +1,31 @@
 import { t } from '../i18n';
 
 export const postCommentsCopy = {
-  title: t('postComments.title'),
-  empty: t('postComments.empty'),
-  inputPlaceholder: t('postComments.inputPlaceholder'),
-  submit: t('postComments.submit'),
-  submitLoading: t('postComments.submitLoading'),
-  commentAuthorFallback: t('postComments.commentAuthorFallback'),
-  currentUserFallback: t('postComments.currentUserFallback'),
+  get title() { return t('postComments.title'); },
+  get empty() { return t('postComments.empty'); },
+  get inputPlaceholder() { return t('postComments.inputPlaceholder'); },
+  get submit() { return t('postComments.submit'); },
+  get submitLoading() { return t('postComments.submitLoading'); },
+  get commentAuthorFallback() { return t('postComments.commentAuthorFallback'); },
+  get currentUserFallback() { return t('postComments.currentUserFallback'); },
   alerts: {
     loadFailed: {
-      title: t('postComments.alert.loadFailed.title'),
+      get title() { return t('postComments.alert.loadFailed.title'); },
     },
     signInRequired: {
-      title: t('postComments.alert.signInRequired.title'),
-      message: t('postComments.alert.signInRequired.message'),
+      get title() { return t('postComments.alert.signInRequired.title'); },
+      get message() { return t('postComments.alert.signInRequired.message'); },
     },
     contentRequired: {
-      title: t('postComments.alert.contentRequired.title'),
-      message: t('postComments.alert.contentRequired.message'),
+      get title() { return t('postComments.alert.contentRequired.title'); },
+      get message() { return t('postComments.alert.contentRequired.message'); },
     },
     offline: {
-      title: t('postComments.alert.offline.title'),
-      message: t('postComments.alert.offline.message'),
+      get title() { return t('postComments.alert.offline.title'); },
+      get message() { return t('postComments.alert.offline.message'); },
     },
     commentFailed: {
-      title: t('postComments.alert.commentFailed.title'),
+      get title() { return t('postComments.alert.commentFailed.title'); },
     },
   },
   testIds: {
