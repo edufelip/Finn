@@ -5,6 +5,7 @@ jest.mock('../src/data/supabase/client', () => ({
   supabase: {
     from: jest.fn(),
     storage: { from: jest.fn() },
+    rpc: jest.fn(),
   },
 }));
 
@@ -25,6 +26,7 @@ describe('SupabaseCommunityRepository', () => {
   beforeEach(() => {
     supabase.from.mockReset();
     supabase.storage.from.mockReset();
+    supabase.rpc.mockReset();
   });
 
   afterEach(() => {
@@ -66,11 +68,6 @@ describe('SupabaseCommunityRepository', () => {
       throw new Error(`Unexpected table ${table}`);
     });
 
-    const blob = { type: 'image/jpeg' } as Blob;
-    global.fetch = jest.fn().mockResolvedValue({
-      blob: jest.fn().mockResolvedValue(blob),
-    }) as unknown as typeof fetch;
-
     const repository = new SupabaseCommunityRepository();
     await repository.saveCommunity(
       {
@@ -83,7 +80,7 @@ describe('SupabaseCommunityRepository', () => {
     );
 
     expect(supabase.storage.from).toHaveBeenCalledWith('community-images');
-    expect(upload).toHaveBeenCalledWith(expect.stringContaining('user-1/'), blob, {
+    expect(upload).toHaveBeenCalledWith(expect.stringContaining('user-1/'), expect.any(Uint8Array), {
       upsert: true,
       contentType: 'image/jpeg',
     });
@@ -142,30 +139,18 @@ describe('SupabaseCommunityRepository', () => {
     });
     supabase.storage.from.mockReturnValue({ createSignedUrl });
 
-    const communitiesQuery = {
-      select: jest.fn().mockReturnThis(),
-      ilike: jest.fn().mockReturnThis(),
-      then: jest.fn((resolve) =>
-        resolve({
-          data: [
-            {
-              id: 1,
-              title: 'General',
-              description: 'General',
-              image_url: 'user-1/community.jpg',
-              owner_id: 'user-1',
-            },
-          ],
-          error: null,
-        })
-      ),
-    };
-
-    supabase.from.mockImplementation((table: string) => {
-      if (table === TABLES.communities) {
-        return communitiesQuery;
-      }
-      throw new Error(`Unexpected table ${table}`);
+    supabase.rpc.mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          title: 'General',
+          description: 'General',
+          image_url: 'user-1/community.jpg',
+          owner_id: 'user-1',
+          subscribers_count: 0,
+        },
+      ],
+      error: null,
     });
 
     const repository = new SupabaseCommunityRepository();

@@ -23,6 +23,14 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
   }),
 }));
 
+jest.mock('../src/app/providers/LocalizationProvider', () => ({
+  useLocalization: () => ({
+    locale: 'en',
+    setLocale: jest.fn(),
+    supportedLocales: ['en'],
+  }),
+}));
+
 jest.mock('../src/app/providers/PresenceProvider', () => ({
   usePresence: () => ({
     isOnlineVisible: true,

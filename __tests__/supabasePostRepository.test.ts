@@ -216,11 +216,6 @@ describe('SupabasePostRepository', () => {
       throw new Error(`Unexpected table ${table}`);
     });
 
-    const blob = { type: 'image/jpeg' } as Blob;
-    global.fetch = jest.fn().mockResolvedValue({
-      blob: jest.fn().mockResolvedValue(blob),
-    }) as unknown as typeof fetch;
-
     const repository = new SupabasePostRepository();
     await repository.savePost(
       {
@@ -233,7 +228,7 @@ describe('SupabasePostRepository', () => {
     );
 
     expect(supabase.storage.from).toHaveBeenCalledWith('post-images');
-    expect(upload).toHaveBeenCalledWith(expect.stringContaining('user-1/'), blob, {
+    expect(upload).toHaveBeenCalledWith(expect.stringContaining('user-1/'), expect.any(Uint8Array), {
       upsert: true,
       contentType: 'image/jpeg',
     });

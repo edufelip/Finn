@@ -33,7 +33,15 @@ jest.mock('expo-image-picker', () => ({
 }));
 
 jest.mock('expo-image-manipulator', () => ({
-  manipulateAsync: jest.fn().mockResolvedValue({ uri: 'file://processed.jpg' }),
+  ImageManipulator: {
+    manipulate: () => ({
+      resize: () => ({
+        renderAsync: async () => ({
+          saveAsync: async () => ({ uri: 'file://processed.jpg' }),
+        }),
+      }),
+    }),
+  },
   SaveFormat: { JPEG: 'jpeg' },
 }));
 
