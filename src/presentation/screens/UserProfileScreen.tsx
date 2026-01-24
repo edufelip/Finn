@@ -185,11 +185,12 @@ export default function UserProfileScreen() {
     likeInFlightRef.current.add(post.id);
 
     const nextLiked = !post.isLiked;
-    const nextLikesCount = Math.max(0, (post.likesCount ?? 0) + (nextLiked ? 1 : -1));
+    // Read current count from store to ensure accuracy
+    const currentPost = usePostsStore.getState().postsById[post.id];
+    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
+    const nextLikesCount = Math.max(0, currentCount + (nextLiked ? 1 : -1));
     
-    // Update local state
-    setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isLiked: nextLiked, likesCount: nextLikesCount } : p));
-    // Update global store
+    // Update global store (single source of truth)
     updateStorePost(post.id, { isLiked: nextLiked, likesCount: nextLikesCount });
 
     try {
@@ -210,9 +211,8 @@ export default function UserProfileScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
-      // Rollback
-      setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isLiked: post.isLiked, likesCount: post.likesCount } : p));
-      updateStorePost(post.id, { isLiked: post.isLiked, likesCount: post.likesCount });
+      // Rollback to previous state on error
+      updateStorePost(post.id, { isLiked: !nextLiked, likesCount: currentCount });
       if (err instanceof Error) {
         Alert.alert(commonCopy.error, err.message);
       }

@@ -42,6 +42,8 @@ describe('HomeScreen', () => {
     mockUseAuth.mockReturnValue({
       session: { user: { id: 'user-1', email: 'user@example.com' } },
       initializing: false,
+      isGuest: false,
+      exitGuest: jest.fn(),
     });
     mockNavigate.mockReset();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
@@ -281,7 +283,8 @@ describe('HomeScreen', () => {
 
   it('shows sign-in required alert when session is missing', async () => {
     const postsRepo = {
-      getUserFeed: jest.fn().mockResolvedValue([
+      getUserFeed: jest.fn().mockResolvedValue([]),
+      getPublicFeed: jest.fn().mockResolvedValue([
         {
           id: 7,
           content: 'Sign in',
@@ -304,26 +307,32 @@ describe('HomeScreen', () => {
       getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
     };
 
-    const { getByTestId, rerender } = render(
+    // Start with guest mode
+    const mockExitGuest = jest.fn();
+    mockUseAuth.mockReturnValue({ 
+      session: null, 
+      initializing: false,
+      isGuest: true,
+      exitGuest: mockExitGuest,
+    });
+
+    const { getByTestId } = render(
       <RepositoryProvider overrides={{ posts: postsRepo, users: usersRepo }}>
         <HomeScreen />
       </RepositoryProvider>
     );
 
     await waitFor(() => expect(getByTestId('post-like-7')).toBeTruthy());
-    mockUseAuth.mockReturnValue({ session: null, initializing: false });
-    rerender(
-      <RepositoryProvider overrides={{ posts: postsRepo, users: usersRepo }}>
-        <HomeScreen />
-      </RepositoryProvider>
-    );
-
+    
     fireEvent.press(getByTestId('post-like-7'));
-    expect(Alert.alert).toHaveBeenCalledWith(guestCopy.action.title, guestCopy.action.body, [
-      { text: guestCopy.action.cancel, style: 'cancel' },
-      { text: guestCopy.action.signIn, onPress: expect.any(Function) },
-    ]);
-    await waitForHomeEffects(postsRepo, usersRepo);
+    
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(guestCopy.action.title, guestCopy.action.body, [
+        { text: guestCopy.action.cancel, style: 'cancel' },
+        { text: guestCopy.action.signIn, onPress: expect.any(Function) },
+      ]);
+    });
+    await waitFor(() => expect(postsRepo.getPublicFeed).toHaveBeenCalled(), { timeout: 3000 });
   });
 
   it('saves a post via options menu', async () => {

@@ -110,10 +110,6 @@ export default function PostDetailScreen() {
     }
 
     const nextSaved = !post.isSaved;
-    setPost((prev) => ({
-      ...prev,
-      isSaved: nextSaved,
-    }));
     updatePost(post.id, { isSaved: nextSaved });
     setSavedForUser(session.user.id, post.id, nextSaved);
 
@@ -135,12 +131,9 @@ export default function PostDetailScreen() {
         await postRepository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (error) {
-      setPost((prev) => ({
-        ...prev,
-        isSaved: post.isSaved,
-      }));
-      updatePost(post.id, { isSaved: post.isSaved });
-      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
+      // Rollback on error
+      updatePost(post.id, { isSaved: !nextSaved });
+      setSavedForUser(session.user.id, post.id, !nextSaved);
       if (error instanceof Error) {
         Alert.alert(postDetailCopy.alerts.savedFailed.title, error.message);
       }
@@ -183,12 +176,12 @@ export default function PostDetailScreen() {
         createdAt: Date.now(),
       });
       setComments((prev) => [...prev, newComment]);
-      const nextCount = (post.commentsCount ?? 0) + 1;
-      setPost((prev) => ({
-        ...prev,
-        commentsCount: (prev.commentsCount ?? 0) + 1,
-      }));
+      
+      // Read current count from store to ensure accuracy
+      const currentPost = usePostsStore.getState().postsById[post.id];
+      const nextCount = (currentPost?.commentsCount ?? 0) + 1;
       updatePost(post.id, { commentsCount: nextCount });
+      
       setContent('');
       setLoading(false);
       Alert.alert(postDetailCopy.alerts.offline.title, postDetailCopy.alerts.offline.message);
@@ -203,12 +196,12 @@ export default function PostDetailScreen() {
         content: content.trim(),
       });
       setComments((prev) => [...prev, created]);
-      const nextCount = (post.commentsCount ?? 0) + 1;
-      setPost((prev) => ({
-        ...prev,
-        commentsCount: (prev.commentsCount ?? 0) + 1,
-      }));
+      
+      // Read current count from store to ensure accuracy
+      const currentPost = usePostsStore.getState().postsById[post.id];
+      const nextCount = (currentPost?.commentsCount ?? 0) + 1;
       updatePost(post.id, { commentsCount: nextCount });
+      
       setContent('');
     } catch (error) {
       if (error instanceof Error) {

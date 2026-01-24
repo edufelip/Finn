@@ -118,17 +118,14 @@ export default function SavedPostsScreen() {
     }
 
     const nextLiked = !post.isLiked;
-    setPosts((prev) =>
-      prev.map((item) =>
-        item.id === post.id
-          ? {
-              ...item,
-              isLiked: nextLiked,
-              likesCount: Math.max(0, (item.likesCount ?? 0) + (nextLiked ? 1 : -1)),
-            }
-          : item
-      )
-    );
+    // Read current count from store to ensure accuracy
+    const currentPost = usePostsStore.getState().postsById[post.id];
+    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
+    
+    updatePost(post.id, {
+      isLiked: nextLiked,
+      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
+    });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -148,17 +145,11 @@ export default function SavedPostsScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
-      setPosts((prev) =>
-        prev.map((item) =>
-          item.id === post.id
-            ? {
-                ...item,
-                isLiked: post.isLiked,
-                likesCount: post.likesCount,
-              }
-            : item
-        )
-      );
+      // Rollback to previous state on error
+      updatePost(post.id, {
+        isLiked: !nextLiked,
+        likesCount: currentCount,
+      });
       if (err instanceof Error) {
         Alert.alert(savedPostsCopy.alerts.likeFailed.title, err.message);
       }

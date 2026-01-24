@@ -133,10 +133,20 @@ export const usePostsStore = create<PostsState>()(
         set((state) => {
           const existing = state.postsById[postId];
           if (!existing) return state;
+          
+          // Ensure counts never go negative
+          const sanitizedPatch = { ...patch };
+          if (sanitizedPatch.likesCount !== undefined) {
+            sanitizedPatch.likesCount = Math.max(0, sanitizedPatch.likesCount);
+          }
+          if (sanitizedPatch.commentsCount !== undefined) {
+            sanitizedPatch.commentsCount = Math.max(0, sanitizedPatch.commentsCount);
+          }
+          
           return {
             postsById: {
               ...state.postsById,
-              [postId]: { ...existing, ...patch },
+              [postId]: { ...existing, ...sanitizedPatch },
             },
           };
         });

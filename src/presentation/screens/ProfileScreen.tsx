@@ -252,9 +252,13 @@ export default function ProfileScreen() {
     likeInFlightRef.current.add(post.id);
 
     const nextLiked = !post.isLiked;
+    // Read current count from store to ensure accuracy
+    const currentPost = usePostsStore.getState().postsById[post.id];
+    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
+    
     updatePost(post.id, {
       isLiked: nextLiked,
-      likesCount: Math.max(0, (post.likesCount ?? 0) + (nextLiked ? 1 : -1)),
+      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
     });
 
     try {
@@ -275,9 +279,10 @@ export default function ProfileScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
+      // Rollback to previous state on error
       updatePost(post.id, {
-        isLiked: post.isLiked,
-        likesCount: post.likesCount,
+        isLiked: !nextLiked,
+        likesCount: currentCount,
       });
       if (err instanceof Error) {
         Alert.alert(profileCopy.alerts.likeFailed.title, err.message);
