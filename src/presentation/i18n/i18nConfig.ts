@@ -32,7 +32,11 @@ Object.keys(strings).forEach((lang) => {
   Object.keys(translations).forEach((key) => {
     const value = translations[key];
     // Convert arrays to strings (e.g., tags)
-    resources[locale].translation[key] = Array.isArray(value) ? value.join(', ') : value;
+    if (Array.isArray(value)) {
+      resources[locale].translation[key] = value.join(', ');
+    } else {
+      resources[locale].translation[key] = value as string;
+    }
   });
 });
 
