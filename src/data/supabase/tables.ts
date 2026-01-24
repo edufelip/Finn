@@ -13,6 +13,7 @@ export const TABLES = {
   chatMessages: 'chat_messages',
   notifications: 'notifications',
   postReports: 'post_reports',
+  communityReports: 'community_reports',
   topics: 'topics',
   communityModerators: 'community_moderators',
   moderationLogs: 'moderation_logs',

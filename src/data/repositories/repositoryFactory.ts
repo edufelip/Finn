@@ -4,6 +4,7 @@ import type { ChatRepository } from '../../domain/repositories/ChatRepository';
 import type { PostRepository } from '../../domain/repositories/PostRepository';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
 import type { PostReportRepository } from '../../domain/repositories/PostReportRepository';
+import type { CommunityReportRepository } from '../../domain/repositories/CommunityReportRepository';
 import type { TopicRepository } from '../../domain/repositories/TopicRepository';
 import type { CommunityModeratorRepository } from '../../domain/repositories/CommunityModeratorRepository';
 import type { ModerationLogRepository } from '../../domain/repositories/ModerationLogRepository';
@@ -14,6 +15,7 @@ import { SupabaseCommunityRepository } from './SupabaseCommunityRepository';
 import { SupabasePostRepository } from './SupabasePostRepository';
 import { SupabaseUserRepository } from './SupabaseUserRepository';
 import { SupabasePostReportRepository } from './SupabasePostReportRepository';
+import { SupabaseCommunityReportRepository } from './SupabaseCommunityReportRepository';
 import { SupabaseTopicRepository } from './SupabaseTopicRepository';
 import { SupabaseCommunityModeratorRepository } from './SupabaseCommunityModeratorRepository';
 import { SupabaseModerationLogRepository } from './SupabaseModerationLogRepository';
@@ -23,6 +25,7 @@ import { MockCommunityRepository } from './mock/MockCommunityRepository';
 import { MockPostRepository } from './mock/MockPostRepository';
 import { MockUserRepository } from './mock/MockUserRepository';
 import { MockPostReportRepository } from './mock/MockPostReportRepository';
+import { MockCommunityReportRepository } from './mock/MockCommunityReportRepository';
 import { MockTopicRepository } from './mock/MockTopicRepository';
 import { MockCommunityModeratorRepository } from './mock/MockCommunityModeratorRepository';
 import { MockModerationLogRepository } from './mock/MockModerationLogRepository';
@@ -34,6 +37,7 @@ export type RepositoryBundle = {
   users: UserRepository;
   comments: CommentRepository;
   postReports: PostReportRepository;
+  communityReports: CommunityReportRepository;
   topics: TopicRepository;
   communityModerators: CommunityModeratorRepository;
   moderationLogs: ModerationLogRepository;
@@ -48,6 +52,7 @@ export function createRepositories(): RepositoryBundle {
       users: new MockUserRepository(),
       comments: new MockCommentRepository(),
       postReports: new MockPostReportRepository(),
+      communityReports: new MockCommunityReportRepository(),
       topics: new MockTopicRepository(),
       communityModerators: new MockCommunityModeratorRepository(),
       moderationLogs: new MockModerationLogRepository(),
@@ -61,6 +66,7 @@ export function createRepositories(): RepositoryBundle {
     users: new SupabaseUserRepository(),
     comments: new SupabaseCommentRepository(),
     postReports: new SupabasePostReportRepository(),
+    communityReports: new SupabaseCommunityReportRepository(),
     topics: new SupabaseTopicRepository(),
     communityModerators: new SupabaseCommunityModeratorRepository(),
     moderationLogs: new SupabaseModerationLogRepository(),
