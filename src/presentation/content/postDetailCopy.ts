@@ -2,6 +2,7 @@ import { t } from '../i18n';
 
 export const postDetailCopy = {
   commentsTitle: t('postDetail.commentsTitle'),
+  inputPlaceholder: t('postDetail.inputPlaceholder'),
   empty: t('postDetail.empty'),
   commentAge: t('postDetail.commentAge'),
   commentAuthorFallback: t('postDetail.commentAuthorFallback'),

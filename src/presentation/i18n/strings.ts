@@ -639,6 +639,7 @@ export const strings: Record<Locale, TranslationStrings> = {
 
     // Post detail
     'postDetail.commentsTitle': 'Comments',
+    'postDetail.inputPlaceholder': 'Add a comment...',
     'postDetail.empty': 'No comments yet.',
     'postDetail.commentAge': ' - 7 days ago',
     'postDetail.commentAuthorFallback': 'Deleted user',

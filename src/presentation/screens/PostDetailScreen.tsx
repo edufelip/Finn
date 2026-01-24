@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,7 +19,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { postDetailCopy } from '../content/postDetailCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
-import { usePostsStore } from '../../app/store/postsStore';
+import { usePostsStore, usePostById } from '../../app/store/postsStore';
 import { sharePost } from '../../utils/shareUtils';
 
 type RouteParams = {
@@ -32,27 +32,20 @@ export default function PostDetailScreen() {
   const { post: initialPost } = route.params as RouteParams;
   const { session, isGuest, exitGuest } = useAuth();
   const { posts: postRepository, comments: commentsRepository } = useRepositories();
-  const [post, setPost] = useState<Post>(initialPost);
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
-  const storedPost = usePostsStore((state) => state.postsById[initialPost.id]);
   const updatePost = usePostsStore((state) => state.updatePost);
   const upsertPosts = usePostsStore((state) => state.upsertPosts);
   const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
+  const post = usePostById(initialPost.id) ?? initialPost;
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     upsertPosts([initialPost]);
   }, [initialPost, upsertPosts]);
-
-  useEffect(() => {
-    if (storedPost) {
-      setPost(storedPost);
-    }
-  }, [storedPost]);
 
   useEffect(() => {
     commentsRepository
@@ -72,14 +65,13 @@ export default function PostDetailScreen() {
     }
 
     const nextLiked = !post.isLiked;
-    setPost((prev) => ({
-      ...prev,
-      isLiked: nextLiked,
-      likesCount: Math.max(0, (prev.likesCount ?? 0) + (nextLiked ? 1 : -1)),
-    }));
+    // Read current count from store to ensure accuracy
+    const currentPost = usePostsStore.getState().postsById[post.id];
+    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
+    
     updatePost(post.id, {
       isLiked: nextLiked,
-      likesCount: Math.max(0, (post.likesCount ?? 0) + (nextLiked ? 1 : -1)),
+      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
     });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -100,14 +92,10 @@ export default function PostDetailScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (error) {
-      setPost((prev) => ({
-        ...prev,
-        isLiked: post.isLiked,
-        likesCount: post.likesCount,
-      }));
+      // Rollback to previous state on error
       updatePost(post.id, {
-        isLiked: post.isLiked,
-        likesCount: post.likesCount,
+        isLiked: !nextLiked,
+        likesCount: currentCount,
       });
       if (error instanceof Error) {
         Alert.alert(postDetailCopy.alerts.likeFailed.title, error.message);
@@ -289,35 +277,41 @@ export default function PostDetailScreen() {
         style={styles.list}
         contentContainerStyle={styles.listContent}
       />
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <View style={styles.bottomAvatar}>
-          <Text style={styles.bottomAvatarText}>
-            {(session?.user?.email ?? postDetailCopy.currentUserFallback).charAt(0).toUpperCase()}
-          </Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={styles.bottomAvatar}>
+            <Text style={styles.bottomAvatarText}>
+              {(session?.user?.email ?? postDetailCopy.currentUserFallback).charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.inputStack}>
+            <TextInput
+              style={styles.commentInput}
+              value={content}
+              onChangeText={setContent}
+              maxLength={300}
+              placeholder={postDetailCopy.inputPlaceholder}
+              placeholderTextColor={theme.onSurfaceVariant}
+              editable={!isGuest}
+              testID={postDetailCopy.testIds.input}
+              accessibilityLabel={postDetailCopy.testIds.input}
+            />
+            <Text style={styles.charCount}>{`${content.length}/300`}</Text>
+          </View>
+          <Pressable
+            style={[styles.commentButton, isGuest && styles.commentButtonLocked]}
+            onPress={isGuest ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() }) : submitComment}
+            disabled={loading}
+            testID={postDetailCopy.testIds.submit}
+            accessibilityLabel={postDetailCopy.testIds.submit}
+          >
+            <MaterialIcons name={isGuest ? 'lock' : 'send'} size={24} color={theme.onPrimary} />
+          </Pressable>
         </View>
-        <View style={styles.inputStack}>
-          <TextInput
-            style={styles.commentInput}
-            value={content}
-            onChangeText={setContent}
-            maxLength={300}
-            placeholderTextColor={theme.onSurfaceVariant}
-            editable={!isGuest}
-            testID={postDetailCopy.testIds.input}
-            accessibilityLabel={postDetailCopy.testIds.input}
-          />
-          <Text style={styles.charCount}>{`${content.length}/300`}</Text>
-        </View>
-        <Pressable
-          style={[styles.commentButton, isGuest && styles.commentButtonLocked]}
-          onPress={isGuest ? () => showGuestGateAlert({ onSignIn: () => void exitGuest() }) : submitComment}
-          disabled={loading}
-          testID={postDetailCopy.testIds.submit}
-          accessibilityLabel={postDetailCopy.testIds.submit}
-        >
-          <MaterialIcons name={isGuest ? 'lock' : 'send'} size={24} color={theme.onPrimary} />
-        </Pressable>
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -339,6 +333,7 @@ const createStyles = (theme: ThemeColors) =>
       alignSelf: 'flex-start',
     },
     list: {
+      flex: 1,
       backgroundColor: theme.background,
     },
     listContent: {
