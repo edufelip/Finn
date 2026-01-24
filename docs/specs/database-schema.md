@@ -58,10 +58,32 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 - Un-archiving removes user from `archived_by` array, returns thread to Primary tab
 
 ### 7. Moderation
-- **Moderators (`community_moderators`)**: `community_id` -> `user_id`.
-- **Logs (`moderation_logs`)**: Tracks `action` by `moderator_id`.
-    - **Actions**: `approve_post`, `reject_post`, `mark_for_review`, `delete_post`, `mark_safe`, `moderator_added`, `moderator_removed`, `settings_changed`.
-- **Reports (`post_reports`)**: `post_id`, `user_id`, `reason`, `status`.
+- **Moderators (`community_moderators`)**: 
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `community_id`, `user_id`, `added_by`, `added_at`
+    - **Unique Constraint**: (community_id, user_id) - prevents duplicate moderators
+    - **Referential Integrity**: Cascade delete on community deletion, set null on user deletion
+- **Logs (`moderation_logs`)**: 
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `community_id`, `moderator_id`, `action`, `post_id` (nullable), `created_at`
+    - **Actions**: `approve_post`, `reject_post`, `mark_for_review`, `delete_post`, `mark_safe`, `moderator_added`, `moderator_removed`, `settings_changed`, `other`
+    - **Purpose**: Audit trail for all moderation activities
+- **Post Reports (`post_reports`)**: 
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `post_id`, `user_id`, `reason`, `status`, `created_at`
+    - **Constraint**: `reason` must be 15-300 characters
+    - **Constraint**: `status` in (`pending`, `reviewed`, `resolved`)
+    - **Unique Constraint**: (user_id, post_id) - prevents duplicate reports from same user
+    - **Indexes**: post_id, user_id, created_at desc, status
+    - **Referential Integrity**: Cascade delete on post/user deletion
+- **Community Reports (`community_reports`)**: 
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `community_id`, `user_id`, `reason`, `created_at`
+    - **Constraint**: `reason` must be 15-300 characters
+    - **Unique Constraint**: (user_id, community_id) - prevents duplicate reports from same user
+    - **Indexes**: community_id, user_id, created_at desc
+    - **Referential Integrity**: Cascade delete on community/user deletion
+    - **Purpose**: Track reported communities that violate guidelines
 
 ### 8. Topics (`public.topics`)
 - **Primary Key**: `id` (BigSerial)

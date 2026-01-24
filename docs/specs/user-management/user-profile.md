@@ -36,8 +36,8 @@ The `UserProfile` screen uses a high-fidelity professional design including:
 - Cover image with gradient overlay.
 - Overlapping avatar with online status indicator.
 - Follower/Following stat summaries.
-- Animated tab selector ("Posts" and "Comments") using `react-native-reanimated`.
-- Horizontal content pager synchronized with tab selection.
+- Animated tab selector ("Posts" and "Comments") using `react-native-reanimated` with `useAnimatedStyle`.
+- Horizontal content pager synchronized with tab selection via `useState` and animated indicator.
 - Message button for direct communication.
 
 The screen automatically fetches and maps "Liked" and "Saved" statuses for all displayed posts to ensure UI consistency.
