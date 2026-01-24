@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import type { ThemeColors } from '../../theme/colors';
+import { communityDetailCopy } from '../../content/communityDetailCopy';
 
 type CommunityDetailEmptyStateProps = {
   theme: ThemeColors;
@@ -26,9 +27,9 @@ export default function CommunityDetailEmptyState({
           <MaterialIcons name="forum" size={60} color={theme.primary + '66'} />
         </View>
       </View>
-      <Text style={styles.emptyTitle}>No discussions yet</Text>
+      <Text style={styles.emptyTitle}>{communityDetailCopy.emptyTitle}</Text>
       <Text style={styles.emptyDescription}>
-        Be the first to start the conversation! Share your insights or ask a question.
+        {communityDetailCopy.emptyDescription}
       </Text>
       <Pressable
         style={[styles.startDiscussionButton, isDisabled && styles.startDiscussionButtonDisabled]}
@@ -36,7 +37,7 @@ export default function CommunityDetailEmptyState({
         disabled={isDisabled}
       >
         <MaterialIcons name="add-circle" size={20} color={theme.primary} />
-        <Text style={styles.startDiscussionText}>Start a Discussion</Text>
+        <Text style={styles.startDiscussionText}>{communityDetailCopy.emptyButton}</Text>
       </Pressable>
     </View>
   );

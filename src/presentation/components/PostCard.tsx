@@ -89,18 +89,18 @@ const PostCard = ({
 
   const handleReport = async (reason: string) => {
     if (!session?.user?.id) {
-      Alert.alert('Error', 'You must be logged in to report a post');
+      Alert.alert(postCardCopy.report.error.title, postCardCopy.report.error.notLoggedIn);
       throw new Error('User not logged in');
     }
 
     try {
       await postReports.reportPost(post.id, session.user.id, reason);
-      Alert.alert('Report Submitted', 'Thank you for helping keep our community safe. We will review your report.');
+      Alert.alert(postCardCopy.report.success.title, postCardCopy.report.success.message);
     } catch (error) {
       console.error('Report post error:', error);
       
       // Handle different error types
-      let errorMessage = 'Failed to submit report. Please try again.';
+      let errorMessage = postCardCopy.report.failed.message;
       
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -117,7 +117,7 @@ const PostCard = ({
         errorMessage = error;
       }
       
-      Alert.alert('Report Failed', errorMessage);
+      Alert.alert(postCardCopy.report.failed.title, errorMessage);
       throw error; // Re-throw to keep modal open
     }
   };

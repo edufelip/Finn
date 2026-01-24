@@ -15,12 +15,12 @@ import * as Network from 'expo-network';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
-import type { NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../app/providers/AuthProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import { usePresence } from '../../app/providers/PresenceProvider';
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -33,6 +33,7 @@ import type { MainStackParamList } from '../navigation/MainStack';
 import { settingsCopy } from '../content/settingsCopy';
 import { commonCopy } from '../content/commonCopy';
 import { maskEmail } from '../i18n/formatters';
+import { t } from '../i18n';
 import { registerPushToken, setNotificationGatePreference } from '../../app/notifications/pushTokens';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
@@ -41,6 +42,7 @@ import { useUserStore } from '../../app/store/userStore';
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
+  const { locale, setLocale, supportedLocales } = useLocalization();
   const { users: userRepository } = useRepositories();
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
   const { isDark, toggleTheme } = useTheme();
@@ -70,6 +72,22 @@ export default function SettingsScreen() {
 
   const showUnavailable = () => {
     Alert.alert(settingsCopy.alerts.unavailable.title, settingsCopy.alerts.unavailable.message);
+  };
+
+  const showLanguagePicker = () => {
+    const languageButtons = supportedLocales.map((loc) => ({
+      text: t(`language.${loc}`),
+      onPress: () => setLocale(loc),
+    }));
+
+    Alert.alert(
+      t('settings.alert.language.title'),
+      undefined,
+      [
+        ...languageButtons,
+        { text: t('common.cancel'), style: 'cancel' },
+      ]
+    );
   };
 
   const ensurePushPermission = async () => {
@@ -318,6 +336,23 @@ export default function SettingsScreen() {
               thumbColor={notificationsEnabled ? theme.onPrimary : theme.onSurface}
             />
           </View>
+          <Pressable
+            style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
+            onPress={showLanguagePicker}
+            testID="settings-language"
+            accessibilityLabel="settings-language"
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="language" size={20} color={theme.onSurfaceVariant} />
+              </View>
+              <Text style={styles.rowText}>{settingsCopy.options.language}</Text>
+            </View>
+            <View style={styles.languageValue}>
+              <Text style={styles.languageValueText}>{t(`language.${locale}`)}</Text>
+              <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
+            </View>
+          </Pressable>
         </View>
         <Text style={styles.sectionNote}>{settingsCopy.sections.preferencesNote}</Text>
 
@@ -334,7 +369,7 @@ export default function SettingsScreen() {
               <View style={styles.iconCircle}>
                 <MaterialIcons name="edit" size={20} color={theme.onSurfaceVariant} />
               </View>
-              <Text style={styles.rowText}>Edit Profile</Text>
+              <Text style={styles.rowText}>{settingsCopy.options.editProfile}</Text>
             </View>
             <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
           </Pressable>
@@ -666,5 +701,15 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontWeight: '600',
       color: theme.onSurfaceVariant,
+    },
+    languageValue: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    languageValueText: {
+      fontSize: 14,
+      color: theme.onSurfaceVariant,
+      fontWeight: '500',
     },
   });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useThemeColors } from '../../app/providers/ThemeProvider';
@@ -13,11 +13,10 @@ type SearchEmptyStateProps = {
   hasSearch: boolean;
   hasTopicFilter: boolean;
   isGuest: boolean;
-  onCreateCommunity: () => void;
 };
 
 export const SearchEmptyState = React.memo<SearchEmptyStateProps>(
-  ({ loading, initialLoad, hasSearch, hasTopicFilter, isGuest, onCreateCommunity }) => {
+  ({ loading, initialLoad, hasSearch, hasTopicFilter, isGuest }) => {
     const theme = useThemeColors();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
 
@@ -43,9 +42,6 @@ export const SearchEmptyState = React.memo<SearchEmptyStateProps>(
       <View style={styles.footerSection}>
         <Text style={styles.empty}>{searchCopy.empty}</Text>
         <Text style={styles.footerText}>{exploreCopy.emptyTitle}</Text>
-        <Pressable onPress={onCreateCommunity}>
-          <Text style={styles.browseAllText}>{exploreCopy.secondaryCta}</Text>
-        </Pressable>
       </View>
     );
   }
@@ -88,10 +84,5 @@ const createStyles = (theme: ThemeColors) =>
     footerText: {
       fontSize: 14,
       color: theme.onSurfaceVariant,
-    },
-    browseAllText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.primary,
     },
   });

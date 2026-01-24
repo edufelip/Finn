@@ -15,6 +15,7 @@ import type { MainStackParamList } from '../navigation/MainStack';
 import type { MainTabParamList } from '../navigation/MainTabs';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
+import { exploreCopy } from '../content/exploreCopy';
 import { useExploreData } from './ExploreScreen/hooks/useExploreData';
 import TrendingSection from './ExploreScreen/components/TrendingSection';
 import FeedSection from './ExploreScreen/components/FeedSection';
@@ -88,7 +89,7 @@ export default function ExploreScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeExploreHeader
         profilePhoto={profilePhoto}
-        placeholder="Search communities"
+        placeholder={exploreCopy.searchPlaceholder}
         onPressAvatar={openDrawer}
         onPressSearch={() => navigation.navigate('SearchResults', { focus: true })}
         onPressNotifications={() => {

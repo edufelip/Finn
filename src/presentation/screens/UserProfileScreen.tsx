@@ -43,7 +43,6 @@ import { isMockMode } from '../../config/appConfig';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isUserOnline } from '../../domain/presence';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 180;
 
 export default function UserProfileScreen() {
@@ -215,7 +214,7 @@ export default function UserProfileScreen() {
       setPosts(prev => prev.map(p => p.id === post.id ? { ...p, isLiked: post.isLiked, likesCount: post.likesCount } : p));
       updateStorePost(post.id, { isLiked: post.isLiked, likesCount: post.likesCount });
       if (err instanceof Error) {
-        Alert.alert('Error', err.message);
+        Alert.alert(commonCopy.error, err.message);
       }
     } finally {
       likeInFlightRef.current.delete(post.id);
@@ -263,7 +262,7 @@ export default function UserProfileScreen() {
         setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
       }
       if (err instanceof Error) {
-        Alert.alert('Error', err.message);
+        Alert.alert(commonCopy.error, err.message);
       }
     }
   };

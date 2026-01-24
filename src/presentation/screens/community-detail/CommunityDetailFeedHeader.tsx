@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import type { ThemeColors } from '../../theme/colors';
+import { communityDetailCopy } from '../../content/communityDetailCopy';
 
 type CommunityDetailFeedHeaderProps = {
   theme: ThemeColors;
@@ -14,10 +15,10 @@ export default function CommunityDetailFeedHeader({ theme, onPressSort }: Commun
 
   return (
     <View style={styles.feedHeader}>
-      <Text style={styles.feedTitle}>Latest Discussions</Text>
+      <Text style={styles.feedTitle}>{communityDetailCopy.feedTitle}</Text>
       <Pressable style={styles.sortButton} onPress={onPressSort} disabled={!onPressSort}>
         <MaterialIcons name="sort" size={14} color={theme.primary} />
-        <Text style={styles.sortButtonText}>Sort: Newest</Text>
+        <Text style={styles.sortButtonText}>{communityDetailCopy.feedSort}</Text>
       </Pressable>
     </View>
   );

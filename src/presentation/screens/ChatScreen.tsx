@@ -323,7 +323,7 @@ export default function ChatScreen() {
             </View>
             <View style={styles.headerInfo}>
               <Text style={styles.headerName}>{displayName}</Text>
-              <Text style={isOnline ? styles.statusText : styles.offlineStatusText}>{isOnline ? 'Online now' : 'Offline'}</Text>
+              <Text style={isOnline ? styles.statusText : styles.offlineStatusText}>{isOnline ? chatCopy.status.online : chatCopy.status.offline}</Text>
             </View>
           </View>
         </View>

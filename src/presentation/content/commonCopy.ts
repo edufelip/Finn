@@ -4,4 +4,6 @@ export const commonCopy = {
   userFallback: t('common.userFallback'),
   unknownUser: t('common.unknownUser'),
   emptyDash: t('common.emptyDash'),
+  cancel: t('common.cancel'),
+  error: t('common.error'),
 };

@@ -41,7 +41,13 @@ export const createPostCopy = {
     failed: {
       title: t('createPost.alert.failed.title'),
     },
+    communityNotFound: t('createPost.alert.communityNotFound'),
+    pendingModeration: {
+      title: t('createPost.alert.pendingModeration.title'),
+      message: t('createPost.alert.pendingModeration.message'),
+    },
   },
+  moderationNotice: t('createPost.moderationNotice'),
   testIds: {
     content: 'create-post-content',
     image: 'create-post-image',

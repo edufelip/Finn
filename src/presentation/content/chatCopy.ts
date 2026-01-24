@@ -13,6 +13,8 @@ export const chatCopy = {
   },
   todayLabel: t('chat.todayLabel'),
   status: {
+    online: t('chat.status.online'),
+    offline: t('chat.status.offline'),
     sending: t('chat.status.sending'),
     failed: t('chat.status.failed'),
   },

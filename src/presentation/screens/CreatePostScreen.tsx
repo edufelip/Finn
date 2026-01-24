@@ -133,7 +133,7 @@ export default function CreatePostScreen() {
         // Check if user is moderator
         const isMod = await moderatorRepository.isModerator(selectedCommunityId, session.user.id);
         if (!cancelled) setUserCanModerate(isMod);
-      } catch (error) {
+      } catch {
         if (!cancelled) setUserCanModerate(false);
       }
     };
@@ -226,7 +226,7 @@ export default function CreatePostScreen() {
 
     const selectedCommunity = communities.find((c) => c.id === selectedCommunityId);
     if (!selectedCommunity) {
-      Alert.alert(createPostCopy.alerts.failed.title, 'Community not found');
+      Alert.alert(createPostCopy.alerts.failed.title, createPostCopy.alerts.communityNotFound);
       return;
     }
 
@@ -271,8 +271,8 @@ export default function CreatePostScreen() {
       
       if (needsModeration) {
         Alert.alert(
-          'Post Submitted',
-          'Your post has been submitted and is pending moderator approval.'
+          createPostCopy.alerts.pendingModeration.title,
+          createPostCopy.alerts.pendingModeration.message
         );
       } else {
         Alert.alert(createPostCopy.alerts.posted.title, createPostCopy.alerts.posted.message);
@@ -333,7 +333,7 @@ export default function CreatePostScreen() {
               <View style={styles.moderationNotice}>
                 <MaterialIcons name="info" size={16} color={theme.tertiary} />
                 <Text style={styles.moderationNoticeText}>
-                  This community requires moderator approval before posts are visible.
+                  {createPostCopy.moderationNotice}
                 </Text>
               </View>
             )}

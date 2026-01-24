@@ -10,8 +10,10 @@ export const settingsCopy = {
   },
   options: {
     darkMode: t('settings.option.darkMode'),
+    language: t('settings.option.language'),
     notifications: t('settings.option.notifications'),
     onlineStatus: t('settings.option.onlineStatus'),
+    editProfile: t('settings.option.editProfile'),
     logout: t('settings.option.logout'),
     deleteAccount: t('settings.option.deleteAccount'),
   },

@@ -249,7 +249,7 @@ export default function CreateCommunityScreen() {
             <Text style={styles.counter}>{descriptionCount}</Text>
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>Topic (Optional)</Text>
+            <Text style={styles.label}>{createCommunityCopy.topicLabel}</Text>
             <Pressable
               style={styles.topicSelector}
               onPress={() => setTopicSelectorOpen(true)}
@@ -266,7 +266,7 @@ export default function CreateCommunityScreen() {
               ) : (
                 <View style={styles.topicPlaceholder}>
                   <MaterialIcons name="label-outline" size={20} color={theme.onSurfaceVariant} />
-                  <Text style={styles.topicPlaceholderText}>Select a topic</Text>
+                  <Text style={styles.topicPlaceholderText}>{createCommunityCopy.topicPlaceholder}</Text>
                   <MaterialIcons name="chevron-right" size={20} color={theme.onSurfaceVariant} />
                 </View>
               )}

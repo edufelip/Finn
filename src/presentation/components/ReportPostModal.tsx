@@ -13,6 +13,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
+import { t } from '../i18n';
 
 type ReportPostModalProps = {
   visible: boolean;
@@ -77,7 +78,7 @@ export default function ReportPostModal({
         <Pressable style={styles.backdrop} onPress={handleClose}>
           <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
             <View style={styles.header}>
-              <Text style={styles.title}>Report Post</Text>
+              <Text style={styles.title}>{t('post.report.modal.title')}</Text>
               <Pressable
                 onPress={handleClose}
                 disabled={submitting}
@@ -88,8 +89,7 @@ export default function ReportPostModal({
             </View>
 
             <Text style={styles.description}>
-              Please tell us why you're reporting this post. Your report will help us keep the
-              community safe.
+              {t('post.report.modal.description')}
             </Text>
 
             <View style={styles.inputContainer}>
@@ -97,7 +97,7 @@ export default function ReportPostModal({
                 style={styles.input}
                 value={reason}
                 onChangeText={setReason}
-                placeholder="Describe the issue (minimum 15 characters)"
+                placeholder={t('post.report.modal.placeholder')}
                 placeholderTextColor={theme.onSurfaceVariant}
                 multiline
                 maxLength={MAX_LENGTH}
@@ -111,8 +111,10 @@ export default function ReportPostModal({
 
             {reason.trim().length > 0 && reason.trim().length < MIN_LENGTH && (
               <Text style={styles.hint}>
-                Please provide at least {MIN_LENGTH - reason.trim().length} more character
-                {MIN_LENGTH - reason.trim().length === 1 ? '' : 's'}
+                {t('post.report.modal.hint', {
+                  count: String(MIN_LENGTH - reason.trim().length),
+                  plural: MIN_LENGTH - reason.trim().length === 1 ? '' : 's',
+                })}
               </Text>
             )}
 
@@ -137,7 +139,7 @@ export default function ReportPostModal({
                       !isValid && styles.submitButtonTextDisabled,
                     ]}
                   >
-                    Submit Report
+                    {t('post.report.modal.submit')}
                   </Text>
                 </>
               )}

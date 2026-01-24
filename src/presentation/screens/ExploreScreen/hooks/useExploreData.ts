@@ -45,7 +45,11 @@ export function useExploreData(
 
     try {
       const [communitiesData, topicsData] = await Promise.all([
-        communityRepository.getCommunities(),
+        communityRepository.getCommunities({
+          sort: 'mostFollowed',
+          page: 0,
+          pageSize: exploreCopy.trendingLimit + exploreCopy.feedLimit,
+        }),
         topicRepository.getPopularTopics(8),
       ]);
 

@@ -30,6 +30,12 @@ export const profileCopy = {
     body: t('profile.loading.body'),
   },
   errorSignInRequired: t('profile.error.signInRequired'),
+  errorFollowFailed: t('profile.error.failedFollow'),
+  locationNotSpecified: t('profile.location.notSpecified'),
+  tabLabels: {
+    posts: t('profile.tabs.posts'),
+    comments: t('profile.tabs.comments'),
+  },
   memberSince: (date: string) => t('profile.memberSince', { date }),
   alerts: {
     signInRequired: {

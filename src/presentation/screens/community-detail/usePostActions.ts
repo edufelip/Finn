@@ -9,6 +9,7 @@ import { usePostsStore } from '../../../app/store/postsStore';
 import { enqueueWrite } from '../../../data/offline/queueStore';
 import { isMockMode } from '../../../config/appConfig';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
+import { commonCopy } from '../../content/commonCopy';
 import { showGuestGateAlert } from '../../components/GuestGateAlert';
 
 type UsePostActionsParams = {
@@ -119,32 +120,38 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
         }
       }
     },
-    [postRepository, requireUser, session?.user?.id, updatePost]
+    [postRepository, requireUser, session?.user?.id, setSavedForUser, updatePost]
   );
 
   const handleMarkForReview = useCallback(
     async (post: Post) => {
       if (!session?.user?.id) {
-        Alert.alert('Error', 'You must be logged in to mark posts for review');
+        Alert.alert(commonCopy.error, communityDetailCopy.markForReview.signInRequired);
         return;
       }
 
       if (!canModerate) {
-        Alert.alert('Not Authorized', 'Only moderators and owners can mark posts for review');
+        Alert.alert(
+          communityDetailCopy.markForReview.notAuthorized.title,
+          communityDetailCopy.markForReview.notAuthorized.message
+        );
         return;
       }
 
       Alert.alert(
-        'Mark for Review',
-        'Are you sure you want to mark this post for review? This will notify other moderators.',
+        communityDetailCopy.markForReview.confirm.title,
+        communityDetailCopy.markForReview.confirm.message,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: commonCopy.cancel, style: 'cancel' },
           {
-            text: 'Mark',
+            text: communityDetailCopy.markForReview.confirm.mark,
             onPress: async () => {
               const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
               if (!status.isConnected) {
-                Alert.alert('Offline', 'You must be online to mark posts for review');
+                Alert.alert(
+                  communityDetailCopy.alerts.offline.title,
+                  communityDetailCopy.markForReview.offline
+                );
                 return;
               }
 
@@ -156,10 +163,13 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
                   action: 'mark_for_review',
                   postId: post.id,
                 });
-                Alert.alert('Marked', 'This post has been marked for review');
+                Alert.alert(
+                  communityDetailCopy.markForReview.success.title,
+                  communityDetailCopy.markForReview.success.message
+                );
               } catch (err) {
                 if (err instanceof Error) {
-                  Alert.alert('Failed', err.message);
+                  Alert.alert(communityDetailCopy.markForReview.failed, err.message);
                 }
               }
             },

@@ -8,6 +8,8 @@ export const createCommunityCopy = {
   descriptionPlaceholder: t('createCommunity.descriptionPlaceholder'),
   descriptionCount: (count: number, max: number) =>
     t('createCommunity.descriptionCount', { count, max }),
+  topicLabel: t('createCommunity.topicLabel'),
+  topicPlaceholder: t('createCommunity.topicPlaceholder'),
   iconLabel: t('createCommunity.iconLabel'),
   iconHelper: t('createCommunity.iconHelper'),
   submit: t('createCommunity.submit'),
