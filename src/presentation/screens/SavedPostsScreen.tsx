@@ -18,6 +18,7 @@ import { savedPostsCopy } from '../content/savedPostsCopy';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 import { usePostsStore, useSavedPosts } from '../../app/store/postsStore';
+import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 
 export default function SavedPostsScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
@@ -74,10 +75,14 @@ export default function SavedPostsScreen() {
       return;
     }
 
-    const previous = savedPosts;
-    const nextSaved = !post.isSaved;
-    updatePost(post.id, { isSaved: nextSaved });
-    setSavedForUser(session.user.id, post.id, nextSaved);
+    const { nextSaved, rollback } = applyOptimisticSave({
+      post,
+      userId: session.user.id,
+      updatePost,
+      setSavedForUser,
+      restoreSavedPosts: setSavedPosts,
+      previousSavedPosts: savedPosts,
+    });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -98,9 +103,7 @@ export default function SavedPostsScreen() {
         await postRepository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (err) {
-      setSavedPosts(session.user.id, previous);
-      updatePost(post.id, { isSaved: post.isSaved });
-      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
+      rollback();
       if (err instanceof Error) {
         Alert.alert(savedPostsCopy.alerts.savedFailed.title, err.message);
       }
@@ -113,15 +116,7 @@ export default function SavedPostsScreen() {
       return;
     }
 
-    const nextLiked = !post.isLiked;
-    // Read current count from store to ensure accuracy
-    const currentPost = usePostsStore.getState().postsById[post.id];
-    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
-    
-    updatePost(post.id, {
-      isLiked: nextLiked,
-      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
-    });
+    const { nextLiked, rollback } = applyOptimisticLike({ post, updatePost });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -141,11 +136,7 @@ export default function SavedPostsScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
-      // Rollback to previous state on error
-      updatePost(post.id, {
-        isLiked: !nextLiked,
-        likesCount: currentCount,
-      });
+      rollback();
       if (err instanceof Error) {
         Alert.alert(savedPostsCopy.alerts.likeFailed.title, err.message);
       }

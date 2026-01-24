@@ -6,6 +6,7 @@ import type { ThemeColors } from '../../../theme/colors';
 import { palette } from '../../../theme/palette';
 import { formatCompactNumber } from '../../../i18n/formatters';
 import { exploreCopy } from '../../../content/exploreCopy';
+import { useLocalization } from '../../../../app/providers/LocalizationProvider';
 
 type TrendingCardProps = {
   community: Community;
@@ -17,6 +18,7 @@ type TrendingCardProps = {
 };
 
 const TrendingCard = React.memo<TrendingCardProps>(({ community, tagLabel, tagBackground, tagText, theme, onPress }) => {
+  useLocalization();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const members = formatCompactNumber(community.subscribersCount ?? 0);
   const meta = exploreCopy.trendingMembersLabel(members);

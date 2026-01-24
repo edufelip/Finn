@@ -4,6 +4,8 @@ export const postCardCopy = {
   get optionsTitle() { return t('post.optionsTitle'); },
   get save() { return t('post.save'); },
   get unsave() { return t('post.unsave'); },
+  get markForReview() { return t('post.options.markForReview'); },
+  get reportAction() { return t('post.options.report'); },
   get cancel() { return t('post.cancel'); },
   get share() { return t('post.share'); },
   get communityFallback() { return t('post.communityFallback'); },

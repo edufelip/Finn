@@ -11,6 +11,7 @@ import { isMockMode } from '../../../config/appConfig';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
 import { commonCopy } from '../../content/commonCopy';
 import { showGuestGateAlert } from '../../components/GuestGateAlert';
+import { applyOptimisticLike, applyOptimisticSave } from '../../utils/postToggleUtils';
 
 type UsePostActionsParams = {
   communityId: number;
@@ -43,11 +44,7 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
       }
       likeInFlightRef.current.add(post.id);
 
-      const nextLiked = !post.isLiked;
-      updatePost(post.id, {
-        isLiked: nextLiked,
-        likesCount: Math.max(0, (post.likesCount ?? 0) + (nextLiked ? 1 : -1)),
-      });
+      const { nextLiked, rollback } = applyOptimisticLike({ post, updatePost });
 
       try {
         const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -67,10 +64,7 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
           await postRepository.dislikePost(post.id, session?.user?.id ?? '');
         }
       } catch (err) {
-        updatePost(post.id, {
-          isLiked: post.isLiked,
-          likesCount: post.likesCount,
-        });
+        rollback();
         if (err instanceof Error) {
           Alert.alert(communityDetailCopy.alerts.likeFailed.title, err.message);
         }
@@ -87,11 +81,16 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
         return;
       }
 
-      const nextSaved = !post.isSaved;
-      updatePost(post.id, { isSaved: nextSaved });
-      if (session?.user?.id) {
-        setSavedForUser(session.user.id, post.id, nextSaved);
+      const userId = session?.user?.id;
+      if (!userId) {
+        return;
       }
+      const { nextSaved, rollback } = applyOptimisticSave({
+        post,
+        userId,
+        updatePost,
+        setSavedForUser,
+      });
 
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
       if (!status.isConnected) {
@@ -111,10 +110,7 @@ export const usePostActions = ({ communityId, canModerate }: UsePostActionsParam
           await postRepository.unbookmarkPost(post.id, session?.user?.id ?? '');
         }
       } catch (err) {
-        updatePost(post.id, { isSaved: post.isSaved });
-        if (session?.user?.id) {
-          setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
-        }
+        rollback();
         if (err instanceof Error) {
           Alert.alert(communityDetailCopy.alerts.savedFailed.title, err.message);
         }

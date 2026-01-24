@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import { postDetailCopy } from '../content/postDetailCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { usePostsStore, usePostById } from '../../app/store/postsStore';
 import { sharePost } from '../../utils/shareUtils';
+import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 
 type RouteParams = {
   post: Post;
@@ -64,15 +65,7 @@ export default function PostDetailScreen() {
       return;
     }
 
-    const nextLiked = !post.isLiked;
-    // Read current count from store to ensure accuracy
-    const currentPost = usePostsStore.getState().postsById[post.id];
-    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
-    
-    updatePost(post.id, {
-      isLiked: nextLiked,
-      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
-    });
+    const { nextLiked, rollback } = applyOptimisticLike({ post, updatePost });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -92,11 +85,7 @@ export default function PostDetailScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (error) {
-      // Rollback to previous state on error
-      updatePost(post.id, {
-        isLiked: !nextLiked,
-        likesCount: currentCount,
-      });
+      rollback();
       if (error instanceof Error) {
         Alert.alert(postDetailCopy.alerts.likeFailed.title, error.message);
       }
@@ -109,9 +98,12 @@ export default function PostDetailScreen() {
       return;
     }
 
-    const nextSaved = !post.isSaved;
-    updatePost(post.id, { isSaved: nextSaved });
-    setSavedForUser(session.user.id, post.id, nextSaved);
+    const { nextSaved, rollback } = applyOptimisticSave({
+      post,
+      userId: session.user.id,
+      updatePost,
+      setSavedForUser,
+    });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -131,9 +123,7 @@ export default function PostDetailScreen() {
         await postRepository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (error) {
-      // Rollback on error
-      updatePost(post.id, { isSaved: !nextSaved });
-      setSavedForUser(session.user.id, post.id, !nextSaved);
+      rollback();
       if (error instanceof Error) {
         Alert.alert(postDetailCopy.alerts.savedFailed.title, error.message);
       }
@@ -271,7 +261,7 @@ export default function PostDetailScreen() {
         contentContainerStyle={styles.listContent}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>

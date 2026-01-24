@@ -16,8 +16,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import type { MainStackParamList } from '../navigation/MainStack';
-import type { ModerationLog, ModerationAction } from '../../domain/models/moderationLog';
-import { useAuth } from '../../app/providers/AuthProvider';
+import type { ModerationLog } from '../../domain/models/moderationLog';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
@@ -31,7 +30,6 @@ type Route = RouteProp<MainStackParamList, 'ModerationLogs'>;
 export default function ModerationLogsScreen() {
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
-  const { session } = useAuth();
   const { moderationLogs: logRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -78,60 +76,53 @@ export default function ModerationLogsScreen() {
     loadLogs();
   }, [loadLogs]);
 
-  const getActionIcon = (action: ModerationAction): keyof typeof MaterialIcons.glyphMap => {
-    switch (action) {
-      case 'approve_post':
-        return 'check-circle';
-      case 'reject_post':
-        return 'cancel';
-      case 'delete_post':
-        return 'delete';
-      case 'mark_safe':
-        return 'verified-user';
-      case 'mark_for_review':
-        return 'flag';
-      case 'moderator_added':
-        return 'person-add';
-      case 'moderator_removed':
-        return 'person-remove';
-      case 'settings_changed':
-        return 'settings';
-      default:
-        return 'info';
-    }
-  };
-
-  const getActionColor = (action: ModerationAction): string => {
-    switch (action) {
-      case 'approve_post':
-      case 'mark_safe':
-        return theme.primary;
-      case 'reject_post':
-      case 'delete_post':
-        return theme.error;
-      case 'moderator_added':
-      case 'settings_changed':
-        return theme.tertiary;
-      case 'moderator_removed':
-        return theme.onSurfaceVariant;
-      case 'mark_for_review':
-        return theme.secondary;
-      default:
-        return theme.onSurfaceVariant;
-    }
-  };
-
-  const getActionLabel = (action: ModerationAction): string => {
-    // Map action to copy key
-    const copyKey = action as keyof typeof moderationLogsCopy.actions;
-    return moderationLogsCopy.actions[copyKey] || action;
-  };
-
   const renderLog = useCallback(
     ({ item }: { item: ModerationLog }) => {
-      const actionIcon = getActionIcon(item.action);
-      const actionColor = getActionColor(item.action);
-      const actionLabel = getActionLabel(item.action);
+      const actionIcon = (() => {
+        switch (item.action) {
+          case 'approve_post':
+            return 'check-circle';
+          case 'reject_post':
+            return 'cancel';
+          case 'delete_post':
+            return 'delete';
+          case 'mark_safe':
+            return 'verified-user';
+          case 'mark_for_review':
+            return 'flag';
+          case 'moderator_added':
+            return 'person-add';
+          case 'moderator_removed':
+            return 'person-remove';
+          case 'settings_changed':
+            return 'settings';
+          default:
+            return 'info';
+        }
+      })();
+
+      const actionColor = (() => {
+        switch (item.action) {
+          case 'approve_post':
+          case 'mark_safe':
+            return theme.primary;
+          case 'reject_post':
+          case 'delete_post':
+            return theme.error;
+          case 'moderator_added':
+          case 'settings_changed':
+            return theme.tertiary;
+          case 'moderator_removed':
+            return theme.onSurfaceVariant;
+          case 'mark_for_review':
+            return theme.secondary;
+          default:
+            return theme.onSurfaceVariant;
+        }
+      })();
+
+      const copyKey = item.action as keyof typeof moderationLogsCopy.actions;
+      const actionLabel = moderationLogsCopy.actions[copyKey] || item.action;
 
       return (
         <View
@@ -161,7 +152,7 @@ export default function ModerationLogsScreen() {
         </View>
       );
     },
-    [getActionColor, getActionIcon, getActionLabel, styles, theme.onSurfaceVariant]
+    [styles, theme.error, theme.onSurfaceVariant, theme.primary, theme.secondary, theme.tertiary]
   );
 
   // Show loading during both auth and data fetch

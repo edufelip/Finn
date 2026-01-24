@@ -100,6 +100,15 @@ jest.mock('expo-font', () => ({
   loadAsync: jest.fn(),
 }));
 
+jest.mock('./src/app/providers/LocalizationProvider', () => ({
+  useLocalization: () => ({
+    locale: 'en',
+    setLocale: jest.fn(),
+    supportedLocales: ['en'],
+  }),
+  LocalizationProvider: ({ children }) => children,
+}));
+
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -123,5 +132,16 @@ console.error = (...args) => {
   if (args.some((arg) => String(arg).includes('VirtualizedList'))) {
     return;
   }
+  if (args.some((arg) => String(arg).includes('not wrapped in act'))) {
+    return;
+  }
   originalConsoleError(...args);
+};
+
+const originalConsoleWarn = console.warn;
+console.warn = (...args) => {
+  if (args.some((arg) => String(arg).includes('Translation missing for key:'))) {
+    return;
+  }
+  originalConsoleWarn(...args);
 };

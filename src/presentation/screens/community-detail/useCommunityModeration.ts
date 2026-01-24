@@ -34,7 +34,7 @@ export const useCommunityModeration = ({
 
         const isMod = await moderatorRepository.isModerator(communityId, session.user.id);
         if (mounted) setCanModerate(isMod);
-      } catch (error) {
+      } catch {
         if (mounted) setCanModerate(false);
       }
     };

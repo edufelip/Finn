@@ -20,11 +20,13 @@ export const exploreCopy = {
   trendingLimit: 3,
   feedLimit: 6,
   feedSkeletonCount: 2,
-  trendingTags: [
-    { id: 'tech', label: t('explore.trending.tag.tech'), tone: 'tech' },
-    { id: 'travel', label: t('explore.trending.tag.travel'), tone: 'travel' },
-    { id: 'design', label: t('explore.trending.tag.design'), tone: 'design' },
-  ] as TrendingTag[],
+  get trendingTags(): TrendingTag[] {
+    return [
+      { id: 'tech', label: t('explore.trending.tag.tech'), tone: 'tech' },
+      { id: 'travel', label: t('explore.trending.tag.travel'), tone: 'travel' },
+      { id: 'design', label: t('explore.trending.tag.design'), tone: 'design' },
+    ];
+  },
   trendingMembersLabel: (count: string) => t('explore.trending.members', { count }),
   get feedTitle() { return t('explore.feed.title'); },
   get emptyTitle() { return t('explore.empty.title'); },
@@ -32,12 +34,14 @@ export const exploreCopy = {
   get primaryCta() { return t('explore.cta.primary'); },
   get secondaryCta() { return t('explore.cta.secondary'); },
   get topicsTitle() { return t('explore.topics.title'); },
-  topics: [
-    { id: 'gaming', label: t('explore.topics.gaming'), icon: 'sports-esports', tone: 'orange' },
-    { id: 'music', label: t('explore.topics.music'), icon: 'music-note', tone: 'green' },
-    { id: 'movies', label: t('explore.topics.movies'), icon: 'movie', tone: 'purple' },
-    { id: 'science', label: t('explore.topics.science'), icon: 'science', tone: 'blue' },
-  ] as TopicItem[],
+  get topics(): TopicItem[] {
+    return [
+      { id: 'gaming', label: t('explore.topics.gaming'), icon: 'sports-esports', tone: 'orange' },
+      { id: 'music', label: t('explore.topics.music'), icon: 'music-note', tone: 'green' },
+      { id: 'movies', label: t('explore.topics.movies'), icon: 'movie', tone: 'purple' },
+      { id: 'science', label: t('explore.topics.science'), icon: 'science', tone: 'blue' },
+    ];
+  },
   get communityFallback() { return t('explore.community.fallback'); },
   testIds: {
     avatar: 'explore-avatar',

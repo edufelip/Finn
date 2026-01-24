@@ -118,6 +118,8 @@ export const ar = {
 
   // Post card
   'post.optionsTitle': 'خيارات',
+  'post.options.markForReview': 'وضع للمراجعة',
+  'post.options.report': 'إبلاغ',
   'post.save': 'حفظ',
   'post.unsave': 'إلغاء الحفظ',
   'post.cancel': 'إلغاء',

@@ -118,6 +118,8 @@ export const pt = {
 
   // Post card
   'post.optionsTitle': 'Opções',
+  'post.options.markForReview': 'Marcar para Revisao',
+  'post.options.report': 'Denunciar',
   'post.save': 'Salvar',
   'post.unsave': 'Remover',
   'post.cancel': 'Cancelar',

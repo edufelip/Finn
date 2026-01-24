@@ -190,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, [session?.user?.id, repositories.users]);
+  }, [session, session?.user?.id, repositories.users]);
 
   useEffect(() => {
     if (!session || isMockMode()) return;

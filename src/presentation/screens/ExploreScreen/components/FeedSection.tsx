@@ -4,6 +4,7 @@ import type { Community } from '../../../../domain/models/community';
 import type { ThemeColors } from '../../../theme/colors';
 import { exploreCopy } from '../../../content/exploreCopy';
 import { formatCompactNumber } from '../../../i18n/formatters';
+import { useLocalization } from '../../../../app/providers/LocalizationProvider';
 
 type FeedSectionProps = {
   feedItems: Community[];
@@ -12,6 +13,7 @@ type FeedSectionProps = {
 };
 
 const FeedSection = React.memo<FeedSectionProps>(({ feedItems, theme, onItemPress }) => {
+  useLocalization();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   if (feedItems.length === 0) {

@@ -3,7 +3,6 @@ import type { Subscription } from '../../../domain/models/subscription';
 import type {
   CommunityRepository,
   CommunitySearchParams,
-  CommunitySortOrder,
 } from '../../../domain/repositories/CommunityRepository';
 import { mockCommunities, mockSubscriptions, nextCommunityId, nextSubscriptionId } from './mockData';
 

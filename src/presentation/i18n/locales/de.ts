@@ -118,6 +118,8 @@ export const de = {
 
   // Post card
   'post.optionsTitle': 'Optionen',
+  'post.options.markForReview': 'Zur Pruefung markieren',
+  'post.options.report': 'Melden',
   'post.save': 'Speichern',
   'post.unsave': 'Entfernen',
   'post.cancel': 'Abbrechen',

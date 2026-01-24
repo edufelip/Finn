@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { searchCopy } from '../content/searchCopy';
 import { exploreCopy } from '../content/exploreCopy';
@@ -18,6 +19,7 @@ type SearchEmptyStateProps = {
 export const SearchEmptyState = React.memo<SearchEmptyStateProps>(
   ({ loading, initialLoad, hasSearch, hasTopicFilter, isGuest }) => {
     const theme = useThemeColors();
+    useLocalization();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     if (loading) {

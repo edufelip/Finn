@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import type { Topic } from '../../domain/models/topic';
 import type { CommunitySortOrder } from '../../domain/repositories/CommunityRepository';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { searchCopy } from '../content/searchCopy';
 
@@ -36,6 +37,7 @@ const TOPIC_PALETTE = {
 export const SearchFilters = React.memo<SearchFiltersProps>(
   ({ sortOrder, selectedTopic, onSortPress, onTopicPress, onClearTopic }) => {
     const theme = useThemeColors();
+    useLocalization();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     const getSortLabel = (sort: CommunitySortOrder) => {

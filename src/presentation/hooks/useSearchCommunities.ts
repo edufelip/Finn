@@ -89,7 +89,7 @@ export const useSearchCommunities = ({
         setCommunities((prev) => (replace ? data : [...prev, ...data]));
         setPage(pageToLoad);
         setHasMore(data.length === COMMUNITY_PAGE_SIZE);
-      } catch (err) {
+      } catch {
         // Silent fail - could add error handling here
       } finally {
         setLoading(false);
@@ -154,6 +154,62 @@ export const useSearchCommunities = ({
     loadCommunities({ pageToLoad: page + 1 });
   }, [communities.length, hasMore, loadCommunities, loading, loadingMore, page]);
 
+  const performToggleSubscription = useCallback(
+    async (community: Community, current: Subscription | null, nextSubscribed: boolean) => {
+      if (!session?.user?.id) return;
+
+      const currentId = current?.id ?? 0;
+
+      // Optimistic update
+      setSubscription(
+        community.id,
+        nextSubscribed ? { id: currentId, userId: session.user.id, communityId: community.id } : null
+      );
+
+      const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+      if (!status.isConnected) {
+        await enqueueWrite({
+          id: `${Date.now()}`,
+          type: nextSubscribed ? 'subscribe_community' : 'unsubscribe_community',
+          payload: {
+            id: current?.id ?? 0,
+            userId: session.user.id,
+            communityId: community.id,
+          },
+          createdAt: Date.now(),
+        });
+        Alert.alert(communityDetailCopy.alerts.offline.title, communityDetailCopy.alerts.offline.message);
+        return;
+      }
+
+      try {
+        if (nextSubscribed) {
+          const created = await communityRepository.subscribe({
+            id: 0,
+            userId: session.user.id,
+            communityId: community.id,
+          });
+          setSubscription(community.id, created);
+        } else {
+          await communityRepository.unsubscribe({
+            id: current?.id ?? 0,
+            userId: session.user.id,
+            communityId: community.id,
+          });
+          setSubscription(community.id, null);
+        }
+      } catch (err) {
+        // Revert optimistic update
+        setSubscription(community.id, current);
+        if (err instanceof Error) {
+          Alert.alert(communityDetailCopy.alerts.subscriptionFailed.title, err.message);
+        }
+        throw err;
+      }
+    },
+    [communityRepository, session?.user?.id, setSubscription]
+  );
+
   const handleToggleSubscription = useCallback(
     (community: Community) => {
       if (isGuest) {
@@ -186,65 +242,8 @@ export const useSearchCommunities = ({
 
       return performToggleSubscription(community, currentSubscription, nextSubscribed);
     },
-    [isGuest, userSubscriptions]
+    [isGuest, performToggleSubscription, userSubscriptions]
   );
-
-  const performToggleSubscription = async (
-    community: Community,
-    current: Subscription | null,
-    nextSubscribed: boolean
-  ) => {
-    if (!session?.user?.id) return;
-
-    const currentId = current?.id ?? 0;
-
-    // Optimistic update
-    setSubscription(
-      community.id,
-      nextSubscribed ? { id: currentId, userId: session.user.id, communityId: community.id } : null
-    );
-
-    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
-    if (!status.isConnected) {
-      await enqueueWrite({
-        id: `${Date.now()}`,
-        type: nextSubscribed ? 'subscribe_community' : 'unsubscribe_community',
-        payload: {
-          id: current?.id ?? 0,
-          userId: session.user.id,
-          communityId: community.id,
-        },
-        createdAt: Date.now(),
-      });
-      Alert.alert(communityDetailCopy.alerts.offline.title, communityDetailCopy.alerts.offline.message);
-      return;
-    }
-
-    try {
-      if (nextSubscribed) {
-        const created = await communityRepository.subscribe({
-          id: 0,
-          userId: session.user.id,
-          communityId: community.id,
-        });
-        setSubscription(community.id, created);
-      } else {
-        await communityRepository.unsubscribe({
-          id: current?.id ?? 0,
-          userId: session.user.id,
-          communityId: community.id,
-        });
-        setSubscription(community.id, null);
-      }
-    } catch (err) {
-      // Revert optimistic update
-      setSubscription(community.id, current);
-      if (err instanceof Error) {
-        Alert.alert(communityDetailCopy.alerts.subscriptionFailed.title, err.message);
-      }
-      throw err;
-    }
-  };
 
   return {
     communities,

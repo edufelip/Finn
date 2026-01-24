@@ -38,6 +38,7 @@ import type { User } from '../../domain/models/user';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
+import { formatTimeAgo } from '../i18n/formatters';
 
 type SectionKey = 'unread' | 'earlier';
 
@@ -504,21 +505,6 @@ const getInitials = (name: string) => {
   return `${first}${second}`.toUpperCase();
 };
 
-const formatTimeAgo = (timestamp: string): string => {
-  const now = Date.now();
-  const then = new Date(timestamp).getTime();
-  const diff = now - then;
-  
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m`;
-  if (hours < 24) return `${hours}h`;
-  if (days < 7) return `${days}d`;
-  return new Date(timestamp).toLocaleDateString();
-};
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({

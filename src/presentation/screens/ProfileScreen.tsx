@@ -29,6 +29,7 @@ import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { profileCopy } from '../content/profileCopy';
+import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 import { commonCopy } from '../content/commonCopy';
 import { formatMonthYear } from '../i18n/formatters';
 import { palette } from '../theme/palette';
@@ -251,15 +252,7 @@ export default function ProfileScreen() {
     }
     likeInFlightRef.current.add(post.id);
 
-    const nextLiked = !post.isLiked;
-    // Read current count from store to ensure accuracy
-    const currentPost = usePostsStore.getState().postsById[post.id];
-    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
-    
-    updatePost(post.id, {
-      isLiked: nextLiked,
-      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
-    });
+    const { nextLiked, rollback } = applyOptimisticLike({ post, updatePost });
 
     try {
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -279,11 +272,7 @@ export default function ProfileScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
-      // Rollback to previous state on error
-      updatePost(post.id, {
-        isLiked: !nextLiked,
-        likesCount: currentCount,
-      });
+      rollback();
       if (err instanceof Error) {
         Alert.alert(profileCopy.alerts.likeFailed.title, err.message);
       }
@@ -298,9 +287,12 @@ export default function ProfileScreen() {
       return;
     }
 
-    const nextSaved = !post.isSaved;
-    updatePost(post.id, { isSaved: nextSaved });
-    setSavedForUser(session.user.id, post.id, nextSaved);
+    const { nextSaved, rollback } = applyOptimisticSave({
+      post,
+      userId: session.user.id,
+      updatePost,
+      setSavedForUser,
+    });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -320,8 +312,7 @@ export default function ProfileScreen() {
         await postRepository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (err) {
-      updatePost(post.id, { isSaved: post.isSaved });
-      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
+      rollback();
       if (err instanceof Error) {
         Alert.alert(profileCopy.alerts.savedFailed.title, err.message);
       }
@@ -405,6 +396,13 @@ export default function ProfileScreen() {
     transform: [{ scale: interpolate(tabProgress.value, [0, 0.5, 1], [0.96, 0.96, 1]) }],
   }));
 
+  const handleManageCommunity = useCallback(
+    (community: Community) => {
+      navigation.navigate('EditCommunity', { communityId: community.id });
+    },
+    [navigation]
+  );
+
   if (isGuest) {
     return (
       <ScreenFade onlyOnTabSwitch>
@@ -424,13 +422,6 @@ export default function ProfileScreen() {
     }
     setActiveTab(nextTab);
   };
-
-  const handleManageCommunity = useCallback(
-    (community: Community) => {
-      navigation.navigate('EditCommunity', { communityId: community.id });
-    },
-    [navigation]
-  );
 
   return (
     <View style={styles.container}>

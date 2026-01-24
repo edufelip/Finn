@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { editCommunityCopy } from '../content/editCommunityCopy';
 
@@ -13,6 +14,7 @@ type CommunityImageUploadProps = {
 
 const CommunityImageUpload = ({ imageUri, onPress }: CommunityImageUploadProps) => {
   const theme = useThemeColors();
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (

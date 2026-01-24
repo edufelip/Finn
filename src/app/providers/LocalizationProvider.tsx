@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { I18nManager, Platform, Alert } from 'react-native';
+import { I18nManager, Alert } from 'react-native';
 import { initLocale, setLocale as setI18nLocale, getLocale, getSupportedLocales } from '../../presentation/i18n';
 import type { Locale } from '../../presentation/i18n/strings';
 

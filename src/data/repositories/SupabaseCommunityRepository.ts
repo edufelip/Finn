@@ -1,6 +1,6 @@
 import type { Community } from '../../domain/models/community';
 import type { Subscription } from '../../domain/models/subscription';
-import type { CommunityRepository, CommunitySearchParams, CommunitySortOrder } from '../../domain/repositories/CommunityRepository';
+import type { CommunityRepository, CommunitySearchParams } from '../../domain/repositories/CommunityRepository';
 import { CacheKey, CACHE_TTL_MS } from '../cache/cachePolicy';
 import { cacheFirst } from '../cache/cacheHelpers';
 import { clearCache, setCache } from '../cache/cacheStore';

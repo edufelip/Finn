@@ -4,8 +4,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import type { Topic } from '../../../../domain/models/topic';
 import type { ThemeColors } from '../../../theme/colors';
 
-type TopicTone = 'orange' | 'green' | 'purple' | 'blue';
-
 type TopicPalette = {
   background: string;
   border: string;

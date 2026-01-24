@@ -21,7 +21,7 @@ import { spacing, radii } from '../theme/metrics';
 import { onboardingCopy } from '../content/onboardingCopy';
 import { Images } from '@assets/images';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {

@@ -118,6 +118,8 @@ export const ja = {
 
   // Post card
   'post.optionsTitle': 'オプション',
+  'post.options.markForReview': 'レビュー対象にする',
+  'post.options.report': '報告',
   'post.save': '保存',
   'post.unsave': '保存解除',
   'post.cancel': 'キャンセル',

@@ -12,7 +12,6 @@ import Animated, {
   useSharedValue,
   withTiming,
   Easing,
-  useDerivedValue,
 } from 'react-native-reanimated';
 
 import PostCard from '../components/PostCard';
@@ -31,6 +30,7 @@ import { homeCopy } from '../content/homeCopy';
 import GuestBanner from '../components/GuestBanner';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { useHomePosts, useFollowingPosts, usePostsStore } from '../../app/store/postsStore';
+import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -228,15 +228,7 @@ export default function HomeScreen() {
     }
     likeInFlightRef.current.add(post.id);
 
-    const nextLiked = !post.isLiked;
-    // Read current count from store to ensure accuracy
-    const currentPost = usePostsStore.getState().postsById[post.id];
-    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
-    
-    updatePost(post.id, {
-      isLiked: nextLiked,
-      likesCount: Math.max(0, currentCount + (nextLiked ? 1 : -1)),
-    });
+    const { nextLiked, rollback } = applyOptimisticLike({ post, updatePost });
 
     try {
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -256,11 +248,7 @@ export default function HomeScreen() {
         await repository.dislikePost(post.id, session.user.id);
       }
     } catch (error) {
-      // Rollback to previous state on error
-      updatePost(post.id, {
-        isLiked: !nextLiked,
-        likesCount: currentCount,
-      });
+      rollback();
       if (error instanceof Error) {
         Alert.alert(homeCopy.alerts.likeFailed.title, error.message);
       }
@@ -275,9 +263,12 @@ export default function HomeScreen() {
       return;
     }
 
-    const nextSaved = !post.isSaved;
-    updatePost(post.id, { isSaved: nextSaved });
-    setSavedForUser(session.user.id, post.id, nextSaved);
+    const { nextSaved, rollback } = applyOptimisticSave({
+      post,
+      userId: session.user.id,
+      updatePost,
+      setSavedForUser,
+    });
 
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
     if (!status.isConnected) {
@@ -297,8 +288,7 @@ export default function HomeScreen() {
         await repository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (error) {
-      updatePost(post.id, { isSaved: post.isSaved });
-      setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
+      rollback();
       if (error instanceof Error) {
         Alert.alert(homeCopy.alerts.savedFailed.title, error.message);
       }

@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Image,
   Modal,
   Pressable,
@@ -42,6 +41,7 @@ import { usePostsStore, useProfilePosts } from '../../app/store/postsStore';
 import { isMockMode } from '../../config/appConfig';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { isUserOnline } from '../../domain/presence';
+import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 
 const COVER_HEIGHT = 180;
 
@@ -185,14 +185,7 @@ export default function UserProfileScreen() {
     }
     likeInFlightRef.current.add(post.id);
 
-    const nextLiked = !post.isLiked;
-    // Read current count from store to ensure accuracy
-    const currentPost = usePostsStore.getState().postsById[post.id];
-    const currentCount = currentPost?.likesCount ?? post.likesCount ?? 0;
-    const nextLikesCount = Math.max(0, currentCount + (nextLiked ? 1 : -1));
-    
-    // Update global store (single source of truth)
-    updateStorePost(post.id, { isLiked: nextLiked, likesCount: nextLikesCount });
+    const { nextLiked, rollback } = applyOptimisticLike({ post, updatePost: updateStorePost });
 
     try {
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -212,8 +205,7 @@ export default function UserProfileScreen() {
         await postRepository.dislikePost(post.id, session.user.id);
       }
     } catch (err) {
-      // Rollback to previous state on error
-      updateStorePost(post.id, { isLiked: !nextLiked, likesCount: currentCount });
+      rollback();
       if (err instanceof Error) {
         Alert.alert(commonCopy.error, err.message);
       }
@@ -228,13 +220,12 @@ export default function UserProfileScreen() {
       return;
     }
 
-    const nextSaved = !post.isSaved;
-    
-    // Update global store
-    updateStorePost(post.id, { isSaved: nextSaved });
-    if (session?.user?.id) {
-      setSavedForUser(session.user.id, post.id, nextSaved);
-    }
+    const { nextSaved, rollback } = applyOptimisticSave({
+      post,
+      userId: session.user.id,
+      updatePost: updateStorePost,
+      setSavedForUser,
+    });
 
     try {
       const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -254,11 +245,7 @@ export default function UserProfileScreen() {
         await postRepository.unbookmarkPost(post.id, session.user.id);
       }
     } catch (err) {
-      // Rollback
-      updateStorePost(post.id, { isSaved: post.isSaved });
-      if (session?.user?.id) {
-        setSavedForUser(session.user.id, post.id, post.isSaved ?? false);
-      }
+      rollback();
       if (err instanceof Error) {
         Alert.alert(commonCopy.error, err.message);
       }

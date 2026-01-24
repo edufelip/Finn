@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { Community } from '../../../domain/models/community';
 import { PostSortOrder } from '../../../domain/models/post';
@@ -25,6 +25,7 @@ export const useCommunityDetail = ({
   const subscription = subscriptions[communityId];
 
   const [community, setCommunity] = useState<Community | null>(initialCommunity ?? null);
+  const communityRef = useRef<Community | null>(initialCommunity ?? null);
   const [subscribersCount, setSubscribersCount] = useState(initialCommunity?.subscribersCount ?? 0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,10 @@ export const useCommunityDetail = ({
     setCommunity(initialCommunity ?? null);
     setSubscribersCount(initialCommunity?.subscribersCount ?? 0);
   }, [communityId, initialCommunity]);
+
+  useEffect(() => {
+    communityRef.current = community;
+  }, [community]);
 
   useEffect(() => {
     let mounted = true;
@@ -61,7 +66,7 @@ export const useCommunityDetail = ({
 
         if (!mounted) return;
 
-        const hasFallbackCommunity = Boolean(initialCommunity ?? community);
+        const hasFallbackCommunity = Boolean(initialCommunity ?? communityRef.current);
         if (communityResult.status !== 'fulfilled' || !communityResult.value) {
           if (!hasFallbackCommunity) {
             const message =
@@ -127,7 +132,6 @@ export const useCommunityDetail = ({
     session?.user?.id,
     setCommunityPosts,
     setSubscription,
-    community,
     initialCommunity,
     sortOrder,
   ]);

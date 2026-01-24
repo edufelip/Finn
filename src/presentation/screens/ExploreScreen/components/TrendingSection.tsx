@@ -5,6 +5,7 @@ import type { Topic } from '../../../../domain/models/topic';
 import type { ThemeColors } from '../../../theme/colors';
 import { exploreCopy } from '../../../content/exploreCopy';
 import TrendingCard from './TrendingCard';
+import { useLocalization } from '../../../../app/providers/LocalizationProvider';
 
 type TopicTone = 'orange' | 'green' | 'purple' | 'blue';
 
@@ -19,11 +20,17 @@ type TrendingSectionProps = {
 
 const TrendingSection = React.memo<TrendingSectionProps>(
   ({ trending, topics, error, theme, onSeeAll, onCardPress }) => {
+    const { locale } = useLocalization();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
+
+    const trendingTags = React.useMemo(
+      () => (locale ? exploreCopy.trendingTags : exploreCopy.trendingTags),
+      [locale]
+    );
 
     const tagPalette = React.useMemo(
       () =>
-        exploreCopy.trendingTags.map((tag) => ({
+        trendingTags.map((tag) => ({
           label: tag.label,
           background:
             tag.tone === 'tech'
@@ -38,7 +45,7 @@ const TrendingSection = React.memo<TrendingSectionProps>(
                 ? theme.onSecondary
                 : theme.onTertiary,
         })),
-      [theme]
+      [theme, trendingTags]
     );
 
     const topicPalette = React.useMemo(

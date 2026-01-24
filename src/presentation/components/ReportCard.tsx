@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import type { PostReport } from '../../domain/models/postReport';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { reportedContentCopy } from '../content/reportedContentCopy';
 import { formatTimeAgo } from '../i18n/formatters';
@@ -17,6 +18,7 @@ type ReportCardProps = {
 
 const ReportCard = ({ report, onDelete, onMarkSafe, isProcessing }: ReportCardProps) => {
   const theme = useThemeColors();
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (

@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import type { Community } from '../../domain/models/community';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { exploreCopy } from '../content/exploreCopy';
 import { searchCopy } from '../content/searchCopy';
@@ -23,6 +24,7 @@ type CommunityCardProps = {
 export const CommunityCard = React.memo<CommunityCardProps>(
   ({ community, index, isSubscribed, onPress, onToggleSubscription }) => {
     const theme = useThemeColors();
+    useLocalization();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     const tag = exploreCopy.trendingTags[index % exploreCopy.trendingTags.length];

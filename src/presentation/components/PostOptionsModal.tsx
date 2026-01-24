@@ -2,7 +2,9 @@ import React, { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
+import { postCardCopy } from '../content/postCardCopy';
 
 type PostOptionsModalProps = {
   visible: boolean;
@@ -26,6 +28,7 @@ const PostOptionsModal = ({
   position,
 }: PostOptionsModalProps) => {
   const theme = useThemeColors();
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -76,7 +79,7 @@ const PostOptionsModal = ({
               size={20}
               color={theme.onSurface}
             />
-            <Text style={styles.optionText}>{isSaved ? 'Unsave' : 'Save'}</Text>
+            <Text style={styles.optionText}>{isSaved ? postCardCopy.unsave : postCardCopy.save}</Text>
           </Pressable>
           {canModerate && onMarkForReview && (
             <Pressable
@@ -88,7 +91,7 @@ const PostOptionsModal = ({
               testID="post-option-mark-review"
             >
               <MaterialIcons name="flag" size={20} color={theme.tertiary} />
-              <Text style={[styles.optionText, { color: theme.tertiary }]}>Mark for Review</Text>
+              <Text style={[styles.optionText, { color: theme.tertiary }]}>{postCardCopy.markForReview}</Text>
             </Pressable>
           )}
           <Pressable
@@ -100,7 +103,7 @@ const PostOptionsModal = ({
             testID="post-option-report"
           >
             <MaterialIcons name="outlined-flag" size={20} color={theme.error} />
-            <Text style={[styles.optionText, { color: theme.error }]}>Report</Text>
+            <Text style={[styles.optionText, { color: theme.error }]}>{postCardCopy.reportAction}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

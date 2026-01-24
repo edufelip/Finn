@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -38,17 +38,29 @@ export default function TopicSelectorModal({
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const isMountedRef = useRef(true);
 
-  useEffect(() => {
-    if (visible) {
-      setLoading(true);
-      topicRepository
-        .getTopics()
-        .then((data) => setAllTopics(data))
-        .catch(() => setAllTopics([]))
-        .finally(() => setLoading(false));
-    }
-  }, [visible, topicRepository]);
+  useEffect(() => () => {
+    isMountedRef.current = false;
+  }, []);
+
+  const handleShow = useCallback(() => {
+    setLoading(true);
+    topicRepository
+      .getTopics()
+      .then((data) => {
+        if (!isMountedRef.current) return;
+        setAllTopics(data);
+      })
+      .catch(() => {
+        if (!isMountedRef.current) return;
+        setAllTopics([]);
+      })
+      .finally(() => {
+        if (!isMountedRef.current) return;
+        setLoading(false);
+      });
+  }, [topicRepository]);
 
   const filteredTopics = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -145,6 +157,7 @@ export default function TopicSelectorModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      onShow={handleShow}
     >
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>

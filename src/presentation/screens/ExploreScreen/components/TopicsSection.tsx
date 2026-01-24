@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { Topic } from '../../../../domain/models/topic';
 import type { ThemeColors } from '../../../theme/colors';
 import { exploreCopy } from '../../../content/exploreCopy';
+import { useLocalization } from '../../../../app/providers/LocalizationProvider';
 import TopicCard from './TopicCard';
 
 type TopicTone = 'orange' | 'green' | 'purple' | 'blue';
@@ -14,6 +15,7 @@ type TopicsSectionProps = {
 };
 
 const TopicsSection = React.memo<TopicsSectionProps>(({ topics, theme, onTopicPress }) => {
+  useLocalization();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   const topicPalette = React.useMemo(

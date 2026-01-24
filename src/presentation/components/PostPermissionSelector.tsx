@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 
 import type { PostPermission } from '../../domain/models/community';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { editCommunityCopy } from '../content/editCommunityCopy';
 
@@ -47,6 +47,7 @@ RadioOption.displayName = 'RadioOption';
 
 const PostPermissionSelector = ({ selected, onSelect }: PostPermissionSelectorProps) => {
   const theme = useThemeColors();
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
