@@ -2,6 +2,10 @@
 .expo-shared/
 .DS_Store
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+ios/Podfile.lock
 ios/build/
 android/build/
 android/app/build/
