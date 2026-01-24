@@ -1,10 +1,10 @@
-import type { ModerationStatus, Post } from '../models/post';
+import type { ModerationStatus, Post, PostSortOrder } from '../models/post';
 
 export interface PostRepository {
   getUserFeed(userId: string, page: number): Promise<Post[]>;
   getFollowingFeed(userId: string, page: number): Promise<Post[]>;
   getPublicFeed(page: number): Promise<Post[]>;
-  getPostsFromCommunity(communityId: number, page: number): Promise<Post[]>;
+  getPostsFromCommunity(communityId: number, page: number, sortOrder?: PostSortOrder): Promise<Post[]>;
   getPostsFromUser(userId: string, page: number): Promise<Post[]>;
   getSavedPosts(userId: string, page: number): Promise<Post[]>;
   getSavedPostsCount(userId: string): Promise<number>;

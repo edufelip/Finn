@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Community } from '../../../domain/models/community';
+import { PostSortOrder } from '../../../domain/models/post';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { useRepositories } from '../../../app/providers/RepositoryProvider';
 import { useCommunityPosts, usePostsStore } from '../../../app/store/postsStore';
@@ -27,6 +28,7 @@ export const useCommunityDetail = ({
   const [subscribersCount, setSubscribersCount] = useState(initialCommunity?.subscribersCount ?? 0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<PostSortOrder>(PostSortOrder.Newest);
 
   useEffect(() => {
     setCommunity(initialCommunity ?? null);
@@ -37,10 +39,8 @@ export const useCommunityDetail = ({
     let mounted = true;
 
     const load = async () => {
-      if (!initialCommunity) {
         setLoading(true);
-      }
-      setError(null);
+        setError(null);
 
       try {
         if (!Number.isFinite(communityId)) {
@@ -52,7 +52,7 @@ export const useCommunityDetail = ({
           await Promise.allSettled([
             communityRepository.getCommunity(communityId),
             communityRepository.getCommunitySubscribersCount(communityId),
-            postRepository.getPostsFromCommunity(communityId, 0),
+            postRepository.getPostsFromCommunity(communityId, 0, sortOrder),
             session?.user?.id
               ? communityRepository.getSubscription(session.user.id, communityId)
               : Promise.resolve(null),
@@ -127,7 +127,9 @@ export const useCommunityDetail = ({
     session?.user?.id,
     setCommunityPosts,
     setSubscription,
+    community,
     initialCommunity,
+    sortOrder,
   ]);
 
   return {
@@ -139,5 +141,7 @@ export const useCommunityDetail = ({
     setSubscribersCount,
     subscription,
     setSubscription,
+    sortOrder,
+    setSortOrder,
   };
 };

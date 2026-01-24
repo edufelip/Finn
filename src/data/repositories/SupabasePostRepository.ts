@@ -1,3 +1,4 @@
+import { ModerationStatus, PostSortOrder } from '../../domain/models/post';
 import type { Post } from '../../domain/models/post';
 import type { PostRepository } from '../../domain/repositories/PostRepository';
 import { CacheKey, CACHE_TTL_MS } from '../cache/cachePolicy';
@@ -51,7 +52,7 @@ function toDomain(row: PostRow, extras?: Partial<Post>): Post {
     communityImageUrl: row.communities?.image_url ?? null,
     userId: row.user_id,
     userName: row.profiles?.name,
-    moderationStatus: (row.moderation_status as Post['moderationStatus']) ?? 'approved',
+    moderationStatus: (row.moderation_status as ModerationStatus) ?? ModerationStatus.Approved,
     // userPhotoUrl is handled in toDomainWithImages
     likesCount: row.likes?.[0]?.count ?? 0,
     commentsCount: row.comments?.[0]?.count ?? 0,
@@ -331,20 +332,35 @@ export class SupabasePostRepository implements PostRepository {
     return cached ?? [];
   }
 
-  async getPostsFromCommunity(communityId: number, page: number): Promise<Post[]> {
-    const cacheKey = CacheKey.postsByCommunity(communityId, page);
+  async getPostsFromCommunity(
+    communityId: number,
+    page: number,
+    sortOrder: PostSortOrder = PostSortOrder.Newest
+  ): Promise<Post[]> {
+    const cacheKey = CacheKey.postsByCommunity(communityId, page, sortOrder);
     const cached = await cacheFirst<Post[]>(cacheKey, CACHE_TTL_MS.feed, async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      const { data, error } = await selectPostsWithFallback((select) =>
-        supabase
+      const { data, error } = await selectPostsWithFallback((select) => {
+        const query = supabase
           .from(TABLES.posts)
           .select(select)
           .eq('community_id', communityId)
-          .order('created_at', { ascending: false })
-          .range(from, to)
-      );
+          .range(from, to);
+
+        switch (sortOrder) {
+          case PostSortOrder.Oldest:
+            return query.order('created_at', { ascending: true });
+          case PostSortOrder.MostLiked:
+            return query.order('likes_count', { ascending: false });
+          case PostSortOrder.MostCommented:
+            return query.order('comments_count', { ascending: false });
+          case PostSortOrder.Newest:
+          default:
+            return query.order('created_at', { ascending: false });
+        }
+      });
 
       if (error) {
         throw error;
@@ -660,7 +676,7 @@ export class SupabasePostRepository implements PostRepository {
         .from(TABLES.posts)
         .select(select)
         .eq('community_id', communityId)
-        .eq('moderation_status', 'pending')
+        .eq('moderation_status', ModerationStatus.Pending)
         .order('created_at', { ascending: false })
     );
 
@@ -688,7 +704,7 @@ export class SupabasePostRepository implements PostRepository {
   async markPostForReview(postId: number): Promise<void> {
     const { error } = await supabase
       .from(TABLES.posts)
-      .update({ moderation_status: 'pending' })
+      .update({ moderation_status: ModerationStatus.Pending })
       .eq('id', postId);
 
     if (error) {

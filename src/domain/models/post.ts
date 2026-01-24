@@ -1,4 +1,15 @@
-export type ModerationStatus = 'pending' | 'approved' | 'rejected';
+export enum ModerationStatus {
+  Pending = 'pending',
+  Approved = 'approved',
+  Rejected = 'rejected',
+}
+
+export enum PostSortOrder {
+  Newest = 'newest',
+  Oldest = 'oldest',
+  MostLiked = 'mostLiked',
+  MostCommented = 'mostCommented',
+}
 
 export type Post = {
   id: number;

@@ -23,6 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Community } from '../../domain/models/community';
+import { ModerationStatus } from '../../domain/models/post';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { isMockMode } from '../../config/appConfig';
@@ -233,7 +234,7 @@ export default function CreatePostScreen() {
     // Determine moderation status
     // If user is owner/moderator OR community doesn't require moderation, approve immediately
     const needsModeration = selectedCommunity.postPermission === 'moderated' && !userCanModerate;
-    const moderationStatus = needsModeration ? 'pending' : 'approved';
+    const moderationStatus = needsModeration ? ModerationStatus.Pending : ModerationStatus.Approved;
 
     setLoading(true);
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();

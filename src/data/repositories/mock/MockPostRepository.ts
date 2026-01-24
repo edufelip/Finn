@@ -1,3 +1,4 @@
+import { ModerationStatus, PostSortOrder } from '../../../domain/models/post';
 import type { Post } from '../../../domain/models/post';
 import type { PostRepository } from '../../../domain/repositories/PostRepository';
 import { mockPosts, mockSavedPosts, nextPostId } from './mockData';
@@ -15,8 +16,25 @@ export class MockPostRepository implements PostRepository {
     return [...mockPosts].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
   }
 
-  async getPostsFromCommunity(communityId: number, _page: number): Promise<Post[]> {
-    return mockPosts.filter((post) => post.communityId === communityId);
+  async getPostsFromCommunity(
+    communityId: number,
+    _page: number,
+    sortOrder: PostSortOrder = PostSortOrder.Newest
+  ): Promise<Post[]> {
+    const communityPosts = mockPosts.filter((post) => post.communityId === communityId);
+    const withDate = (post: Post) => post.createdAt ?? String(post.id ?? 0);
+
+    switch (sortOrder) {
+      case PostSortOrder.Oldest:
+        return [...communityPosts].sort((a, b) => withDate(a).localeCompare(withDate(b)));
+      case PostSortOrder.MostLiked:
+        return [...communityPosts].sort((a, b) => (b.likesCount ?? 0) - (a.likesCount ?? 0));
+      case PostSortOrder.MostCommented:
+        return [...communityPosts].sort((a, b) => (b.commentsCount ?? 0) - (a.commentsCount ?? 0));
+      case PostSortOrder.Newest:
+      default:
+        return [...communityPosts].sort((a, b) => withDate(b).localeCompare(withDate(a)));
+    }
   }
 
   async getPostsFromUser(userId: string, _page: number): Promise<Post[]> {
@@ -107,7 +125,7 @@ export class MockPostRepository implements PostRepository {
 
   async getPendingPosts(communityId: number): Promise<Post[]> {
     return mockPosts.filter(
-      (post) => post.communityId === communityId && post.moderationStatus === 'pending'
+      (post) => post.communityId === communityId && post.moderationStatus === ModerationStatus.Pending
     );
   }
 
@@ -121,7 +139,7 @@ export class MockPostRepository implements PostRepository {
   async markPostForReview(postId: number): Promise<void> {
     const post = mockPosts.find((p) => p.id === postId);
     if (post) {
-      post.moderationStatus = 'pending';
+      post.moderationStatus = ModerationStatus.Pending;
     }
   }
 

@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as Network from 'expo-network';
 
 import type { MainStackParamList } from '../navigation/MainStack';
+import { ModerationStatus } from '../../domain/models/post';
 import type { Post } from '../../domain/models/post';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
@@ -112,7 +113,7 @@ export default function PendingContentScreen() {
 
               setProcessingPostIds((prev) => new Set(prev).add(post.id));
               try {
-                await postRepository.updateModerationStatus(post.id, 'approved');
+                await postRepository.updateModerationStatus(post.id, ModerationStatus.Approved);
                 await moderationLogRepository.createLog({
                   communityId,
                   moderatorId: session.user.id,
@@ -173,7 +174,7 @@ export default function PendingContentScreen() {
 
               setProcessingPostIds((prev) => new Set(prev).add(post.id));
               try {
-                await postRepository.updateModerationStatus(post.id, 'rejected');
+                await postRepository.updateModerationStatus(post.id, ModerationStatus.Rejected);
                 await moderationLogRepository.createLog({
                   communityId,
                   moderatorId: session.user.id,
@@ -259,7 +260,7 @@ export default function PendingContentScreen() {
         </View>
       );
     },
-    [handleApprove, handleReject, navigation, processingPostIds, styles, theme]
+    [handleApprove, handleReject, navigation, processingPostIds, session?.user?.id, styles, theme]
   );
 
   // Show loading during both auth and data fetch

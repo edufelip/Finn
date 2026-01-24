@@ -29,7 +29,8 @@ export const CacheKey = {
   communitiesBySubscriber: (userId: string) => `communities:subscriber:${userId}`,
   feedByUser: (userId: string, page: number) => `feed:user:${userId}:page:${page}`,
   feedByFollowing: (userId: string, page: number) => `feed:following:${userId}:page:${page}`,
-  postsByCommunity: (communityId: number, page: number) => `posts:community:${communityId}:page:${page}`,
+  postsByCommunity: (communityId: number, page: number, sortOrder?: string) =>
+    `posts:community:${communityId}:page:${page}:sort:${sortOrder ?? 'newest'}`,
   postsByUser: (userId: string, page: number) => `posts:user:${userId}:page:${page}`,
   commentsByPost: (postId: number) => `comments:post:${postId}`,
   savedPostsByUser: (userId: string, page: number) => `saved_posts:user:${userId}:page:${page}`,

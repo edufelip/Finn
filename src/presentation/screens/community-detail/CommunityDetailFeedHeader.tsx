@@ -8,9 +8,10 @@ import { communityDetailCopy } from '../../content/communityDetailCopy';
 type CommunityDetailFeedHeaderProps = {
   theme: ThemeColors;
   onPressSort?: () => void;
+  sortLabel: string;
 };
 
-export default function CommunityDetailFeedHeader({ theme, onPressSort }: CommunityDetailFeedHeaderProps) {
+export default function CommunityDetailFeedHeader({ theme, onPressSort, sortLabel }: CommunityDetailFeedHeaderProps) {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
@@ -18,7 +19,7 @@ export default function CommunityDetailFeedHeader({ theme, onPressSort }: Commun
       <Text style={styles.feedTitle}>{communityDetailCopy.feedTitle}</Text>
       <Pressable style={styles.sortButton} onPress={onPressSort} disabled={!onPressSort}>
         <MaterialIcons name="sort" size={14} color={theme.primary} />
-        <Text style={styles.sortButtonText}>{communityDetailCopy.feedSort}</Text>
+        <Text style={styles.sortButtonText}>{communityDetailCopy.feedSort(sortLabel)}</Text>
       </Pressable>
     </View>
   );
@@ -31,7 +32,7 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 20,
-      marginTop: 32,
+      marginTop: 12,
       marginBottom: 8,
     },
     feedTitle: {

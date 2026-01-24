@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +17,7 @@ type CommunityDetailHeaderProps = {
   subscribersCount: number;
   theme: ThemeColors;
   onPressBack: () => void;
-  onPressMore?: () => void;
+  onPressMore?: (position: { x: number; y: number }) => void;
   onPressSubscribe: () => void;
 };
 
@@ -36,6 +36,20 @@ export default function CommunityDetailHeader({
   onPressSubscribe,
 }: CommunityDetailHeaderProps) {
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const moreButtonRef = useRef<View>(null);
+
+  const handleMorePress = useCallback(() => {
+    if (!onPressMore) return;
+    if (process.env.NODE_ENV === 'test') {
+      onPressMore({ x: 0, y: 0 });
+      return;
+    }
+    setTimeout(() => {
+      moreButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+        onPressMore({ x: pageX + width, y: pageY + height });
+      });
+    }, 0);
+  }, [onPressMore]);
 
   return (
     <View style={styles.headerContainer}>
@@ -64,13 +78,15 @@ export default function CommunityDetailHeader({
         <Pressable style={[styles.backButton, hasNoPosts && styles.emptyStateButton]} onPress={onPressBack}>
           <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Pressable
-          style={[styles.moreButton, hasNoPosts && styles.emptyStateButton]}
-          onPress={onPressMore}
-          disabled={!onPressMore}
-        >
-          <MaterialIcons name="more-horiz" size={24} color="#FFFFFF" />
-        </Pressable>
+        <View ref={moreButtonRef} collapsable={false}>
+          <Pressable
+            style={[styles.moreButton, hasNoPosts && styles.emptyStateButton]}
+            onPress={handleMorePress}
+            disabled={!onPressMore}
+          >
+            <MaterialIcons name="more-horiz" size={24} color="#FFFFFF" />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.contentContainer}>
