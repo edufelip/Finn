@@ -3,8 +3,16 @@ import type { Subscription } from '../models/subscription';
 
 export type CommunitySortOrder = 'mostFollowed' | 'leastFollowed' | 'newest' | 'oldest';
 
+export type CommunitySearchParams = {
+  search?: string | null;
+  sort?: CommunitySortOrder;
+  topicId?: number | null;
+  page?: number;
+  pageSize?: number;
+};
+
 export interface CommunityRepository {
-  getCommunities(search?: string | null, sort?: CommunitySortOrder, topicId?: number | null): Promise<Community[]>;
+  getCommunities(params?: CommunitySearchParams): Promise<Community[]>;
   getCommunity(id: number): Promise<Community | null>;
   getCommunitiesFromUser(userId: string): Promise<Community[]>;
   getSubscribedCommunities(userId: string): Promise<Community[]>;

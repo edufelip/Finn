@@ -1,25 +1,35 @@
 import type { Community } from '../../../domain/models/community';
 import type { Subscription } from '../../../domain/models/subscription';
-import type { CommunityRepository, CommunitySortOrder } from '../../../domain/repositories/CommunityRepository';
+import type {
+  CommunityRepository,
+  CommunitySearchParams,
+  CommunitySortOrder,
+} from '../../../domain/repositories/CommunityRepository';
 import { mockCommunities, mockSubscriptions, nextCommunityId, nextSubscriptionId } from './mockData';
 
 export class MockCommunityRepository implements CommunityRepository {
-  async getCommunities(search?: string | null, sort?: CommunitySortOrder, topicId?: number | null): Promise<Community[]> {
+  async getCommunities(params?: CommunitySearchParams): Promise<Community[]> {
     let results = [...mockCommunities];
+    const normalizedSearch = params?.search?.trim().toLowerCase() ?? '';
+    const normalizedSort = params?.sort ?? 'mostFollowed';
+    const normalizedTopicId = params?.topicId ?? null;
+    const page = params?.page ?? 0;
+    const pageSize = params?.pageSize ?? 20;
+    const start = page * pageSize;
+    const end = start + pageSize;
     
     // Apply search filter
-    if (search) {
-      const query = search.toLowerCase();
-      results = results.filter((community) => community.title.toLowerCase().includes(query));
+    if (normalizedSearch) {
+      results = results.filter((community) => community.title.toLowerCase().includes(normalizedSearch));
     }
     
     // Apply topic filter
-    if (topicId) {
-      results = results.filter((community) => community.topicId === topicId);
+    if (normalizedTopicId) {
+      results = results.filter((community) => community.topicId === normalizedTopicId);
     }
 
     // Apply sorting
-    switch (sort) {
+    switch (normalizedSort) {
       case 'mostFollowed':
         results.sort((a, b) => (b.subscribersCount ?? 0) - (a.subscribersCount ?? 0));
         break;
@@ -46,7 +56,7 @@ export class MockCommunityRepository implements CommunityRepository {
         break;
     }
 
-    return results;
+    return results.slice(start, end);
   }
 
   async getCommunity(id: number): Promise<Community | null> {

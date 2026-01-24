@@ -10,8 +10,20 @@ export const CACHE_TTL_MS = {
 
 export const CacheKey = {
   user: (id: string) => `user:${id}`,
-  communities: (search?: string | null) =>
-    search ? `communities:search:${search.toLowerCase()}` : 'communities:all',
+  communitiesSearch: (params?: {
+    search?: string | null;
+    sort?: string | null;
+    topicId?: number | null;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const normalizedSearch = params?.search?.toLowerCase() ?? '';
+    const normalizedSort = params?.sort ?? 'mostFollowed';
+    const normalizedTopic = params?.topicId ?? 'all';
+    const normalizedPage = params?.page ?? 0;
+    const normalizedPageSize = params?.pageSize ?? 20;
+    return `communities:search:${normalizedSearch}:topic:${normalizedTopic}:sort:${normalizedSort}:page:${normalizedPage}:size:${normalizedPageSize}`;
+  },
   community: (id: number) => `community:${id}`,
   communitiesByUser: (userId: string) => `communities:user:${userId}`,
   communitiesBySubscriber: (userId: string) => `communities:subscriber:${userId}`,

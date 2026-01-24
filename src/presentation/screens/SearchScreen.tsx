@@ -41,9 +41,9 @@ export default function SearchScreen() {
     userSubscriptions,
     isGuest,
     exitGuest,
-    loadCommunities,
-    setSelectedTopicId,
-    setSortOrder,
+    searchCommunities,
+    applyTopicFilter,
+    applySortOrder,
     handleToggleSubscription,
   } = useSearchCommunities({
     initialSort: route.params?.sort || 'mostFollowed',
@@ -59,8 +59,8 @@ export default function SearchScreen() {
   }, [route.params?.focus]);
 
   const handleSearch = useCallback(() => {
-    loadCommunities(searchText);
-  }, [loadCommunities, searchText]);
+    searchCommunities(searchText);
+  }, [searchCommunities, searchText]);
 
   const handleCommunityPress = useCallback(
     (community: Community) => {
@@ -81,33 +81,25 @@ export default function SearchScreen() {
 
   const handleSortPress = useCallback(() => {
     Alert.alert('Sort by', '', [
-      { text: searchCopy.sortMostFollowed, onPress: () => setSortOrder('mostFollowed') },
-      { text: searchCopy.sortLeastFollowed, onPress: () => setSortOrder('leastFollowed') },
-      { text: searchCopy.sortNewest, onPress: () => setSortOrder('newest') },
-      { text: searchCopy.sortOldest, onPress: () => setSortOrder('oldest') },
+      { text: searchCopy.sortMostFollowed, onPress: () => applySortOrder('mostFollowed') },
+      { text: searchCopy.sortLeastFollowed, onPress: () => applySortOrder('leastFollowed') },
+      { text: searchCopy.sortNewest, onPress: () => applySortOrder('newest') },
+      { text: searchCopy.sortOldest, onPress: () => applySortOrder('oldest') },
       { text: 'Cancel', style: 'cancel' },
     ]);
-  }, [setSortOrder]);
+  }, [applySortOrder]);
 
   const handleTopicPress = useCallback(() => {
     const options = [
-      { text: 'All Topics', onPress: () => setSelectedTopicId(undefined) },
+      { text: 'All Topics', onPress: () => applyTopicFilter(undefined) },
       ...topics.map((topic) => ({
         text: topic.label,
-        onPress: () => setSelectedTopicId(topic.id),
+        onPress: () => applyTopicFilter(topic.id),
       })),
       { text: 'Cancel', style: 'cancel' as const },
     ];
     Alert.alert('Filter by Topic', '', options);
-  }, [topics, setSelectedTopicId]);
-
-  const handleCreateCommunity = useCallback(() => {
-    if (isGuest) {
-      showGuestGateAlert({ onSignIn: () => void exitGuest() });
-      return;
-    }
-    navigation.navigate('CreateCommunity');
-  }, [isGuest, exitGuest, navigation]);
+  }, [topics, applyTopicFilter]);
 
   const selectedTopic = useMemo(
     () => topics.find((t) => t.id === selectedTopicId),
@@ -135,10 +127,9 @@ export default function SearchScreen() {
         hasSearch={!!searchText}
         hasTopicFilter={!!selectedTopicId}
         isGuest={isGuest}
-        onCreateCommunity={handleCreateCommunity}
       />
     ),
-    [loading, initialLoad, searchText, selectedTopicId, isGuest, handleCreateCommunity]
+    [loading, initialLoad, searchText, selectedTopicId, isGuest]
   );
 
   const renderFooter = useCallback(() => {
@@ -177,7 +168,7 @@ export default function SearchScreen() {
         selectedTopic={selectedTopic}
         onSortPress={handleSortPress}
         onTopicPress={handleTopicPress}
-        onClearTopic={() => setSelectedTopicId(undefined)}
+        onClearTopic={() => applyTopicFilter(undefined)}
       />
 
       <FlatList

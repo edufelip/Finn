@@ -19,6 +19,8 @@ type UseSearchCommunitiesParams = {
   shouldLoadOnMount?: boolean;
 };
 
+const COMMUNITY_PAGE_SIZE = 20;
+
 export const useSearchCommunities = ({
   initialSort = 'mostFollowed',
   initialTopicId,
@@ -32,8 +34,12 @@ export const useSearchCommunities = ({
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<number | undefined>(initialTopicId);
   const [sortOrder, setSortOrder] = useState<CommunitySortOrder>(initialSort);
+  const [activeQuery, setActiveQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   // Load topics on mount
   useEffect(() => {
@@ -41,14 +47,33 @@ export const useSearchCommunities = ({
   }, [topicRepository]);
 
   const loadCommunities = useCallback(
-    async (searchQuery?: string) => {
-      setLoading(true);
+    async ({
+      query,
+      pageToLoad = 0,
+      replace = false,
+      sort = sortOrder,
+      topicId = selectedTopicId,
+    }: {
+      query?: string;
+      pageToLoad?: number;
+      replace?: boolean;
+      sort?: CommunitySortOrder;
+      topicId?: number | null;
+    } = {}) => {
+      if (replace) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
       try {
-        const data = await communityRepository.getCommunities(
-          searchQuery?.trim() || undefined,
-          sortOrder,
-          selectedTopicId ?? null
-        );
+        const data = await communityRepository.getCommunities({
+          search: query ?? activeQuery,
+          sort,
+          topicId: topicId ?? null,
+          page: pageToLoad,
+          pageSize: COMMUNITY_PAGE_SIZE,
+        });
 
         if (session?.user?.id) {
           const subs = await Promise.all(
@@ -61,30 +86,73 @@ export const useSearchCommunities = ({
           setSubscriptions(subMap);
         }
 
-        setCommunities(data);
+        setCommunities((prev) => (replace ? data : [...prev, ...data]));
+        setPage(pageToLoad);
+        setHasMore(data.length === COMMUNITY_PAGE_SIZE);
       } catch (err) {
         // Silent fail - could add error handling here
       } finally {
         setLoading(false);
+        setLoadingMore(false);
         setInitialLoad(false);
       }
     },
-    [communityRepository, session?.user?.id, setSubscriptions, sortOrder, selectedTopicId]
+    [
+      activeQuery,
+      communityRepository,
+      selectedTopicId,
+      session?.user?.id,
+      setSubscriptions,
+      sortOrder,
+    ]
   );
 
   // Load on mount if requested
   useEffect(() => {
     if (shouldLoadOnMount) {
-      loadCommunities();
+      loadCommunities({ query: '', pageToLoad: 0, replace: true });
     }
-  }, []);
+  }, [loadCommunities, shouldLoadOnMount]);
 
-  // Reload when filters change (but not on mount)
-  useEffect(() => {
-    if (!initialLoad) {
-      loadCommunities();
+  const searchCommunities = useCallback(
+    (query: string) => {
+      const normalized = query.trim();
+      setActiveQuery(normalized);
+      loadCommunities({ query: normalized, pageToLoad: 0, replace: true });
+    },
+    [loadCommunities]
+  );
+
+  const applyTopicFilter = useCallback(
+    (topicId?: number) => {
+      setSelectedTopicId(topicId);
+      loadCommunities({
+        query: activeQuery,
+        pageToLoad: 0,
+        replace: true,
+        topicId: topicId ?? null,
+      });
+    },
+    [activeQuery, loadCommunities]
+  );
+
+  const applySortOrder = useCallback(
+    (nextSort: CommunitySortOrder) => {
+      setSortOrder(nextSort);
+      if (!activeQuery && !selectedTopicId) {
+        return;
+      }
+      loadCommunities({ query: activeQuery, pageToLoad: 0, replace: true, sort: nextSort });
+    },
+    [activeQuery, loadCommunities, selectedTopicId]
+  );
+
+  const loadMore = useCallback(() => {
+    if (loading || loadingMore || !hasMore || communities.length === 0) {
+      return;
     }
-  }, [sortOrder, selectedTopicId]);
+    loadCommunities({ pageToLoad: page + 1 });
+  }, [communities.length, hasMore, loadCommunities, loading, loadingMore, page]);
 
   const handleToggleSubscription = useCallback(
     (community: Community) => {
@@ -185,12 +253,16 @@ export const useSearchCommunities = ({
     sortOrder,
     loading,
     initialLoad,
+    loadingMore,
+    hasMore,
+    activeQuery,
     userSubscriptions,
     isGuest,
     exitGuest,
-    loadCommunities,
-    setSelectedTopicId,
-    setSortOrder,
+    searchCommunities,
+    applyTopicFilter,
+    applySortOrder,
+    loadMore,
     handleToggleSubscription,
   };
 };
