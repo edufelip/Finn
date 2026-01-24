@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } 
 
 import type { Post } from '../../domain/models/post';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { postCardCopy } from '../content/postCardCopy';
 import PostOptionsModal from './PostOptionsModal';
@@ -41,6 +42,7 @@ const PostCard = ({
   onPressBody,
 }: PostCardProps & { isFirst?: boolean }) => {
   const theme = useThemeColors();
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const likeScale = useSharedValue(1);
   const likeSpring = useMemo(() => ({ duration: 133, dampingRatio: 0.7 }), []);
@@ -309,7 +311,15 @@ export default React.memo(PostCard, (prevProps, nextProps) => {
   // Other props we check
   const otherPropsChanged = (
     prevProps.canModerate !== nextProps.canModerate ||
-    prevProps.isFirst !== nextProps.isFirst
+    prevProps.isFirst !== nextProps.isFirst ||
+    prevProps.onToggleLike !== nextProps.onToggleLike ||
+    prevProps.onOpenComments !== nextProps.onOpenComments ||
+    prevProps.onToggleSave !== nextProps.onToggleSave ||
+    prevProps.onShare !== nextProps.onShare ||
+    prevProps.onMarkForReview !== nextProps.onMarkForReview ||
+    prevProps.onPressUser !== nextProps.onPressUser ||
+    prevProps.onPressCommunity !== nextProps.onPressCommunity ||
+    prevProps.onPressBody !== nextProps.onPressBody
   );
   
   // Return true if nothing changed (skip re-render)
