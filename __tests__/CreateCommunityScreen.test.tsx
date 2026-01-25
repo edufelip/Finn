@@ -281,7 +281,7 @@ describe('CreateCommunityScreen', () => {
     imagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true });
     imagePicker.launchImageLibraryAsync.mockResolvedValue({
       canceled: false,
-      assets: [{ uri: 'file://community.jpg' }],
+      assets: [{ uri: 'file://community.jpg', width: 1920 }],
     });
 
     const { getByTestId, queryByTestId } = render(
@@ -299,6 +299,9 @@ describe('CreateCommunityScreen', () => {
     fireEvent.press(getByTestId(createCommunityCopy.testIds.image));
     fireEvent.press(getByTestId(imagePickerCopy.testIds.gallery));
 
-    await waitFor(() => expect(queryByTestId(createCommunityCopy.testIds.imageError)).toBeNull());
+    // Wait for async image processing (compressImageUri) and state updates to complete
+    await waitFor(() => expect(queryByTestId(createCommunityCopy.testIds.imageError)).toBeNull(), {
+      timeout: 3000,
+    });
   });
 });
