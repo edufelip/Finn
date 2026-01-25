@@ -22,4 +22,5 @@ logs_*/
 # Firebase configuration files with real credentials
 # These are managed via CI secrets for production builds
 ios/FinnDev/GoogleService-Info.plist
+ios/Finn/GoogleService-Info.plist
 android/app/google-services.json

@@ -56,7 +56,7 @@ jobs:
 
       - name: Bump iOS build number
         run: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" ios/FinnDev/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" ios/Finn/Info.plist
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -81,8 +81,8 @@ jobs:
         env:
           GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
         run: |
-          mkdir -p FinnDev
-          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > FinnDev/GoogleService-Info.plist
+          mkdir -p Finn
+          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -d > Finn/GoogleService-Info.plist
 
       - name: Sync Google Sign-In scheme (prod)
         run: |
@@ -90,8 +90,8 @@ jobs:
           import plistlib
           import sys
 
-          info_path = "ios/FinnDev/Info.plist"
-          gservice_path = "ios/FinnDev/GoogleService-Info.plist"
+          info_path = "ios/Finn/Info.plist"
+          gservice_path = "ios/Finn/GoogleService-Info.plist"
 
           with open(gservice_path, "rb") as f:
             gservice = plistlib.load(f)
@@ -126,8 +126,8 @@ jobs:
 
       - name: Validate Google Sign-In scheme
         run: |
-          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/FinnDev/GoogleService-Info.plist)
-          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" ios/FinnDev/Info.plist | grep -Fq "$PLIST_REVERSED"; then
+          PLIST_REVERSED=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/Finn/GoogleService-Info.plist)
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" ios/Finn/Info.plist | grep -Fq "$PLIST_REVERSED"; then
             echo "Google Sign-In mismatch: Info.plist missing REVERSED_CLIENT_ID scheme ($PLIST_REVERSED)" >&2
             exit 1
           fi
@@ -198,9 +198,9 @@ jobs:
           cd ios
           xcodebuild \
             -workspace FinnDev.xcworkspace \
-            -scheme FinnDev \
+            -scheme Finn \
             -configuration Release \
-            -archivePath "$PWD/build/FinnDev.xcarchive" \
+            -archivePath "$PWD/build/Finn.xcarchive" \
             archive \
             PRODUCT_BUNDLE_IDENTIFIER="com.edufelip.finn" \
             CODE_SIGN_STYLE=Manual \
@@ -211,16 +211,16 @@ jobs:
 
       - name: Verify dSYM generation
         run: |
-          DSYM_PATH="ios/build/FinnDev.xcarchive/dSYMs/FinnDev.app.dSYM"
+          DSYM_PATH="ios/build/Finn.xcarchive/dSYMs/Finn.app.dSYM"
           if [ ! -d "$DSYM_PATH" ]; then
             echo "❌ ERROR: dSYM bundle not found at $DSYM_PATH" >&2
             echo "Listing archive contents:"
-            find ios/build/FinnDev.xcarchive -type d -name "*.dSYM" || true
+            find ios/build/Finn.xcarchive -type d -name "*.dSYM" || true
             exit 1
           fi
           echo "✅ dSYM bundle generated successfully"
           echo "dSYM size: $(du -sh "$DSYM_PATH" | cut -f1)"
-          echo "dSYM UUID: $(dwarfdump --uuid "$DSYM_PATH/Contents/Resources/DWARF/FinnDev" | head -1)"
+          echo "dSYM UUID: $(dwarfdump --uuid "$DSYM_PATH/Contents/Resources/DWARF/Finn" | head -1)"
 
       - name: Export IPA
         env:
@@ -246,22 +246,22 @@ jobs:
 
           cd ios
           xcodebuild -exportArchive \
-            -archivePath "$PWD/build/FinnDev.xcarchive" \
+            -archivePath "$PWD/build/Finn.xcarchive" \
             -exportOptionsPlist ExportOptions.plist \
             -exportPath "$PWD/build" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
       - name: Archive dSYMs for backup
         run: |
-          cd ios/build/FinnDev.xcarchive/dSYMs
-          zip -r FinnDev.dSYM.zip FinnDev.app.dSYM
-          echo "✅ dSYM archive created: $(du -sh FinnDev.dSYM.zip | cut -f1)"
+          cd ios/build/Finn.xcarchive/dSYMs
+          zip -r Finn.dSYM.zip Finn.app.dSYM
+          echo "✅ dSYM archive created: $(du -sh Finn.dSYM.zip | cut -f1)"
 
       - name: Upload dSYM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FinnDev.dSYM
-          path: ios/build/FinnDev.xcarchive/dSYMs/FinnDev.dSYM.zip
+          name: Finn.dSYM
+          path: ios/build/Finn.xcarchive/dSYMs/Finn.dSYM.zip
           retention-days: 90
 
       - name: Upload IPA to TestFlight

@@ -23,14 +23,14 @@ prepare_react_native_project!
 # Enable modular headers for Firebase Swift pods
 use_modular_headers!
 
-target 'FinnDev' do
+def shared_pods(podfile_properties)
   use_expo_modules!
 
   # Firebase Crashlytics
   pod 'Firebase/Crashlytics', '~> 10.24.0'
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
-    config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
+    config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"]; 
   else
     config_command = [
       'npx',
@@ -43,6 +43,7 @@ target 'FinnDev' do
   end
 
   config = use_native_modules!(config_command)
+  $react_native_config ||= config
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
@@ -54,28 +55,36 @@ target 'FinnDev' do
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
+end
 
-  post_install do |installer|
-    # Existing React Native post_install
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      :ccache_enabled => ccache_enabled?(podfile_properties),
-    )
-    
-    # Add Firebase Crashlytics dSYM upload script to Xcode project
-    # This automatically uploads debug symbols during Release builds
-    installer.pods_project.targets.each do |target|
-      if target.name == 'FinnDev'
-        puts "Adding Firebase Crashlytics run script to #{target.name}"
-        shell_script_phase = target.new_shell_script_build_phase("[firebase_crashlytics] Upload dSYMs")
-        shell_script_phase.shell_script = "\"${PODS_ROOT}/FirebaseCrashlytics/run\""
-        shell_script_phase.input_paths = [
-          "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
-          "${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
-        ]
-      end
+target 'FinnDev' do
+  shared_pods(podfile_properties)
+end
+
+target 'Finn' do
+  shared_pods(podfile_properties)
+end
+
+post_install do |installer|
+  # Existing React Native post_install
+  react_native_post_install(
+    installer,
+    $react_native_config[:reactNativePath],
+    :mac_catalyst_enabled => false,
+    :ccache_enabled => ccache_enabled?(podfile_properties),
+  )
+  
+  # Add Firebase Crashlytics dSYM upload script to Xcode project
+  # This automatically uploads debug symbols during Release builds
+  installer.pods_project.targets.each do |target|
+    if ['FinnDev', 'Finn'].include?(target.name)
+      puts "Adding Firebase Crashlytics run script to #{target.name}"
+      shell_script_phase = target.new_shell_script_build_phase("[firebase_crashlytics] Upload dSYMs")
+      shell_script_phase.shell_script = "\"${PODS_ROOT}/FirebaseCrashlytics/run\""
+      shell_script_phase.input_paths = [
+        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+        "${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
+      ]
     end
   end
 end
