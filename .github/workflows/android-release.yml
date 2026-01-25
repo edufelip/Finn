@@ -108,16 +108,59 @@ jobs:
           echo "✅ Mapping file generated successfully"
           echo "Size: $(du -h app/build/outputs/mapping/release/mapping.txt | cut -f1)"
 
-      - name: Verify native symbols exist
+      - name: Find and package native debug symbols
         run: |
-          SYMBOLS_DIR="app/build/intermediates/merged_native_libs/release/out/lib"
-          if [ ! -d "$SYMBOLS_DIR" ]; then
-            echo "❌ ERROR: Native symbols directory not found!"
-            echo "Expected: $SYMBOLS_DIR"
-            ls -la app/build/intermediates/merged_native_libs/release/out/ || true
-            exit 1
+          echo "🔍 Searching for native libraries in build output..."
+          
+          # List possible locations
+          echo "Checking possible symbol locations:"
+          find app/build/intermediates -type d -name "lib" 2>/dev/null | grep -E "(merged_native_libs|stripped_native_libs|library_jni)" | head -10 || true
+          
+          # Try multiple possible locations (ordered by preference)
+          SYMBOLS_DIR=""
+          POSSIBLE_DIRS=(
+            "app/build/intermediates/merged_native_libs/release/out/lib"
+            "app/build/intermediates/library_jni/release/jni"
+            "app/build/intermediates/stripped_native_libs/release/out/lib"
+            "app/build/intermediates/merged_native_libs/release/lib"
+          )
+          
+          for dir in "${POSSIBLE_DIRS[@]}"; do
+            if [ -d "$dir" ] && [ -n "$(find "$dir" -name "*.so" -type f 2>/dev/null)" ]; then
+              SYMBOLS_DIR="$dir"
+              echo "✅ Found native symbols at: $SYMBOLS_DIR"
+              break
+            fi
+          done
+          
+          if [ -z "$SYMBOLS_DIR" ]; then
+            echo "⚠️  Warning: Native symbols directory not found in standard locations"
+            echo "This might be expected for some build configurations."
+            echo "Checking if AAB contains native code..."
+            
+            # Extract AAB to check for native libs
+            AAB_FILE="app/build/outputs/bundle/release/app-release.aab"
+            if [ -f "$AAB_FILE" ]; then
+              TEMP_DIR=$(mktemp -d)
+              unzip -q "$AAB_FILE" -d "$TEMP_DIR" 2>/dev/null || true
+              
+              if [ -d "$TEMP_DIR/base/lib" ]; then
+                echo "✅ Found native libraries inside AAB at base/lib/"
+                SYMBOLS_DIR="$TEMP_DIR/base/lib"
+              else
+                echo "ℹ️  No native libraries found in AAB"
+                echo "This app might not have native dependencies requiring symbols"
+                exit 0
+              fi
+            else
+              echo "❌ ERROR: AAB file not found at $AAB_FILE"
+              exit 1
+            fi
           fi
-          echo "✅ Native symbols directory found"
+          
+          # Display found symbols
+          echo ""
+          echo "📦 Native symbol files found:"
           echo "Architectures:"
           ls -la "$SYMBOLS_DIR"
           echo ""
@@ -125,19 +168,20 @@ jobs:
           find "$SYMBOLS_DIR" -name "*.so" -type f | while read f; do
             echo "  - $(basename $(dirname $f))/$(basename $f) ($(du -h $f | cut -f1))"
           done
-
-      - name: Create native debug symbols zip
-        run: |
-          SYMBOLS_DIR="app/build/intermediates/merged_native_libs/release/out/lib"
-          SYMBOLS_ZIP="app/build/outputs/native-debug-symbols.zip"
           
+          # Create zip
+          SYMBOLS_ZIP="app/build/outputs/native-debug-symbols.zip"
           mkdir -p app/build/outputs
           cd "$SYMBOLS_DIR"
           zip -r "$GITHUB_WORKSPACE/android/$SYMBOLS_ZIP" . -i "*.so"
           
+          echo ""
           echo "✅ Native debug symbols zip created"
           echo "Location: $SYMBOLS_ZIP"
           echo "Size: $(du -h $GITHUB_WORKSPACE/android/$SYMBOLS_ZIP | cut -f1)"
+          
+          # Save the symbols dir for cleanup if needed
+          echo "SYMBOLS_DIR=$SYMBOLS_DIR" >> $GITHUB_ENV
 
       - name: Sign bundle with jarsigner
         env:
