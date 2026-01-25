@@ -108,6 +108,37 @@ jobs:
           echo "✅ Mapping file generated successfully"
           echo "Size: $(du -h app/build/outputs/mapping/release/mapping.txt | cut -f1)"
 
+      - name: Verify native symbols exist
+        run: |
+          SYMBOLS_DIR="app/build/intermediates/merged_native_libs/release/out/lib"
+          if [ ! -d "$SYMBOLS_DIR" ]; then
+            echo "❌ ERROR: Native symbols directory not found!"
+            echo "Expected: $SYMBOLS_DIR"
+            ls -la app/build/intermediates/merged_native_libs/release/out/ || true
+            exit 1
+          fi
+          echo "✅ Native symbols directory found"
+          echo "Architectures:"
+          ls -la "$SYMBOLS_DIR"
+          echo ""
+          echo "Symbol files:"
+          find "$SYMBOLS_DIR" -name "*.so" -type f | while read f; do
+            echo "  - $(basename $(dirname $f))/$(basename $f) ($(du -h $f | cut -f1))"
+          done
+
+      - name: Create native debug symbols zip
+        run: |
+          SYMBOLS_DIR="app/build/intermediates/merged_native_libs/release/out/lib"
+          SYMBOLS_ZIP="app/build/outputs/native-debug-symbols.zip"
+          
+          mkdir -p app/build/outputs
+          cd "$SYMBOLS_DIR"
+          zip -r "$GITHUB_WORKSPACE/android/$SYMBOLS_ZIP" . -i "*.so"
+          
+          echo "✅ Native debug symbols zip created"
+          echo "Location: $SYMBOLS_ZIP"
+          echo "Size: $(du -h $GITHUB_WORKSPACE/android/$SYMBOLS_ZIP | cut -f1)"
+
       - name: Sign bundle with jarsigner
         env:
           STOREPASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -133,6 +164,13 @@ jobs:
           name: app-release.aab
           path: android/app/build/outputs/bundle/release/app-release.aab
 
+      - name: Upload native debug symbols artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-debug-symbols
+          path: android/app/build/outputs/native-debug-symbols.zip
+          retention-days: 90
+
       - name: Upload to Play (internal track)
         uses: r0adkll/upload-google-play@v1
         with:
@@ -142,4 +180,5 @@ jobs:
           track: internal
           status: draft
           mappingFile: android/app/build/outputs/mapping/release/mapping.txt
+          debugSymbols: android/app/build/outputs/native-debug-symbols.zip
           # status: completed
