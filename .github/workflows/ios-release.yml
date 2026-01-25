@@ -209,6 +209,19 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
+      - name: Verify dSYM generation
+        run: |
+          DSYM_PATH="ios/build/FinnDev.xcarchive/dSYMs/FinnDev.app.dSYM"
+          if [ ! -d "$DSYM_PATH" ]; then
+            echo "❌ ERROR: dSYM bundle not found at $DSYM_PATH" >&2
+            echo "Listing archive contents:"
+            find ios/build/FinnDev.xcarchive -type d -name "*.dSYM" || true
+            exit 1
+          fi
+          echo "✅ dSYM bundle generated successfully"
+          echo "dSYM size: $(du -sh "$DSYM_PATH" | cut -f1)"
+          echo "dSYM UUID: $(dwarfdump --uuid "$DSYM_PATH/Contents/Resources/DWARF/FinnDev" | head -1)"
+
       - name: Export IPA
         env:
           IOS_PROFILE_NAME: ${{ secrets.IOS_PROFILE_NAME }}
@@ -237,6 +250,19 @@ jobs:
             -exportOptionsPlist ExportOptions.plist \
             -exportPath "$PWD/build" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
+
+      - name: Archive dSYMs for backup
+        run: |
+          cd ios/build/FinnDev.xcarchive/dSYMs
+          zip -r FinnDev.dSYM.zip FinnDev.app.dSYM
+          echo "✅ dSYM archive created: $(du -sh FinnDev.dSYM.zip | cut -f1)"
+
+      - name: Upload dSYM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinnDev.dSYM
+          path: ios/build/FinnDev.xcarchive/dSYMs/FinnDev.dSYM.zip
+          retention-days: 90
 
       - name: Upload IPA to TestFlight
         env:

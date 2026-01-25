@@ -97,6 +97,17 @@ jobs:
             bundleRelease
             -PCI_VERSION_CODE=${{ env.CI_VERSION_CODE }}
 
+      - name: Verify mapping file exists
+        run: |
+          if [ ! -f app/build/outputs/mapping/release/mapping.txt ]; then
+            echo "❌ ERROR: Mapping file not found!"
+            echo "Expected: app/build/outputs/mapping/release/mapping.txt"
+            ls -la app/build/outputs/mapping/ || true
+            exit 1
+          fi
+          echo "✅ Mapping file generated successfully"
+          echo "Size: $(du -h app/build/outputs/mapping/release/mapping.txt | cut -f1)"
+
       - name: Sign bundle with jarsigner
         env:
           STOREPASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -108,6 +119,13 @@ jobs:
             -keypass "$KEYPASS" \
             app/build/outputs/bundle/release/app-release.aab \
             ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - name: Upload mapping file artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-file
+          path: android/app/build/outputs/mapping/release/mapping.txt
+          retention-days: 90
 
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
@@ -123,4 +141,5 @@ jobs:
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           track: internal
           status: draft
+          mappingFile: android/app/build/outputs/mapping/release/mapping.txt
           # status: completed

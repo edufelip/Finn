@@ -18,8 +18,16 @@ import '@formatjs/intl-relativetimeformat/locale-data/de';
 import '@formatjs/intl-relativetimeformat/locale-data/ja';
 import '@formatjs/intl-relativetimeformat/locale-data/ar';
 import { registerRootComponent } from 'expo';
+import crashlytics from '@react-native-firebase/crashlytics';
 
 import App from './src/app/App';
+
+// Initialize Firebase Crashlytics (production only)
+// This catches crashes early in the app lifecycle before React renders
+if (!__DEV__) {
+  crashlytics().setCrashlyticsCollectionEnabled(true);
+  crashlytics().log('App initialized');
+}
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
