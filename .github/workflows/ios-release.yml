@@ -75,7 +75,7 @@ jobs:
         run: |
           mkdir -p "$COCOAPODS_CACHE_DIR"
           cd ios
-          pod install --silent
+          pod install --repo-update
       - name: Write GoogleService-Info.plist
         working-directory: ios
         env:

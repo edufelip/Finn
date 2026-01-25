@@ -20,11 +20,14 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
 
+# Enable modular headers for Firebase Swift pods
+use_modular_headers!
+
 target 'FinnDev' do
   use_expo_modules!
 
   # Firebase Crashlytics
-  pod 'Firebase/Crashlytics', '~> 10.21.0'
+  pod 'Firebase/Crashlytics', '~> 10.24.0'
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
