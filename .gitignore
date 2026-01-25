@@ -17,3 +17,8 @@ android/app/build/
 .npm-cache/
 .temp/
 *.save
+
+# Firebase configuration files with real credentials
+# These are managed via CI secrets for production builds
+ios/FinnDev/GoogleService-Info.plist
+android/app/google-services.json

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		07CEB807D22FE69057EBAA10 /* libPods-FinnDev.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6373FB5CE38EF31F2C3126A3 /* libPods-FinnDev.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		323068B788474BC958979766 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B1F551ED80ACE15CBBB0B40 /* GoogleService-Info.plist */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		4BBFB61E32FD16D08DB47E8F /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DAFAEB22CFD4763E9F300FD /* ExpoModulesProvider.swift */; };
 		8445A19614D1F992169F2D39 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF1D3A10A7AF8AF8A8380545 /* PrivacyInfo.xcprivacy */; };
@@ -21,6 +22,7 @@
 		13B07F961A680F5B00A75B9A /* FinnDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinnDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FinnDev/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FinnDev/Info.plist; sourceTree = "<group>"; };
+		5B1F551ED80ACE15CBBB0B40 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		6373FB5CE38EF31F2C3126A3 /* libPods-FinnDev.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FinnDev.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DAFAEB22CFD4763E9F300FD /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-FinnDev/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = FinnDev/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -54,6 +56,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				AF1D3A10A7AF8AF8A8380545 /* PrivacyInfo.xcprivacy */,
+				5B1F551ED80ACE15CBBB0B40 /* GoogleService-Info.plist */,
 			);
 			name = FinnDev;
 			sourceTree = "<group>";
@@ -201,6 +204,7 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				8445A19614D1F992169F2D39 /* PrivacyInfo.xcprivacy in Resources */,
+				323068B788474BC958979766 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
