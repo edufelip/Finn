@@ -9,6 +9,7 @@ ios/build/
 android/build/
 android/app/build/
 *.log
+logs_*/
 .env
 .env.local
 .env.development

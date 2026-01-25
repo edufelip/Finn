@@ -19,6 +19,17 @@ Manage native projects directly going forward; avoid re-running prebuild unless 
 - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
 - `EXPO_PUBLIC_APP_MODE` (optional: set to `mock` for deterministic E2E runs)
 
+## Firebase Setup
+Firebase Crashlytics is integrated for crash reporting in production builds.
+
+**For local development:**
+See [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) for instructions on obtaining and configuring your Firebase credentials.
+
+**For CI/CD:**
+The following GitHub Secrets must be configured:
+- `GOOGLE_SERVICE_INFO_PLIST_BASE64` - Base64-encoded iOS config
+- `GOOGLE_SERVICES_JSON_BASE64` - Base64-encoded Android config
+
 ## Tests
 ```bash
 npm test
