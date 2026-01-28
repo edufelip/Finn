@@ -131,19 +131,24 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.onSurface,
     },
     primaryButton: {
-      height: 65,
+      height: 56,
       backgroundColor: theme.primary,
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 24,
-      marginHorizontal: 64,
-      borderRadius: 12,
+      borderRadius: 16,
+      shadowColor: theme.surfaceTint,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+      elevation: 6,
     },
     primaryButtonDisabled: {
       opacity: 0.7,
     },
     primaryButtonText: {
       color: theme.onPrimary,
-      fontSize: 16,
+      fontSize: 17,
+      fontWeight: '700',
     },
   });
