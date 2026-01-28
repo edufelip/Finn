@@ -18,6 +18,8 @@
 		8F6A7D2F4C5B6E7F8A9B0C1F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF1D3A10A7AF8AF8A8380545 /* PrivacyInfo.xcprivacy */; };
 		8F6A7D2F4C5B6E7F8A9B0C20 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7E1D2C3B4A5968778695A4B8 /* GoogleService-Info.plist */; };
 		8F6A7D2F4C5B6E7F8A9B0C21 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		E2A4C6D8F0B13579ACE02468 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D1F3A7B5C9E20468A1B2C3D4 /* InfoPlist.strings */; };
+		E2A4C6D8F0B13579ACE02469 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D1F3A7B5C9E20468A1B2C3D5 /* InfoPlist.strings */; };
 		8F6A7D2F4C5B6E7F8A9B0C22 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		8F6A7D2F4C5B6E7F8A9B0C23 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1D2C3B4A5968778695A4B9 /* ExpoModulesProvider.swift */; };
 		8F6A7D2F4C5B6E7F8A9B0C24 /* libPods-Finn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E1D2C3B4A5968778695A4B6 /* libPods-Finn.a */; };
@@ -30,6 +32,13 @@
 		13B07F961A680F5B00A75B9A /* FinnDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinnDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FinnDev/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FinnDev/Info.plist; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978877665544 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = "FinnDev/en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978877665545 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = "FinnDev/pt.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978877665546 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = "FinnDev/es.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978877665547 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = "FinnDev/fr.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978877665548 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = "FinnDev/de.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978877665549 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = "FinnDev/ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1E2D3C4B5A697887766554A /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = "FinnDev/ar.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		5B1F551ED80ACE15CBBB0B40 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "FinnDev/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		6373FB5CE38EF31F2C3126A3 /* libPods-FinnDev.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FinnDev.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E1D2C3B4A5968778695A4B3 /* Finn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Finn.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -37,6 +46,13 @@
 		7E1D2C3B4A5968778695A4B5 /* Pods-Finn.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Finn.debug.xcconfig"; path = "Target Support Files/Pods-Finn/Pods-Finn.debug.xcconfig"; sourceTree = "<group>"; };
 		7E1D2C3B4A5968778695A4B6 /* libPods-Finn.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Finn.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E1D2C3B4A5968778695A4B7 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Finn/Info.plist; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789AB /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = "Finn/en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789AC /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = "Finn/pt.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789AD /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = "Finn/es.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789AE /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = "Finn/fr.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789AF /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = "Finn/de.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789B0 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = "Finn/ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A9B8C7D6E5F40123456789B1 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = "Finn/ar.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		7E1D2C3B4A5968778695A4B8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Finn/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		7E1D2C3B4A5968778695A4B9 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Finn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		9DAFAEB22CFD4763E9F300FD /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-FinnDev/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
@@ -49,6 +65,37 @@
 		F11748442D0722820044C1D9 /* FinnDev-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FinnDev-Bridging-Header.h"; path = "FinnDev/FinnDev-Bridging-Header.h"; sourceTree = "<group>"; };
 		F7CC9D14363501A15B1C8505 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Finn/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXVariantGroup section */
+		D1F3A7B5C9E20468A1B2C3D4 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F1E2D3C4B5A6978877665544 /* en */,
+				F1E2D3C4B5A6978877665545 /* pt */,
+				F1E2D3C4B5A6978877665546 /* es */,
+				F1E2D3C4B5A6978877665547 /* fr */,
+				F1E2D3C4B5A6978877665548 /* de */,
+				F1E2D3C4B5A6978877665549 /* ja */,
+				F1E2D3C4B5A697887766554A /* ar */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		D1F3A7B5C9E20468A1B2C3D5 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A9B8C7D6E5F40123456789AB /* en */,
+				A9B8C7D6E5F40123456789AC /* pt */,
+				A9B8C7D6E5F40123456789AD /* es */,
+				A9B8C7D6E5F40123456789AE /* fr */,
+				A9B8C7D6E5F40123456789AF /* de */,
+				A9B8C7D6E5F40123456789B0 /* ja */,
+				A9B8C7D6E5F40123456789B1 /* ar */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
@@ -78,6 +125,7 @@
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				D1F3A7B5C9E20468A1B2C3D4 /* InfoPlist.strings */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				AF1D3A10A7AF8AF8A8380545 /* PrivacyInfo.xcprivacy */,
 				5B1F551ED80ACE15CBBB0B40 /* GoogleService-Info.plist */,
@@ -129,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				7E1D2C3B4A5968778695A4B7 /* Info.plist */,
+				D1F3A7B5C9E20468A1B2C3D5 /* InfoPlist.strings */,
 				7E1D2C3B4A5968778695A4B8 /* GoogleService-Info.plist */,
 			);
 			name = Finn;
@@ -258,10 +307,16 @@
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
-				Base,
-			);
+		knownRegions = (
+			en,
+			pt,
+			es,
+			fr,
+			de,
+			ja,
+			ar,
+			Base,
+		);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
@@ -283,6 +338,7 @@
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				8445A19614D1F992169F2D39 /* PrivacyInfo.xcprivacy in Resources */,
 				323068B788474BC958979766 /* GoogleService-Info.plist in Resources */,
+				E2A4C6D8F0B13579ACE02468 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,6 +351,7 @@
 				8F6A7D2F4C5B6E7F8A9B0C1E /* SplashScreen.storyboard in Resources */,
 				8F6A7D2F4C5B6E7F8A9B0C1F /* PrivacyInfo.xcprivacy in Resources */,
 				8F6A7D2F4C5B6E7F8A9B0C20 /* GoogleService-Info.plist in Resources */,
+				E2A4C6D8F0B13579ACE02469 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

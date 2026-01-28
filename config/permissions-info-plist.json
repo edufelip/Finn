@@ -1,0 +1,30 @@
+{
+  "en": {
+    "NSCameraUsageDescription": "Allow camera access so you can take photos for a post or to update your profile avatar.",
+    "NSPhotoLibraryUsageDescription": "Allow photo library access so you can choose photos for a post or your profile avatar."
+  },
+  "pt": {
+    "NSCameraUsageDescription": "Permitir acesso à câmera para tirar fotos para uma publicação ou para atualizar seu avatar de perfil.",
+    "NSPhotoLibraryUsageDescription": "Permitir acesso à sua biblioteca de fotos para escolher fotos para uma publicação ou para seu avatar de perfil."
+  },
+  "es": {
+    "NSCameraUsageDescription": "Permitir acceso a la cámara para tomar fotos para una publicación o para actualizar tu avatar de perfil.",
+    "NSPhotoLibraryUsageDescription": "Permitir acceso a tu biblioteca de fotos para elegir fotos para una publicación o para tu avatar de perfil."
+  },
+  "fr": {
+    "NSCameraUsageDescription": "Autoriser l’accès à l’appareil photo pour prendre des photos pour une publication ou pour mettre à jour votre avatar de profil.",
+    "NSPhotoLibraryUsageDescription": "Autoriser l’accès à votre photothèque pour choisir des photos pour une publication ou votre avatar de profil."
+  },
+  "de": {
+    "NSCameraUsageDescription": "Kamerazugriff erlauben, damit du Fotos für einen Beitrag oder zur Aktualisierung deines Profil-Avatars aufnehmen kannst.",
+    "NSPhotoLibraryUsageDescription": "Zugriff auf deine Fotomediathek erlauben, damit du Fotos für einen Beitrag oder deinen Profil-Avatar auswählen kannst."
+  },
+  "ja": {
+    "NSCameraUsageDescription": "投稿の作成やプロフィールアバターの更新に使う写真を撮影できるよう、カメラへのアクセスを許可してください。",
+    "NSPhotoLibraryUsageDescription": "投稿やプロフィールアバターに使う写真を選択できるよう、写真ライブラリへのアクセスを許可してください。"
+  },
+  "ar": {
+    "NSCameraUsageDescription": "السماح بالوصول إلى الكاميرا لالتقاط صور لمنشور أو لتحديث صورة ملفك الشخصي.",
+    "NSPhotoLibraryUsageDescription": "السماح بالوصول إلى مكتبة الصور لاختيار صور لمنشور أو لصورة ملفك الشخصي."
+  }
+}

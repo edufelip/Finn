@@ -44,6 +44,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     );
   }
 
+  const permissionsPath = path.resolve(__dirname, 'config', 'permissions-info-plist.json');
+  if (!fs.existsSync(permissionsPath)) {
+    throw new Error('[app.config] Missing config/permissions-info-plist.json.');
+  }
+  const permissionStrings = JSON.parse(fs.readFileSync(permissionsPath, 'utf8')) as {
+    en?: {
+      NSCameraUsageDescription?: string;
+      NSPhotoLibraryUsageDescription?: string;
+    };
+  };
+  const cameraPermission = permissionStrings.en?.NSCameraUsageDescription;
+  const photosPermission = permissionStrings.en?.NSPhotoLibraryUsageDescription;
+  if (!cameraPermission || !photosPermission) {
+    throw new Error('[app.config] Missing English camera/photo permission strings.');
+  }
+
   return {
     ...config,
     name: isDevVariant ? 'Finn Dev' : 'Finn',
@@ -82,8 +98,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-image-picker',
         {
-          photosPermission: 'Allow access to your photo library to select images.',
-          cameraPermission: 'Allow access to your camera to take photos.',
+          photosPermission,
+          cameraPermission,
         },
       ],
     ],
