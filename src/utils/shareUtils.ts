@@ -1,15 +1,16 @@
 import { Share } from 'react-native';
 import Constants from 'expo-constants';
 import type { Post } from '../domain/models/post';
+import env from '../config/env';
 
-const APP_ENV = Constants.expoConfig?.extra?.appEnv || 'prod';
-const isDev = APP_ENV === 'dev';
+const isDev = env.appEnv === 'dev';
+const scheme = Constants.expoConfig?.scheme ?? 'finn';
 
 // Base URLs for universal links (these would be your actual domain)
 const WEB_BASE_URL = isDev ? 'https://dev.finn.app' : 'https://finn.app';
 
 // Deep link scheme
-const DEEP_LINK_SCHEME = isDev ? 'finn-dev' : 'finn';
+const DEEP_LINK_SCHEME = scheme;
 
 /**
  * Generates a universal link for a post
