@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Dimensions,
+  useWindowDimensions,
   TouchableOpacity,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -20,8 +20,6 @@ import { useAppStore } from '../../app/store/appStore';
 import { spacing, radii } from '../theme/metrics';
 import { onboardingCopy } from '../content/onboardingCopy';
 import { Images } from '@assets/images';
-
-const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
@@ -49,11 +47,17 @@ export default function OnboardingScreen() {
   const { completeOnboarding } = useAppStore();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const isLandscape = screenWidth > screenHeight;
+  const isTablet = Math.min(screenWidth, screenHeight) >= 768;
+  const imageMaxWidth = screenWidth - spacing.xl * 2;
+  const imageMaxHeight = Math.floor(screenHeight * (isLandscape ? 0.38 : 0.45));
+  const imageSize = isTablet ? Math.min(imageMaxWidth, imageMaxHeight) : imageMaxWidth;
 
   const handleNext = () => {
     if (currentIndex < SLIDES.length - 1) {
       scrollViewRef.current?.scrollTo({
-        x: (currentIndex + 1) * width,
+        x: (currentIndex + 1) * screenWidth,
         animated: true,
       });
       setCurrentIndex(currentIndex + 1);
@@ -65,7 +69,7 @@ export default function OnboardingScreen() {
   const handlePrev = () => {
     if (currentIndex > 0) {
       scrollViewRef.current?.scrollTo({
-        x: (currentIndex - 1) * width,
+        x: (currentIndex - 1) * screenWidth,
         animated: true,
       });
       setCurrentIndex(currentIndex - 1);
@@ -78,7 +82,7 @@ export default function OnboardingScreen() {
 
   const onMomentumScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = e.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(contentOffsetX / width);
+    const newIndex = Math.round(contentOffsetX / screenWidth);
     setCurrentIndex(newIndex);
   };
 
@@ -114,11 +118,20 @@ export default function OnboardingScreen() {
         {SLIDES.map((slide, index) => (
           <View 
             key={slide.id} 
-            style={[styles.slide, { width }]}
+            style={[styles.slide, { width: screenWidth }]}
             testID={onboardingCopy.testIds.slide(index)}
           >
             <View style={styles.imageContainer}>
-              <View style={[styles.imageWrapper, { backgroundColor: theme.surfaceVariant }]}>
+              <View
+                style={[
+                  styles.imageWrapper,
+                  {
+                    backgroundColor: theme.surfaceVariant,
+                    width: imageSize,
+                    height: imageSize,
+                  },
+                ]}
+              >
                 <Image
                   source={slide.image}
                   style={styles.image}
@@ -261,10 +274,9 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: spacing.xl,
     marginBottom: spacing.xl,
+    alignItems: 'center',
   },
   imageWrapper: {
-    width: '100%',
-    aspectRatio: 1,
     borderRadius: radii.md,
     overflow: 'hidden',
     shadowColor: '#000',
