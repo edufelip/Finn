@@ -22,6 +22,7 @@ import FeedSection from './ExploreScreen/components/FeedSection';
 import TopicsSection from './ExploreScreen/components/TopicsSection';
 import { TrendingSkeleton, FeedSkeleton, TopicsSkeleton } from './ExploreScreen/components/ExploreSkeletons';
 import { createStyles } from './ExploreScreen/styles';
+import { useHeaderProfile } from '../hooks/useHeaderProfile';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Explore'>,
@@ -30,25 +31,17 @@ type Navigation = CompositeNavigationProp<
 
 export default function ExploreScreen() {
   const navigation = useNavigation<Navigation>();
-  const { session, isGuest, exitGuest } = useAuth();
-  const { communities: communityRepository, users: userRepository, topics: topicRepository } = useRepositories();
+  const { isGuest, exitGuest } = useAuth();
+  const { communities: communityRepository, topics: topicRepository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const tabBarHeight = useBottomTabBarHeight();
+  const { profilePhoto, displayInitial } = useHeaderProfile();
 
   const { trending, feedItems, topics, loading, error } = useExploreData(communityRepository, topicRepository);
 
-  const [profilePhoto, setProfilePhoto] = React.useState<string | null>(null);
   const skeletonOpacity = useSharedValue(1);
   const contentOpacity = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (!session?.user?.id) return;
-    userRepository
-      .getUser(session.user.id)
-      .then((data) => setProfilePhoto(data?.photoUrl ?? null))
-      .catch(() => setProfilePhoto(null));
-  }, [session?.user?.id, userRepository]);
 
   React.useEffect(() => {
     if (loading) {
@@ -84,11 +77,11 @@ export default function ExploreScreen() {
 
   const showTrendingSection = loading || trending.length > 0 || Boolean(error);
   const showFeedSection = !loading && feedItems.length > 0;
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeExploreHeader
         profilePhoto={profilePhoto}
+        displayInitial={displayInitial}
         placeholder={exploreCopy.searchPlaceholder}
         onPressAvatar={openDrawer}
         onPressSearch={() => navigation.navigate('SearchResults', { focus: true })}

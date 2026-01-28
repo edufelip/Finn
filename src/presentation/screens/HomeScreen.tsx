@@ -31,6 +31,7 @@ import GuestBanner from '../components/GuestBanner';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { useHomePosts, useFollowingPosts, usePostsStore } from '../../app/store/postsStore';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
+import { useHeaderProfile } from '../hooks/useHeaderProfile';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -42,8 +43,8 @@ type Tab = 'communities' | 'people';
 export default function HomeScreen() {
   const navigation = useNavigation<Navigation>();
   const { session, isGuest, exitGuest } = useAuth();
-  const [profileName, setProfileName] = useState<string | null>(null);
   const { width: screenWidth } = useWindowDimensions();
+  const { profilePhoto, displayInitial } = useHeaderProfile();
   
   const [activeTab, setActiveTab] = useState<Tab>('communities');
   const [tabLayouts, setTabLayouts] = useState<{
@@ -73,8 +74,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const likeInFlightRef = useRef<Set<number>>(new Set());
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const { posts: repository, users: userRepository } = useRepositories();
+  const { posts: repository } = useRepositories();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const tabBarHeight = useBottomTabBarHeight();
@@ -114,20 +114,6 @@ export default function HomeScreen() {
       navigation.navigate('Home');
     }, [navigation])
   );
-
-  useEffect(() => {
-    if (!session?.user?.id) return;
-    userRepository
-      .getUser(session.user.id)
-      .then((data) => {
-        setProfilePhoto(data?.photoUrl ?? null);
-        setProfileName(data?.name ?? session.user.email ?? null);
-      })
-      .catch(() => {
-        setProfilePhoto(null);
-        setProfileName(session.user.email ?? null);
-      });
-  }, [session?.user?.id, session?.user?.email, userRepository]);
 
   const loadHomeFeed = useCallback(
     async (pageToLoad: number, replace = false) => {
@@ -192,11 +178,6 @@ export default function HomeScreen() {
       loadFollowingFeed(0, true);
     }
   }, [activeTab, followingHasMore, followingPosts.length, loadFollowingFeed, session?.user?.id]);
-
-  const displayInitial = (profileName ?? session?.user?.email ?? (isGuest ? 'Guest' : 'User'))
-    .trim()
-    .charAt(0)
-    .toUpperCase();
 
   const handleRefresh = () => {
     setRefreshing(true);

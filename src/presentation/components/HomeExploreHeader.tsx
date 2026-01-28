@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useThemeColors } from '../../app/providers/ThemeProvider';
@@ -32,6 +32,51 @@ export default function HomeExploreHeader({
 }: HomeExploreHeaderProps) {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const [retryState, setRetryState] = useState<{
+    photo: string | null;
+    retryCount: number;
+    cacheBuster: number | null;
+  }>(() => ({
+    photo: profilePhoto ?? null,
+    retryCount: 0,
+    cacheBuster: null,
+  }));
+
+  const effectiveRetryCount = retryState.photo === profilePhoto ? retryState.retryCount : 0;
+  const effectiveCacheBuster = retryState.photo === profilePhoto ? retryState.cacheBuster : null;
+
+  const avatarUri = useMemo(() => {
+    if (!profilePhoto || effectiveRetryCount >= 2) {
+      return null;
+    }
+    if (effectiveRetryCount === 1 && effectiveCacheBuster) {
+      const separator = profilePhoto.includes('?') ? '&' : '?';
+      return `${profilePhoto}${separator}cb=${effectiveCacheBuster}`;
+    }
+    return profilePhoto;
+  }, [effectiveCacheBuster, effectiveRetryCount, profilePhoto]);
+
+  const handleAvatarError = () => {
+    if (!profilePhoto) {
+      setRetryState({ photo: null, retryCount: 0, cacheBuster: null });
+      return;
+    }
+
+    if (effectiveRetryCount < 1) {
+      setRetryState({
+        photo: profilePhoto,
+        retryCount: 1,
+        cacheBuster: Date.now(),
+      });
+      return;
+    }
+
+    setRetryState({
+      photo: profilePhoto,
+      retryCount: 2,
+      cacheBuster: effectiveCacheBuster,
+    });
+  };
 
   return (
     <View style={styles.headerRow}>
@@ -41,9 +86,18 @@ export default function HomeExploreHeader({
         testID={testIds.avatar}
         accessibilityLabel={testIds.avatar}
       >
-        <View style={styles.avatarFallback}>
-          <Text style={styles.avatarText}>{displayInitial ?? '?'}</Text>
-        </View>
+        {avatarUri ? (
+          <Image
+            source={{ uri: avatarUri }}
+            style={styles.avatar}
+            accessibilityIgnoresInvertColors
+            onError={handleAvatarError}
+          />
+        ) : (
+          <View style={styles.avatarFallback}>
+            <Text style={styles.avatarText}>{displayInitial ?? '?'}</Text>
+          </View>
+        )}
       </Pressable>
       <View style={styles.searchContainer}>
         <MaterialIcons name="search" size={20} color={theme.onSurfaceVariant} />
