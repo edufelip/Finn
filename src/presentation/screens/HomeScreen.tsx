@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,6 +31,7 @@ import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { useHomePosts, useFollowingPosts, usePostsStore } from '../../app/store/postsStore';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 import { useHeaderProfile } from '../hooks/useHeaderProfile';
+import TabSafeAreaView from '../components/TabSafeAreaView';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -406,7 +406,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <TabSafeAreaView style={styles.safeArea}>
       <HomeExploreHeader
         profilePhoto={profilePhoto}
         displayInitial={displayInitial}
@@ -543,7 +543,7 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
       </ScreenFade>
-    </SafeAreaView>
+    </TabSafeAreaView>
   );
 }
 

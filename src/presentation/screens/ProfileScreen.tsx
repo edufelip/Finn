@@ -5,7 +5,7 @@ import type { NavigationProp } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Network from 'expo-network';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import TabSafeAreaView from '../components/TabSafeAreaView';
 import Animated, {
   Easing,
   interpolate,
@@ -425,7 +425,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <TabSafeAreaView style={styles.safeArea}>
         <View style={styles.topBar}>
           <View style={styles.iconSpacer} />
           <Text
@@ -442,7 +442,7 @@ export default function ProfileScreen() {
             <MaterialIcons name="settings" size={22} color={theme.onBackground} />
           </Pressable>
         </View>
-      </SafeAreaView>
+      </TabSafeAreaView>
       <ScreenFade onlyOnTabSwitch>
         <FlatList
           testID={profileCopy.testIds.list}

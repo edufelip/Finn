@@ -10,7 +10,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -38,6 +37,7 @@ import type { User } from '../../domain/models/user';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
+import TabSafeAreaView from '../components/TabSafeAreaView';
 import { formatTimeAgo } from '../i18n/formatters';
 
 type SectionKey = 'unread' | 'earlier';
@@ -376,7 +376,7 @@ export default function InboxScreen() {
   const showEmpty = !loading && messages.length === 0;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <TabSafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor={theme.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.body}>
         <View style={styles.header}>
@@ -493,7 +493,7 @@ export default function InboxScreen() {
           />
         </ScreenFade>
       </View>
-    </SafeAreaView>
+    </TabSafeAreaView>
   );
 }
 
