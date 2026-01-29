@@ -4,7 +4,8 @@ import type { Community } from '../../../domain/models/community';
 import { PostSortOrder } from '../../../domain/models/post';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { useRepositories } from '../../../app/providers/RepositoryProvider';
-import { useCommunityPosts, usePostsStore } from '../../../app/store/postsStore';
+import { usePostsStore } from '../../../app/store/postsStore';
+import { useCommunityPosts } from '../../hooks/useFilteredPosts';
 import { useCommunityStore } from '../../../app/store/communityStore';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
 

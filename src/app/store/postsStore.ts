@@ -240,5 +240,4 @@ export const useSavedPosts = (userId?: string) =>
     })
   );
 
-export const usePostById = (postId: number) =>
-  usePostsStore((state) => state.postsById[postId]);
+export const usePostById = (postId: number) => usePostsStore((state) => state.postsById[postId]);

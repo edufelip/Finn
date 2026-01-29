@@ -17,7 +17,8 @@ import type { ThemeColors } from '../theme/colors';
 import { savedPostsCopy } from '../content/savedPostsCopy';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
-import { usePostsStore, useSavedPosts } from '../../app/store/postsStore';
+import { usePostsStore } from '../../app/store/postsStore';
+import { useSavedPosts } from '../hooks/useFilteredPosts';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 
 export default function SavedPostsScreen() {

@@ -37,7 +37,8 @@ import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { useUserStore } from '../../app/store/userStore';
-import { usePostsStore, useProfilePosts, useSavedPosts } from '../../app/store/postsStore';
+import { usePostsStore } from '../../app/store/postsStore';
+import { useProfilePosts, useSavedPosts } from '../hooks/useFilteredPosts';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
