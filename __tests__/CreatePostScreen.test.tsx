@@ -6,6 +6,7 @@ import CreatePostScreen from '../src/presentation/screens/CreatePostScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { createPostCopy } from '../src/presentation/content/createPostCopy';
 import { imagePickerCopy } from '../src/presentation/content/imagePickerCopy';
+import { useFeatureConfigStore } from '../src/app/store/featureConfigStore';
 
 const mockGoBack = jest.fn();
 
@@ -61,6 +62,12 @@ describe('CreatePostScreen', () => {
     imagePicker.launchImageLibraryAsync.mockReset();
     imagePicker.launchCameraAsync.mockReset();
     persistOfflineImage.mockReset();
+    useFeatureConfigStore.setState({
+      values: {},
+      isLoading: false,
+      error: null,
+      lastFetchedAt: null,
+    });
   });
 
   it('creates a post when online', async () => {
@@ -254,5 +261,36 @@ describe('CreatePostScreen', () => {
     expect(getByText(createPostCopy.submit)).toBeTruthy();
     fireEvent.press(getByTestId(createPostCopy.testIds.communityPicker));
     await waitFor(() => expect(getByText(createPostCopy.modalTitle)).toBeTruthy());
+  });
+
+  it('blocks posting while moderation config loads', async () => {
+    useFeatureConfigStore.setState({ isLoading: true });
+    network.getNetworkStateAsync.mockResolvedValue({ isConnected: true });
+    const communitiesRepo = {
+      getSubscribedCommunities: jest.fn().mockResolvedValue([
+        { id: 1, title: 'General', description: 'General', ownerId: 'user-1' },
+      ]),
+    };
+    const postsRepo = {
+      savePost: jest.fn(),
+    };
+
+    const { getByPlaceholderText, getByText, getByTestId } = render(
+      <RepositoryProvider overrides={{ communities: communitiesRepo, posts: postsRepo }}>
+        <CreatePostScreen />
+      </RepositoryProvider>
+    );
+
+    await waitFor(() => expect(getByText('General')).toBeTruthy());
+    fireEvent.changeText(getByPlaceholderText(createPostCopy.contentPlaceholder), 'My post');
+    fireEvent.press(getByTestId(createPostCopy.testIds.submit));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        createPostCopy.alerts.configLoading.title,
+        createPostCopy.alerts.configLoading.message
+      );
+    });
+    expect(postsRepo.savePost).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,9 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import SettingsScreen from '../src/presentation/screens/SettingsScreen';
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { settingsCopy } from '../src/presentation/content/settingsCopy';
+import { useUserStore } from '../src/app/store/userStore';
+import { useFeatureConfigStore } from '../src/app/store/featureConfigStore';
+import { FEATURE_CONFIG_KEYS } from '../src/config/featureConfig';
 
 const mockSetOnlineVisibility = jest.fn();
 const mockSetNotificationsEnabled = jest.fn();
@@ -82,6 +85,13 @@ describe('SettingsScreen', () => {
     mockRegisterPushToken.mockReset();
     mockSetNotificationGatePreference.mockReset();
     mockSavePushToken.mockReset();
+    useUserStore.getState().clearUser();
+    useFeatureConfigStore.setState({
+      values: {},
+      isLoading: false,
+      error: null,
+      lastFetchedAt: null,
+    });
   });
 
   it('updates notifications preference', async () => {
@@ -291,5 +301,44 @@ describe('SettingsScreen', () => {
     expect(getByText(settingsCopy.footer.privacy)).toBeTruthy();
     expect(getByText(settingsCopy.footer.terms)).toBeTruthy();
     expect(getByText(settingsCopy.footer.help)).toBeTruthy();
+  });
+
+  it('allows admins to update blocked terms', async () => {
+    useUserStore.getState().setUser({
+      id: 'user-1',
+      name: 'Admin',
+      role: 'admin',
+      notificationsEnabled: true,
+    });
+    const featureConfigRepo = {
+      upsertConfig: jest.fn().mockResolvedValue({
+        key: FEATURE_CONFIG_KEYS.blockedTerms,
+        value: ['spam'],
+      }),
+    };
+    const usersRepo = {
+      deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
+    };
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo, featureConfigs: featureConfigRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent.press(getByTestId(settingsCopy.testIds.adminBlockedTerms));
+    fireEvent.changeText(getByTestId(settingsCopy.testIds.adminTermsInput), 'spam');
+    fireEvent.press(getByTestId(settingsCopy.testIds.adminTermsConfirm));
+
+    await waitFor(() => {
+      expect(featureConfigRepo.upsertConfig).toHaveBeenCalledWith(
+        FEATURE_CONFIG_KEYS.blockedTerms,
+        ['spam'],
+        expect.any(String)
+      );
+    });
   });
 });
