@@ -417,6 +417,89 @@ You'll need at least 3 test users:
 
 ---
 
+## 🧪 Manual Test Plan (UGC Precautions + Moderation)
+
+### Prerequisites
+1. Apply migrations (`supabase db push` or your deployment flow).
+2. Prepare accounts: **Admin/Owner**, **Staff**, **Regular User**, **Guest**.
+3. Bootstrap the first admin role via SQL (only needed once):
+   ```sql
+   UPDATE profiles SET role = 'admin' WHERE id = <admin_user_id>;
+   ```
+4. From **Settings → Admin tools**, set the **Staff** account role to `staff`.
+5. Create a moderated community owned by the Admin/Owner.
+
+### 1) Terms/EULA Acceptance Gate
+1. Sign in as the Regular User.
+2. Confirm the Terms screen appears before any feeds.
+3. Tap the terms link and verify it opens the EULA URL in the in-app webview.
+4. Accept the terms.
+5. Relaunch the app; Terms screen should no longer appear.
+6. Verify in DB:
+   ```sql
+   SELECT terms_version, terms_accepted_at FROM profiles WHERE id = <user_id>;
+   ```
+**Expected:** `terms_version` and `terms_accepted_at` are populated.
+
+### 2) Text Filtering & Image Review
+1. As Regular User, create a post in the moderated community with text containing a review term (e.g., “spam” or “nsfw”).
+2. Confirm the post is created with **pending** moderation and you see the pending alert.
+3. Create another post with an image (safe content) as Regular User.
+4. Confirm the image post is **pending** moderation.
+**Expected:** Non-moderator image posts and flagged text posts require review; moderators/owners bypass.
+
+### 3) User Blocking → Auto Report
+1. As Regular User, open a post by another user.
+2. Tap the 3‑dot menu → **Block User** and enter a 15+ character reason.
+3. Confirm the blocked user’s posts disappear immediately from feeds.
+4. Open a post detail for the blocked user; verify blocked-state UI appears.
+5. Verify a report was created:
+   ```sql
+   SELECT * FROM post_reports WHERE user_id = <blocker_id> ORDER BY created_at DESC LIMIT 1;
+   ```
+**Expected:** `user_blocks` row created and a `post_reports` row created for the source post.
+
+### 4) Reporting Queue + 24‑Hour SLA Labels
+1. As Regular User, report a post with a 15+ character reason.
+2. As Admin/Owner, open **Community Settings → Reported Content**.
+3. Confirm the report card displays a **Due in Xh** label.
+4. (Optional) Set the report time back 25+ hours to validate **Overdue**:
+   ```sql
+   UPDATE post_reports SET created_at = NOW() - INTERVAL '25 hours' WHERE id = <report_id>;
+   ```
+5. Reload Reported Content and verify the label shows **Overdue**.
+
+### 5) Remove & Ban (Community / Global)
+1. From **Reported Content**, choose a report.
+2. Tap **Remove & Ban User**.
+3. Select **Community ban**.
+4. Verify:
+   - Post is deleted.
+   - Report status becomes `resolved_deleted`.
+   - Community ban record exists.
+5. Repeat and select **Global ban** (staff/admin only).
+**Expected:** Community bans block posting/commenting in that community; global bans remove profile/communities everywhere.
+
+### 6) Global Ban / Unban via Admin Tools
+1. As Staff, open **Settings → Admin tools**.
+2. Use **Global ban user** with a target user ID.
+3. Verify the user appears in `user_bans`:
+   ```sql
+   SELECT * FROM user_bans WHERE user_id = <banned_user_id>;
+   ```
+4. Sign in as the banned user.
+5. Confirm the **Banned Account** screen appears and feeds are inaccessible.
+6. As Staff, remove the global ban and verify the user can access again.
+
+### 7) Admin Role Management
+1. As Admin, open **Settings → Admin tools → Set user role**.
+2. Promote a user to **staff**, then to **admin**.
+3. Confirm the promoted user now sees Admin tools.
+4. Verify Staff cannot set roles (admin only).
+**Expected:** Only admins can change roles; staff can ban/unban but cannot set roles.
+
+---
+
 ## 🔍 Data Verification
 
 ### Check Database Records
@@ -464,7 +547,28 @@ WHERE post_id IN (
 ```
 **Expected:**
 - New reports: `status = 'pending'`
-- Handled reports: `status = 'reviewed'`
+- Handled reports: `status = 'resolved_safe'` or `status = 'resolved_deleted'`
+
+#### 5. user_bans table
+```sql
+SELECT * FROM user_bans WHERE user_id = <banned_user_id>;
+```
+**Expected:**
+- Row exists after global ban action
+
+#### 6. user_blocks table
+```sql
+SELECT * FROM user_blocks WHERE blocker_id = <user_id>;
+```
+**Expected:**
+- Row exists after blocking a user
+
+#### 7. profiles role
+```sql
+SELECT id, role FROM profiles WHERE id IN (<admin_id>, <staff_id>);
+```
+**Expected:**
+- Role values reflect Admin/Staff assignments
 
 ---
 
@@ -563,6 +667,17 @@ Use this for rapid testing:
 - [ ] Filter by topic works
 - [ ] Sort orders work correctly
 - [ ] Combined filters work together
+
+### UGC Precautions (App Review 1.2)
+- [ ] Terms gate appears for signed-in users until accepted
+- [ ] Terms link opens the EULA URL and acceptance persists
+- [ ] Blocking a user removes their posts immediately and creates a report entry
+- [ ] Reported content shows due/overdue labels (24-hour window)
+- [ ] Delete & ban removes post and adds a community ban entry
+- [ ] Community-banned users cannot post/comment and their content is hidden
+- [ ] Global bans hide profiles/communities and block posting/commenting
+- [ ] Settings → Admin tools allows staff to ban/unban users
+- [ ] Settings → Admin tools allows admins to update user roles
 
 ---
 

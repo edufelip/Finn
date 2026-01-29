@@ -15,7 +15,7 @@ Enables comprehensive community management via delegated moderator roles, conten
 
 ### Audit and Logging
 - **FR-MOD-07**: All moderation actions shall be logged with moderator ID, action type, and timestamp.
-- **FR-MOD-08**: The system shall track 9 moderation action types: approve_post, reject_post, delete_post, mark_safe, mark_for_review, moderator_added, moderator_removed, settings_changed, other.
+- **FR-MOD-08**: The system shall track 9 moderation action types: approve_post, reject_post, delete_post, mark_safe, mark_for_review, moderator_added, moderator_removed, settings_changed, user_banned.
 - **FR-MOD-09**: Moderation logs shall be viewable by owners and moderators.
 - **FR-MOD-10**: Moderation logs shall display color-coded icons based on action severity.
 
@@ -30,6 +30,8 @@ Enables comprehensive community management via delegated moderator roles, conten
 - **FR-MOD-16**: Navigation blockers shall prevent accidental loss of unsaved changes.
 - **FR-MOD-17**: Confirmation dialogs shall appear before destructive actions.
 - **FR-MOD-18**: Network connectivity checks shall prevent offline moderation actions.
+- **FR-MOD-19**: Moderators/owners shall be able to ban a user from a community when resolving reports.
+- **FR-MOD-20**: Community-banned users shall be prevented from posting or commenting, and their content shall be hidden from other users.
 
 ## Architecture
 
@@ -51,17 +53,16 @@ export enum ModerationStatus {
 
 **ModerationAction** (`src/domain/models/moderationLog.ts`):
 ```typescript
-export enum ModerationAction {
-  ApprovePost = 'approve_post',
-  RejectPost = 'reject_post',
-  DeletePost = 'delete_post',
-  MarkSafe = 'mark_safe',
-  MarkForReview = 'mark_for_review',
-  ModeratorAdded = 'moderator_added',
-  ModeratorRemoved = 'moderator_removed',
-  SettingsChanged = 'settings_changed',
-  Other = 'other',
-}
+export type ModerationAction =
+  | 'approve_post'
+  | 'reject_post'
+  | 'mark_for_review'
+  | 'delete_post'
+  | 'mark_safe'
+  | 'moderator_added'
+  | 'moderator_removed'
+  | 'settings_changed'
+  | 'user_banned';
 
 export type ModerationLog = {
   id: number;
@@ -106,7 +107,16 @@ export type CommunityModerator = {
 - `community_id` (bigint, references communities.id, cascade delete)
 - `moderator_id` (uuid, references profiles.id, set null on delete)
 - `action` (text, not null, check: 9 valid values)
-- `post_id` (bigint, references posts.id, set null on delete, nullable)
+  - `post_id` (bigint, references posts.id, set null on delete, nullable)
+  - `created_at` (timestamptz, default now())
+
+**community_bans table**:
+- `id` (bigserial, primary key)
+- `community_id` (bigint, references communities.id, cascade delete)
+- `user_id` (uuid, references profiles.id, cascade delete)
+- `banned_by` (uuid, references profiles.id, set null on delete)
+- `reason` (text, nullable)
+- `source_post_id` (bigint, references posts.id, set null on delete)
 - `created_at` (timestamptz, default now())
 
 **RLS Helper Function**:
@@ -252,11 +262,11 @@ export interface ModerationLogRepository {
   - Flag badge with report reason
   - Post preview (content + image thumbnail)
 - **Action Buttons**:
-  - **Delete Post** (error color) → deletes post + updates report to 'resolved'
-  - **Mark Safe** (primary color) → updates report to 'reviewed', keeps post
+  - **Remove & Ban User** (error color) → deletes post + updates report to 'resolved_deleted' + bans author
+  - **Mark Safe** (primary color) → updates report to 'resolved_safe', keeps post
 - Confirmation dialogs for both actions
 - Optimistic UI updates
-- Creates moderation logs (delete_post / mark_safe)
+- Creates moderation logs (user_banned / mark_safe)
 - Empty state with shield icon
 
 **Authorization**: Owner or moderator only
@@ -513,22 +523,23 @@ export interface ModerationLogRepository {
 13. Post appears in community feed for all users.
 14. Badge count decrements to (4).
 
-### UC-MOD-04: Delete Reported Post
+### UC-MOD-04: Remove & Ban Reported User
 1. Moderator opens EditCommunityScreen.
 2. Moderator sees "Reported Content" button with badge (2).
 3. Moderator taps "Reported Content".
 4. System opens ReportedContentScreen.
 5. Moderator reviews report card with reason and post preview.
 6. Moderator determines post violates rules.
-7. Moderator taps "Delete Post" button.
-8. System shows confirmation: "Delete this post? This action cannot be undone.".
+7. Moderator taps "Remove & Ban User" button.
+8. System shows confirmation with ban scope options (community or global, if staff/admin).
 9. Moderator confirms deletion.
 10. System checks network connectivity.
 11. System deletes post (cascade deletes likes, comments).
-12. System updates report.status to 'resolved'.
-13. System creates moderation log with action = 'delete_post'.
-14. Report card removed from queue (optimistic).
-15. Post removed from all feeds.
+12. System updates report.status to 'resolved_deleted'.
+13. System creates community or global ban entry for the post author.
+14. System creates moderation log with action = 'user_banned'.
+15. Report card removed from queue (optimistic).
+16. Post removed from all feeds.
 
 ### UC-MOD-05: Remove Moderator
 1. Community owner navigates to ManageModeratorsScreen.
@@ -629,6 +640,8 @@ export interface ModerationLogRepository {
 
 ## Related Specifications
 - Post Reporting: See `docs/specs/moderation/post-reporting.md`
+- User Blocking: See `docs/specs/moderation/user-blocking.md`
+- Global Bans: See `docs/specs/moderation/global-bans.md`
 - Communities: See `docs/specs/social/communities.md`
 - Posts: See `docs/specs/social/posts.md`
 - Navigation: See `docs/specs/architecture/navigation.md`

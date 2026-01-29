@@ -16,6 +16,8 @@ Defines the measures taken to protect user data and ensure compliance with priva
 - **Authenticated Access**: Most `SELECT` policies require `to authenticated`.
 - **Ownership Verification**: `UPDATE` and `DELETE` policies verify `auth.uid() = user_id` or `auth.uid() = owner_id`.
 - **Service Role**: Edge Functions use the `service_role` key only for administrative tasks (like cleanup) after manual authorization checks.
+- **Global Bans**: RLS policies hide globally banned users and their communities from standard queries.
+- **Role Protection**: `profiles_role_guard` prevents non-admins from changing user roles; admin role changes are explicitly authorized.
 
 ### 2. Client-Side Security
 - **SecureStore**: Sensitive data (though currently mostly handled by Supabase Auth) uses `expo-secure-store` for hardware-encrypted storage.
@@ -23,6 +25,7 @@ Defines the measures taken to protect user data and ensure compliance with priva
 
 ### 3. Data Privacy
 - **Privacy Policy**: A public PDF link is hosted at the URL defined in `src/config/links.ts`.
+- **Terms of Service (EULA)**: A public link is defined in `src/config/links.ts`, and acceptance is tracked per user in `profiles.terms_version` and `profiles.terms_accepted_at`.
 - **Account Deletion**: Users have the right to be forgotten. Account deletion triggers a complete cascade of data and file removal (see `user-profile.md`).
 
 ## Use Cases

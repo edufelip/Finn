@@ -43,7 +43,7 @@ Posts are the core content unit of the platform, consisting of text and optional
 - **FR-POST-17**: Users shall be able to report posts that violate guidelines.
 - **FR-POST-18**: Report reasons shall be required (15-300 characters).
 - **FR-POST-19**: Users shall not be able to submit duplicate reports for the same post.
-- **FR-POST-20**: Post reports shall include status tracking (pending, reviewed, resolved).
+- **FR-POST-20**: Post reports shall include status tracking (pending, resolved_safe, resolved_deleted).
 
 ## Architecture
 
@@ -139,7 +139,7 @@ export interface PostRepository {
 - `post_id` (bigint, references posts.id, cascade delete)
 - `user_id` (uuid, references profiles.id, cascade delete)
 - `reason` (text, 15-300 chars)
-- `status` (text, default 'pending', check: pending/reviewed/resolved)
+- `status` (text, default 'pending', check: pending/resolved_safe/resolved_deleted)
 - `created_at` (timestamptz, default now())
 - **Constraint**: Unique index on (user_id, post_id) prevents duplicate reports
 
@@ -158,6 +158,7 @@ Post images are stored in Supabase storage bucket `post-images` with signed URLs
 7. System creates post record with moderation_status based on community settings:
    - `approved` for "anyone_follows" communities.
    - `pending` for "moderated" communities.
+   - `pending` when text filtering flags content or when a non-moderator includes an image.
 8. System clears relevant feed caches.
 9. Post appears immediately in author's feed (if approved) or pending queue (if moderated).
 

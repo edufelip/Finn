@@ -11,6 +11,31 @@ A comprehensive community moderation system has been successfully implemented fo
 
 ---
 
+## 📌 UGC Precautions Addendum (Jan 28, 2026)
+
+Additional safeguards were implemented to satisfy App Review Guideline 1.2 for user-generated content:
+
+- **Terms acceptance gate** with explicit "no tolerance" language and a required EULA link.
+- **Content filtering** for text (flag/review/block tiers) and **manual review** for image posts.
+- **User blocking** with immediate feed removal and report creation.
+- **Block → Report trigger** to ensure admin inbox receives block signals.
+- **Community bans** when resolving objectionable reports; logs include `user_banned`.
+- **Global bans** (staff/admin) to hide profiles/communities and block posting.
+- **Role support** on profiles (`user`, `staff`, `admin`) for moderation authority.
+- **Admin tools** in Settings for staff/admin to manage global bans and for admins to update roles.
+
+**New migrations:**
+- `20260128090000_add_terms_and_user_blocks.sql`
+- `20260128093000_add_community_bans.sql`
+- `20260128094000_add_user_banned_action.sql`
+- `20260128100000_add_profile_roles.sql`
+- `20260128101000_add_user_bans.sql`
+- `20260128102000_add_global_ban_policies.sql`
+- `20260128103000_user_blocks_report_trigger.sql`
+- `20260128104000_add_admin_role_policy.sql`
+
+---
+
 ## ✅ Completed Features
 
 ### 1. **Database Schema & Migrations**
@@ -21,7 +46,7 @@ A comprehensive community moderation system has been successfully implemented fo
 **Changes:**
 - ✅ `communities.post_permission` → 3 values: `anyone_follows`, `moderated`, `private`
 - ✅ `posts.moderation_status` → 3 values: `pending`, `approved`, `rejected`
-- ✅ `post_reports.status` → 3 values: `pending`, `reviewed`, `resolved`
+- ✅ `post_reports.status` → 3 values: `pending`, `resolved_safe`, `resolved_deleted`
 - ✅ New table: `community_moderators` with unique constraint
 - ✅ New table: `moderation_logs` with 9 action types
 - ✅ RLS policies for all tables
@@ -38,13 +63,13 @@ A comprehensive community moderation system has been successfully implemented fo
 **Action Types:**
 1. `approve_post` - Moderator approves pending post
 2. `reject_post` - Moderator rejects pending post
-3. `delete_post` - Moderator deletes reported post
+3. `delete_post` - Moderator deletes a post (non-ban path)
 4. `mark_safe` - Moderator marks reported post as safe
 5. `mark_for_review` - Flag existing post for mod review
 6. `moderator_added` - Owner adds new moderator
 7. `moderator_removed` - Owner removes moderator
 8. `settings_changed` - Owner changes community settings
-9. `other` - Fallback for future actions
+9. `user_banned` - Moderator bans a user after objectionable content
 
 ### 3. **Repository Layer**
 **Interface Files:**
@@ -143,10 +168,10 @@ A comprehensive community moderation system has been successfully implemented fo
   - Report reason
   - Post preview (content + image)
   - Flag badge
-- ✅ Delete/Mark Safe buttons with confirmation dialogs
+- ✅ Delete & Ban / Mark Safe buttons with confirmation dialogs
 - ✅ Authorization check (owner or moderator only)
 - ✅ Optimistic UI updates
-- ✅ Creates moderation logs for delete_post/mark_safe
+- ✅ Creates moderation logs for user_banned/mark_safe
 - ✅ Empty state with shield icon
 
 #### E. **ModerationLogsScreen**
@@ -163,7 +188,7 @@ A comprehensive community moderation system has been successfully implemented fo
   - `moderator_removed` → person-remove (onSurfaceVariant)
   - `settings_changed` → settings (tertiary)
   - `mark_for_review` → flag (tertiary)
-  - `other` → info (onSurfaceVariant)
+  - `user_banned` → block (error)
 - ✅ Shows moderator info and timestamp
 - ✅ Authorization check (owner or moderator only)
 - ✅ Empty state with history icon
@@ -277,13 +302,13 @@ A comprehensive community moderation system has been successfully implemented fo
    ↓
 4. Mod/owner reviews report
    ↓
-5. Clicks "Delete Post" or "Mark Safe"
+5. Clicks "Remove & Ban User" or "Mark Safe"
    ↓
 6. Confirmation dialog
    ↓
 7. Action taken + moderation log created
    ↓
-8. Report status updated to 'reviewed'
+8. Report status updated to 'resolved_safe' or 'resolved_deleted'
 ```
 
 ### **Workflow 3: Mark Post for Review**
@@ -380,13 +405,13 @@ All moderation actions are logged for audit purposes:
 |--------|------|-------|--------------|
 | `approve_post` | check-circle | primary | Approve button in PendingContent |
 | `reject_post` | cancel | error | Reject button in PendingContent |
-| `delete_post` | delete | error | Delete button in ReportedContent |
+| `delete_post` | delete | error | Moderator deletes a post (non-ban path) |
 | `mark_safe` | verified-user | primary | Mark Safe button in ReportedContent |
+| `user_banned` | block | error | Remove & Ban User in ReportedContent |
 | `mark_for_review` | flag | tertiary | Mark for Review in post menu |
 | `moderator_added` | person-add | tertiary | Add Moderator button |
 | `moderator_removed` | person-remove | onSurfaceVariant | Remove Moderator button |
 | `settings_changed` | settings | tertiary | Save button in EditCommunity |
-| `other` | info | onSurfaceVariant | Future actions |
 
 ---
 
@@ -496,9 +521,9 @@ All moderation actions are logged for audit purposes:
 - [ ] **Report Handling Flow:**
   1. User reports post
   2. Owner/mod sees report in ReportedContent
-  3. Mod deletes post
+  3. Mod removes post and bans user
   4. Verify post removed from feed
-  5. Check moderation log for delete_post entry
+  5. Check moderation log for user_banned entry
 
 - [ ] **Moderator Management Flow:**
   1. Owner adds user as moderator
@@ -696,7 +721,7 @@ if (!isOwner && !isMod) {
 await logRepository.createLog({
   communityId,
   moderatorId: session.user.id,
-  action: 'approve_post', // or other ModerationAction
+  action: 'approve_post', // or another ModerationAction
   postId: post.id, // or null for non-post actions
 });
 ```

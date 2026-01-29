@@ -8,7 +8,7 @@ Allows users to flag inappropriate content for moderator review. The reporting s
 ### Core Features
 - **FR-REP-01**: Users shall be able to report any post with a reason (15-300 characters).
 - **FR-REP-02**: Users shall not be able to submit duplicate reports for the same post.
-- **FR-REP-03**: Reports shall have a status: pending, reviewed, or resolved.
+- **FR-REP-03**: Reports shall have a status: pending, resolved_safe, or resolved_deleted.
 - **FR-REP-04**: Community moderators and owners shall be able to view reports for their communities.
 
 ### Moderation Actions
@@ -22,6 +22,7 @@ Allows users to flag inappropriate content for moderator review. The reporting s
 - **FR-REP-10**: Users shall receive confirmation when a report is submitted.
 - **FR-REP-11**: Moderators shall see badge counts for pending reports.
 - **FR-REP-12**: Report workflow shall require network connectivity.
+- **FR-REP-13**: Moderators shall see due/overdue indicators for the 24-hour response window.
 
 ## Architecture
 
@@ -31,8 +32,8 @@ Allows users to flag inappropriate content for moderator review. The reporting s
 ```typescript
 export enum ReportStatus {
   Pending = 'pending',
-  Reviewed = 'reviewed',
-  Resolved = 'resolved',
+  ResolvedSafe = 'resolved_safe',
+  ResolvedDeleted = 'resolved_deleted',
 }
 
 export type PostReport = {
@@ -71,7 +72,7 @@ export interface PostReportRepository {
 - `post_id` (bigint, references posts.id, cascade delete)
 - `user_id` (uuid, references profiles.id, cascade delete)
 - `reason` (text, not null, check: 15-300 chars)
-- `status` (text, default 'pending', check: pending/reviewed/resolved)
+- `status` (text, default 'pending', check: pending/resolved_safe/resolved_deleted)
 - `created_at` (timestamptz, default now())
 
 **Indexes**:
@@ -102,6 +103,7 @@ export interface PostReportRepository {
   - Report reason with flag badge
   - Post preview (content + image thumbnail)
   - Action buttons (Delete Post, Mark Safe)
+  - Due/overdue indicator (24-hour SLA)
 - Authorization check (owner or moderator only)
 - Optimistic UI updates (removes card immediately)
 - Confirmation dialogs for destructive actions
@@ -113,15 +115,16 @@ handleDeletePost(report: PostReport) {
   1. Shows confirmation dialog
   2. Checks network connectivity
   3. Deletes post via postRepository.deletePost()
-  4. Updates report status to 'resolved'
-  5. Creates moderation log (action: 'delete_post')
-  6. Removes from UI optimistically
+  4. Updates report status to 'resolved_deleted'
+  5. Creates a community ban or global ban for the post author
+  6. Creates moderation log (action: 'user_banned')
+  7. Removes from UI optimistically
 }
 
 handleMarkSafe(report: PostReport) {
   1. Shows confirmation dialog
   2. Checks network connectivity
-  3. Updates report status to 'reviewed'
+  3. Updates report status to 'resolved_safe'
   4. Creates moderation log (action: 'mark_safe')
   5. Removes from UI optimistically
 }
@@ -206,7 +209,7 @@ handleMarkSafe(report: PostReport) {
    ↓
 10. System checks network connectivity
    ↓
-11. System updates report.status to 'reviewed'
+11. System updates report.status to 'resolved_safe'
    ↓
 12. System creates moderation_log with action = 'mark_safe'
    ↓
@@ -235,7 +238,7 @@ handleMarkSafe(report: PostReport) {
    ↓
 9. System deletes post image from storage
    ↓
-10. System updates report.status to 'resolved'
+10. System updates report.status to 'resolved_deleted'
    ↓
 11. System creates moderation_log with action = 'delete_post'
    ↓
@@ -257,7 +260,7 @@ handleMarkSafe(report: PostReport) {
 5. Each report shows:
    - Post that was reported
    - Report reason
-   - Status (pending/reviewed/resolved)
+   - Status (pending/resolved_safe/resolved_deleted)
    - Submission date
 ```
 
@@ -291,10 +294,10 @@ handleMarkSafe(report: PostReport) {
 2. Moderator reads reason: "This is offensive".
 3. Moderator reviews post content and determines it's acceptable.
 4. Moderator taps "Mark Safe" button.
-5. System shows confirmation: "Mark this post as safe? The report will be marked as reviewed."
+5. System shows confirmation: "Mark this post as safe? The report will be marked as resolved safe."
 6. Moderator confirms.
 7. System checks network connectivity.
-8. System updates report.status to 'reviewed'.
+8. System updates report.status to 'resolved_safe'.
 9. System creates moderation log with action = 'mark_safe'.
 10. System removes report card from UI (optimistic).
 11. Post remains visible in community feed.
@@ -311,7 +314,7 @@ handleMarkSafe(report: PostReport) {
 8. System calls `postRepository.deletePost(postId)`.
 9. System deletes post record (cascade deletes likes, comments, reports).
 10. System deletes post image from Supabase storage.
-11. System updates report.status to 'resolved'.
+11. System updates report.status to 'resolved_deleted'.
 12. System creates moderation log with action = 'delete_post'.
 13. System removes report card from UI (optimistic).
 14. Post removed from all feeds immediately.
@@ -325,6 +328,13 @@ handleMarkSafe(report: PostReport) {
 5. Database unique constraint fails (user_id, post_id).
 6. System shows error: "You have already reported this post".
 7. No duplicate report is created.
+
+### UC-REP-06: Report SLA Countdown (24 Hours)
+1. Moderator opens ReportedContentScreen.
+2. System calculates due time = report.created_at + 24 hours.
+3. Report card displays **Due in Xh** for open reports.
+4. After 24 hours, label switches to **Overdue**.
+5. Moderator prioritizes overdue reports for action.
 
 ## Test Cases
 
@@ -344,7 +354,7 @@ handleMarkSafe(report: PostReport) {
 - **TC-REP-11**: Verify empty state shows when no pending reports.
 
 ### Mark Safe Action
-- **TC-REP-12**: Verify "Mark Safe" updates report status to 'reviewed'.
+- **TC-REP-12**: Verify "Mark Safe" updates report status to 'resolved_safe'.
 - **TC-REP-13**: Verify "Mark Safe" creates moderation log.
 - **TC-REP-14**: Verify post remains visible after marking safe.
 - **TC-REP-15**: Verify report removed from pending queue after marking safe.
@@ -352,7 +362,7 @@ handleMarkSafe(report: PostReport) {
 
 ### Delete Post Action
 - **TC-REP-17**: Verify "Delete Post" removes post from database.
-- **TC-REP-18**: Verify "Delete Post" updates report status to 'resolved'.
+- **TC-REP-18**: Verify "Delete Post" updates report status to 'resolved_deleted'.
 - **TC-REP-19**: Verify "Delete Post" creates moderation log.
 - **TC-REP-20**: Verify post deletion cascades to likes, comments, saved_posts.
 - **TC-REP-21**: Verify post image deleted from storage.
@@ -385,6 +395,8 @@ handleMarkSafe(report: PostReport) {
 
 ## Related Specifications
 - Community Moderation: See `docs/specs/moderation/community-moderation.md`
+- User Blocking: See `docs/specs/moderation/user-blocking.md`
+- Global Bans: See `docs/specs/moderation/global-bans.md`
 - Posts: See `docs/specs/social/posts.md`
 - Moderation Logs: See moderation system audit trail
 - Database Schema: See `docs/specs/database-schema.md`
