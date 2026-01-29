@@ -12,6 +12,9 @@ Enables comprehensive community management via delegated moderator roles, conten
 - **FR-MOD-04**: Moderators shall be able to review and act on reported content.
 - **FR-MOD-05**: Moderators shall be able to mark approved posts for review.
 - **FR-MOD-06**: The system shall display real-time badge counts for pending and reported content.
+- **FR-MOD-21**: The system shall apply automated text filtering using remote-config term lists (blocked/review), defaulting to empty lists when not configured.
+- **FR-MOD-22**: Moderation term lists shall be normalized to lowercase and limited to word characters (letters/numbers/underscore).
+- **FR-MOD-23**: Post submission shall be blocked while moderation config is still loading on cold start.
 
 ### Audit and Logging
 - **FR-MOD-07**: All moderation actions shall be logged with moderator ID, action type, and timestamp.

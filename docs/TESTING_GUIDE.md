@@ -29,7 +29,7 @@ supabase db push
 
 # Verify tables exist
 # Check Supabase dashboard → Database → Tables
-# Should see: community_moderators, moderation_logs
+# Should see: community_moderators, moderation_logs, feature_config
 ```
 
 ### 3. Create Test Users
@@ -417,6 +417,35 @@ You'll need at least 3 test users:
 
 ---
 
+### Scenario 14: Feature Config Moderation Terms
+**User:** Admin (User A) + Regular member (User C)
+
+**Steps (Admin):**
+1. Open Settings → Admin tools
+2. Tap "Edit blocked terms"
+3. Enter `blockedword` and confirm (letters/numbers/_ only)
+4. **Expected:** Success alert for blocked terms
+5. Tap "Edit review terms"
+6. Enter `reviewword` and confirm (letters/numbers/_ only)
+7. **Expected:** Success alert for review terms
+
+**Steps (Regular User, cold start fetch):**
+1. Restart the app (cold start) to fetch feature config
+2. If the app is still loading config, attempt to submit a post
+3. **Expected:** "Loading moderation rules" alert and no submission
+4. Create a post containing `blockedword`
+5. **Expected:** Post is blocked with the filtered content alert
+6. Create a post containing `reviewword`
+7. **Expected:** Post is submitted as `pending` and moderation alert shown
+
+**Pass Criteria:**
+- ✅ Blocked terms prevent post submission
+- ✅ Review terms set post status to pending
+- ✅ Entries exist in `feature_config` for both keys
+- ✅ Non-word entries are ignored by the parser
+
+---
+
 ## 🧪 Manual Test Plan (UGC Precautions + Moderation)
 
 ### Prerequisites
@@ -678,6 +707,7 @@ Use this for rapid testing:
 - [ ] Global bans hide profiles/communities and block posting/commenting
 - [ ] Settings → Admin tools allows staff to ban/unban users
 - [ ] Settings → Admin tools allows admins to update user roles
+- [ ] Settings → Admin tools allows admins to update blocked/review terms
 
 ---
 
@@ -704,6 +734,7 @@ OS Version: __________
 | 11. Home Feed Tabs & Following | [ ] | [ ] | |
 | 12. i18n & Language Switching | [ ] | [ ] | |
 | 13. Community Search & Pagination | [ ] | [ ] | |
+| 14. Feature Config Moderation Terms | [ ] | [ ] | |
 
 Overall Status: [ ] PASS | [ ] FAIL
 
@@ -729,7 +760,7 @@ Recommendations:
 
 The implementation is **READY FOR PRODUCTION** when:
 
-✅ All 10 test scenarios pass  
+✅ All test scenarios pass  
 ✅ Authorization checks work for all user types  
 ✅ All moderation logs created correctly  
 ✅ No crashes or errors during normal use  
