@@ -7,6 +7,8 @@ export const settingsCopy = {
     get preferencesNote() { return t('settings.section.preferences.note'); },
     get account() { return t('settings.section.account'); },
     get accountNote() { return t('settings.section.account.note'); },
+    get admin() { return t('settings.section.admin'); },
+    get adminNote() { return t('settings.section.admin.note'); },
   },
   options: {
     get darkMode() { return t('settings.option.darkMode'); },
@@ -16,6 +18,37 @@ export const settingsCopy = {
     get editProfile() { return t('settings.option.editProfile'); },
     get logout() { return t('settings.option.logout'); },
     get deleteAccount() { return t('settings.option.deleteAccount'); },
+    get adminBanUser() { return t('settings.option.adminBanUser'); },
+    get adminUnbanUser() { return t('settings.option.adminUnbanUser'); },
+    get adminSetRole() { return t('settings.option.adminSetRole'); },
+  },
+  admin: {
+    prompts: {
+      get userIdTitle() { return t('settings.admin.prompt.userId.title'); },
+      get userIdMessage() { return t('settings.admin.prompt.userId.message'); },
+      get reasonTitle() { return t('settings.admin.prompt.reason.title'); },
+      get reasonMessage() { return t('settings.admin.prompt.reason.message'); },
+      get roleTitle() { return t('settings.admin.prompt.role.title'); },
+      get roleMessage() { return t('settings.admin.prompt.role.message'); },
+      get cancel() { return t('settings.admin.prompt.cancel'); },
+      get confirm() { return t('settings.admin.prompt.confirm'); },
+    },
+    roles: {
+      get user() { return t('settings.admin.role.user'); },
+      get staff() { return t('settings.admin.role.staff'); },
+      get admin() { return t('settings.admin.role.admin'); },
+    },
+    alerts: {
+      get successTitle() { return t('settings.admin.alert.success.title'); },
+      banSuccess: (userId: string) => t('settings.admin.alert.banSuccess.message', { userId }),
+      unbanSuccess: (userId: string) => t('settings.admin.alert.unbanSuccess.message', { userId }),
+      roleSuccess: (userId: string, role: string) =>
+        t('settings.admin.alert.roleSuccess.message', { userId, role }),
+      get failedTitle() { return t('settings.admin.alert.failed.title'); },
+      get failedMessage() { return t('settings.admin.alert.failed.message'); },
+      get offlineTitle() { return t('settings.admin.alert.offline.title'); },
+      get offlineMessage() { return t('settings.admin.alert.offline.message'); },
+    },
   },
   footer: {
     version: (version: string) => t('settings.footer.version', { version }),
@@ -92,5 +125,8 @@ export const settingsCopy = {
     privacy: 'settings-privacy',
     terms: 'settings-terms',
     help: 'settings-help',
+    adminBanUser: 'settings-admin-ban-user',
+    adminUnbanUser: 'settings-admin-unban-user',
+    adminSetRole: 'settings-admin-set-role',
   },
 };
