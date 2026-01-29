@@ -2,9 +2,9 @@ import Constants from 'expo-constants';
 
 const extra = Constants.expoConfig?.extra ?? {};
 const rawAppEnv = extra.appEnv ?? process.env.EXPO_PUBLIC_APP_ENV ?? 'dev';
-const appEnv = rawAppEnv === 'prod' ? 'prod' : 'dev';
+const appEnv: 'dev' | 'prod' = rawAppEnv === 'prod' ? 'prod' : 'dev';
 const rawAppVariant = extra.appVariant ?? process.env.EXPO_PUBLIC_APP_VARIANT ?? appEnv;
-const appVariant = rawAppVariant === 'prod' ? 'prod' : 'dev';
+const appVariant: 'dev' | 'prod' = rawAppVariant === 'prod' ? 'prod' : 'dev';
 
 const supabaseUrl = extra.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = extra.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
