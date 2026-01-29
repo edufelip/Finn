@@ -34,6 +34,9 @@ jobs:
           cat <<'ENVEOF' > .env
           ${{ secrets.ENV_FILE_DEV }}
           ENVEOF
+          cat <<'ENVEOF' > .env.development
+          ${{ secrets.ENV_FILE_DEV }}
+          ENVEOF
 
       - name: Export env vars
         run: |
@@ -51,8 +54,9 @@ jobs:
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
-          echo "EXPO_PUBLIC_APP_ENV=dev" >> "$GITHUB_ENV"
           echo "APP_ENV=dev" >> "$GITHUB_ENV"
+          echo "APP_VARIANT=dev" >> "$GITHUB_ENV"
+          echo "APP_SUPABASE_ENV=dev" >> "$GITHUB_ENV"
 
       - name: Set Finn environment
         run: |

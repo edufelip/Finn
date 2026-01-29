@@ -26,6 +26,9 @@ jobs:
           cat <<'EOF' > .env
           ${{ secrets.ENV_FILE }}
           EOF
+          cat <<'EOF' > .env.production
+          ${{ secrets.ENV_FILE }}
+          EOF
 
       - name: Export env vars
         run: |
@@ -36,6 +39,9 @@ jobs:
       - name: Set Expo environment
         run: |
           echo "EXPO_PUBLIC_ENV=prod" >> "$GITHUB_ENV"
+          echo "APP_ENV=prod" >> "$GITHUB_ENV"
+          echo "APP_VARIANT=prod" >> "$GITHUB_ENV"
+          echo "APP_SUPABASE_ENV=prod" >> "$GITHUB_ENV"
 
       - name: Validate Expo environment
         run: |
