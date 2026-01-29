@@ -11,9 +11,11 @@ type PostOptionsModalProps = {
   onClose: () => void;
   onSave?: () => void;
   onReport?: () => void;
+  onBlockUser?: () => void;
   onMarkForReview?: () => void;
   isSaved: boolean;
   canModerate?: boolean;
+  canBlockUser?: boolean;
   position: { x: number; y: number };
 };
 
@@ -22,9 +24,11 @@ const PostOptionsModal = ({
   onClose,
   onSave,
   onReport,
+  onBlockUser,
   onMarkForReview,
   isSaved,
   canModerate = false,
+  canBlockUser = false,
   position,
 }: PostOptionsModalProps) => {
   const theme = useThemeColors();
@@ -34,7 +38,7 @@ const PostOptionsModal = ({
 
   // Calculate position to ensure modal stays on screen
   const modalWidth = 180;
-  const optionCount = canModerate ? 3 : 2;
+  const optionCount = 1 + 1 + (canModerate ? 1 : 0) + (canBlockUser ? 1 : 0);
   const modalHeight = optionCount * 44 + 8; // ~44px per option + padding
   const padding = 16;
 
@@ -105,6 +109,19 @@ const PostOptionsModal = ({
             <MaterialIcons name="outlined-flag" size={20} color={theme.error} />
             <Text style={[styles.optionText, { color: theme.error }]}>{postCardCopy.reportAction}</Text>
           </Pressable>
+          {canBlockUser && onBlockUser && (
+            <Pressable
+              style={styles.option}
+              onPress={() => {
+                onBlockUser();
+                onClose();
+              }}
+              testID="post-option-block-user"
+            >
+              <MaterialIcons name="block" size={20} color={theme.error} />
+              <Text style={[styles.optionText, { color: theme.error }]}>{postCardCopy.blockAction}</Text>
+            </Pressable>
+          )}
         </Pressable>
       </Pressable>
     </Modal>

@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
+import * as Network from 'expo-network';
 
 import type { Post } from '../../domain/models/post';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
@@ -10,9 +11,12 @@ import type { ThemeColors } from '../theme/colors';
 import { postCardCopy } from '../content/postCardCopy';
 import PostOptionsModal from './PostOptionsModal';
 import ReportPostModal from './ReportPostModal';
+import BlockUserModal from './BlockUserModal';
 import { sharePost } from '../../utils/shareUtils';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useBlockedUsersStore } from '../../app/store/blockedUsersStore';
+import { isMockMode } from '../../config/appConfig';
 
 type PostCardProps = {
   post: Post;
@@ -48,10 +52,12 @@ const PostCard = ({
   const likeSpring = useMemo(() => ({ duration: 133, dampingRatio: 0.7 }), []);
   const [modalVisible, setModalVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const optionsButtonRef = useRef<View>(null);
   const { session } = useAuth();
-  const { postReports } = useRepositories();
+  const { postReports, userBlocks } = useRepositories();
+  const blockUserId = useBlockedUsersStore((state) => state.blockUserId);
 
   const likeStyle = useAnimatedStyle(() => ({
     transform: [{ scale: likeScale.value }],
@@ -123,6 +129,53 @@ const PostCard = ({
       throw error; // Re-throw to keep modal open
     }
   };
+
+  const handleBlockUser = async (reason: string) => {
+    if (!session?.user?.id) {
+      Alert.alert(postCardCopy.block.error.title, postCardCopy.block.error.notLoggedIn);
+      throw new Error('User not logged in');
+    }
+
+    if (session.user.id === post.userId) {
+      return;
+    }
+
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      Alert.alert(postCardCopy.block.error.title, postCardCopy.block.error.offline);
+      throw new Error('Offline');
+    }
+
+    try {
+      await userBlocks.blockUser(session.user.id, post.userId, reason, post.id);
+      blockUserId(post.userId);
+
+      Alert.alert(postCardCopy.block.success.title, postCardCopy.block.success.message);
+    } catch (error) {
+      console.error('Block user error:', error);
+
+      let errorMessage = postCardCopy.block.failed.message;
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        const supabaseError = error as { message?: string; hint?: string; details?: string };
+        if (supabaseError.message) {
+          errorMessage = supabaseError.message;
+          if (supabaseError.hint) {
+            errorMessage += `\n\nHint: ${supabaseError.hint}`;
+          }
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      Alert.alert(postCardCopy.block.failed.title, errorMessage);
+      throw error;
+    }
+  };
+
+  const canBlockUser = Boolean(session?.user?.id && session.user.id !== post.userId);
 
   return (
     <View
@@ -273,9 +326,11 @@ const PostCard = ({
         onClose={() => setModalVisible(false)}
         onSave={() => onToggleSave?.()}
         onReport={() => setReportModalVisible(true)}
+        onBlockUser={() => setBlockModalVisible(true)}
         onMarkForReview={onMarkForReview}
         isSaved={post.isSaved ?? false}
         canModerate={canModerate}
+        canBlockUser={canBlockUser}
         position={modalPosition}
       />
       <ReportPostModal
@@ -283,6 +338,12 @@ const PostCard = ({
         onClose={() => setReportModalVisible(false)}
         onSubmit={handleReport}
         postId={post.id}
+      />
+      <BlockUserModal
+        visible={blockModalVisible}
+        onClose={() => setBlockModalVisible(false)}
+        onSubmit={handleBlockUser}
+        userName={post.userName ?? postCardCopy.authorFallback}
       />
     </View>
   );

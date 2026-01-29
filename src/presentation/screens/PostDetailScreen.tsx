@@ -22,6 +22,7 @@ import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { usePostsStore, usePostById } from '../../app/store/postsStore';
 import { sharePost } from '../../utils/shareUtils';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
+import { useBlockedUsersStore } from '../../app/store/blockedUsersStore';
 
 type RouteParams = {
   post: Post;
@@ -40,15 +41,27 @@ export default function PostDetailScreen() {
   const updatePost = usePostsStore((state) => state.updatePost);
   const upsertPosts = usePostsStore((state) => state.upsertPosts);
   const setSavedForUser = usePostsStore((state) => state.setSavedForUser);
-  const post = usePostById(initialPost.id) ?? initialPost;
+  const blockedUserIds = useBlockedUsersStore((state) => state.blockedUserIds);
+  const isBlockedPost = blockedUserIds.includes(initialPost.userId);
+  const storedPost = usePostById(initialPost.id);
+  const post = isBlockedPost ? null : storedPost ?? initialPost;
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  useEffect(() => {
-    upsertPosts([initialPost]);
-  }, [initialPost, upsertPosts]);
+  const visibleComments = useMemo(() => {
+    if (!blockedUserIds.length) return comments;
+    const blockedSet = new Set(blockedUserIds);
+    return comments.filter((comment) => !blockedSet.has(comment.userId));
+  }, [blockedUserIds, comments]);
 
   useEffect(() => {
+    if (!isBlockedPost) {
+      upsertPosts([initialPost]);
+    }
+  }, [initialPost, isBlockedPost, upsertPosts]);
+
+  useEffect(() => {
+    if (!post) return;
     commentsRepository
       .getCommentsForPost(post.id)
       .then((data) => setComments(data))
@@ -57,9 +70,10 @@ export default function PostDetailScreen() {
           Alert.alert(postDetailCopy.alerts.loadFailed.title, error.message);
         }
       });
-  }, [commentsRepository, post.id]);
+  }, [commentsRepository, post?.id]);
 
   const handleToggleLike = async () => {
+    if (!post) return;
     if (!session?.user?.id) {
       showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
@@ -93,6 +107,7 @@ export default function PostDetailScreen() {
   };
 
   const handleToggleSave = async () => {
+    if (!post) return;
     if (!session?.user?.id) {
       showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
@@ -131,10 +146,14 @@ export default function PostDetailScreen() {
   };
 
   const handleShare = () => {
+    if (!post) return;
     void sharePost(post);
   };
 
   const submitComment = async () => {
+    if (!post) {
+      return;
+    }
     if (!session?.user?.id) {
       showGuestGateAlert({ onSignIn: () => void exitGuest() });
       return;
@@ -202,6 +221,24 @@ export default function PostDetailScreen() {
     }
   };
 
+  if (!post) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="keyboard-arrow-left" size={24} color={theme.onBackground} />
+          </Pressable>
+          <Divider />
+        </View>
+        <View style={styles.blockedState}>
+          <MaterialIcons name="block" size={48} color={theme.onSurfaceVariant} />
+          <Text style={styles.blockedTitle}>{postDetailCopy.blocked.title}</Text>
+          <Text style={styles.blockedMessage}>{postDetailCopy.blocked.message}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
@@ -212,7 +249,7 @@ export default function PostDetailScreen() {
       </View>
       <FlatList
         testID={postDetailCopy.testIds.list}
-        data={comments}
+        data={visibleComments}
         keyExtractor={(item) => `${item.id}`}
         renderItem={({ item, index }) => {
           const name = item.userName ?? postDetailCopy.commentAuthorFallback;
@@ -308,6 +345,25 @@ const createStyles = (theme: ThemeColors) =>
     header: {
       paddingBottom: 8,
       backgroundColor: theme.background,
+    },
+    blockedState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      gap: 12,
+    },
+    blockedTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.onBackground,
+      textAlign: 'center',
+    },
+    blockedMessage: {
+      fontSize: 14,
+      color: theme.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 20,
     },
     backButton: {
       marginLeft: 16,

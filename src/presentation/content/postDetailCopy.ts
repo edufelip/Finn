@@ -7,6 +7,10 @@ export const postDetailCopy = {
   get commentAge() { return t('postDetail.commentAge'); },
   get commentAuthorFallback() { return t('postDetail.commentAuthorFallback'); },
   get currentUserFallback() { return t('postDetail.currentUserFallback'); },
+  blocked: {
+    get title() { return t('postDetail.blocked.title'); },
+    get message() { return t('postDetail.blocked.message'); },
+  },
   alerts: {
     loadFailed: {
       get title() { return t('postDetail.alert.loadFailed.title'); },
