@@ -28,9 +28,11 @@ import { evaluateTextForModeration } from '../../domain/moderation/contentFilter
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { isMockMode } from '../../config/appConfig';
+import { FEATURE_CONFIG_KEYS, parseStringArrayConfig } from '../../config/featureConfig';
 import { enqueueWrite } from '../../data/offline/queueStore';
 import { persistOfflineImage } from '../../data/offline/offlineImages';
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
+import { useFeatureConfigStore } from '../../app/store/featureConfigStore';
 import type { ThemeColors } from '../theme/colors';
 import { palette } from '../theme/palette';
 import { createPostCopy } from '../content/createPostCopy';
@@ -57,6 +59,7 @@ export default function CreatePostScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [imageSourceOpen, setImageSourceOpen] = useState(false);
   const [userCanModerate, setUserCanModerate] = useState(false);
+  const [configAlertShown, setConfigAlertShown] = useState(false);
   const insets = useSafeAreaInsets();
   const contentMaxLength = 500;
 
@@ -68,11 +71,26 @@ export default function CreatePostScreen() {
   const { isDark } = useTheme();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const featureConfigValues = useFeatureConfigStore((state) => state.values);
+  const featureConfigLoading = useFeatureConfigStore((state) => state.isLoading);
+  const moderationTerms = useMemo(
+    () => ({
+      blockedTerms: parseStringArrayConfig(featureConfigValues[FEATURE_CONFIG_KEYS.blockedTerms]),
+      reviewTerms: parseStringArrayConfig(featureConfigValues[FEATURE_CONFIG_KEYS.reviewTerms]),
+    }),
+    [featureConfigValues]
+  );
   const contentCount = createPostCopy.contentCount(content.length, contentMaxLength);
   const gradientColors = useMemo<readonly [string, string]>(
     () => [`${theme.background}00`, theme.background],
     [theme.background]
   );
+
+  useEffect(() => {
+    if (!featureConfigLoading) {
+      setConfigAlertShown(false);
+    }
+  }, [featureConfigLoading]);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +235,16 @@ export default function CreatePostScreen() {
       Alert.alert(createPostCopy.alerts.signInRequired.title, createPostCopy.alerts.signInRequired.message);
       return;
     }
+    if (featureConfigLoading) {
+      if (!configAlertShown) {
+        Alert.alert(
+          createPostCopy.alerts.configLoading.title,
+          createPostCopy.alerts.configLoading.message
+        );
+        setConfigAlertShown(true);
+      }
+      return;
+    }
     const trimmedContent = content.trim();
     if (!trimmedContent) {
       Alert.alert(createPostCopy.alerts.contentRequired.title, createPostCopy.alerts.contentRequired.message);
@@ -236,7 +264,7 @@ export default function CreatePostScreen() {
     // Determine moderation status
     // If user is owner/moderator OR community doesn't require moderation, approve immediately
     const needsModeration = selectedCommunity.postPermission === 'moderated' && !userCanModerate;
-    const textModeration = evaluateTextForModeration(trimmedContent);
+    const textModeration = evaluateTextForModeration(trimmedContent, moderationTerms);
     if (textModeration.action === 'block') {
       Alert.alert(createPostCopy.alerts.filtered.title, createPostCopy.alerts.filtered.message);
       return;

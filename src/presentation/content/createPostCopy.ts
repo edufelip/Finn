@@ -22,6 +22,10 @@ export const createPostCopy = {
       get title() { return t('createPost.alert.signInRequired.title'); },
       get message() { return t('createPost.alert.signInRequired.message'); },
     },
+    configLoading: {
+      get title() { return t('createPost.alert.configLoading.title'); },
+      get message() { return t('createPost.alert.configLoading.message'); },
+    },
     contentRequired: {
       get title() { return t('createPost.alert.contentRequired.title'); },
       get message() { return t('createPost.alert.contentRequired.message'); },

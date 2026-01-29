@@ -21,6 +21,8 @@ export const settingsCopy = {
     get adminBanUser() { return t('settings.option.adminBanUser'); },
     get adminUnbanUser() { return t('settings.option.adminUnbanUser'); },
     get adminSetRole() { return t('settings.option.adminSetRole'); },
+    get adminBlockedTerms() { return t('settings.option.adminBlockedTerms'); },
+    get adminReviewTerms() { return t('settings.option.adminReviewTerms'); },
   },
   admin: {
     prompts: {
@@ -30,6 +32,7 @@ export const settingsCopy = {
       get reasonMessage() { return t('settings.admin.prompt.reason.message'); },
       get roleTitle() { return t('settings.admin.prompt.role.title'); },
       get roleMessage() { return t('settings.admin.prompt.role.message'); },
+      get termsMessage() { return t('settings.admin.prompt.terms.message'); },
       get cancel() { return t('settings.admin.prompt.cancel'); },
       get confirm() { return t('settings.admin.prompt.confirm'); },
     },
@@ -44,6 +47,8 @@ export const settingsCopy = {
       unbanSuccess: (userId: string) => t('settings.admin.alert.unbanSuccess.message', { userId }),
       roleSuccess: (userId: string, role: string) =>
         t('settings.admin.alert.roleSuccess.message', { userId, role }),
+      configSuccess: (label: string) =>
+        t('settings.admin.alert.configSuccess.message', { label }),
       get failedTitle() { return t('settings.admin.alert.failed.title'); },
       get failedMessage() { return t('settings.admin.alert.failed.message'); },
       get offlineTitle() { return t('settings.admin.alert.offline.title'); },
@@ -128,5 +133,11 @@ export const settingsCopy = {
     adminBanUser: 'settings-admin-ban-user',
     adminUnbanUser: 'settings-admin-unban-user',
     adminSetRole: 'settings-admin-set-role',
+    adminBlockedTerms: 'settings-admin-blocked-terms',
+    adminReviewTerms: 'settings-admin-review-terms',
+    adminTermsModal: 'settings-admin-terms-modal',
+    adminTermsInput: 'settings-admin-terms-input',
+    adminTermsCancel: 'settings-admin-terms-cancel',
+    adminTermsConfirm: 'settings-admin-terms-confirm',
   },
 };

@@ -2,13 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Linking,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import * as Network from 'expo-network';
@@ -24,9 +22,16 @@ import { useLocalization } from '../../app/providers/LocalizationProvider';
 import { usePresence } from '../../app/providers/PresenceProvider';
 import { useTheme, useThemeColors } from '../../app/providers/ThemeProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useFeatureConfigStore } from '../../app/store/featureConfigStore';
 import env from '../../config/env';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
+import {
+  FEATURE_CONFIG_DESCRIPTIONS,
+  FEATURE_CONFIG_KEYS,
+  formatStringArrayConfig,
+  parseStringArrayConfig,
+} from '../../config/featureConfig';
 import { links } from '../../config/links';
 import type { UserRole } from '../../domain/models/user';
 import type { ThemeColors } from '../theme/colors';
@@ -39,12 +44,20 @@ import { registerPushToken, setNotificationGatePreference } from '../../app/noti
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 import { useUserStore } from '../../app/store/userStore';
+import { AdminToolsSection } from '../components/settings/AdminToolsSection';
+import { AdminTermsModal } from '../components/settings/AdminTermsModal';
+import { DeleteAccountModal } from '../components/settings/DeleteAccountModal';
+import { SettingsCard } from '../components/settings/SettingsCard';
+import { SettingsRow } from '../components/settings/SettingsRow';
+import { SettingsSection } from '../components/settings/SettingsSection';
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
   const { locale, setLocale, supportedLocales } = useLocalization();
-  const { users: userRepository, userBans: userBanRepository } = useRepositories();
+  const { users: userRepository, userBans: userBanRepository, featureConfigs: featureConfigRepository } = useRepositories();
+  const featureConfigValues = useFeatureConfigStore((state) => state.values);
+  const setFeatureConfigValue = useFeatureConfigStore((state) => state.setValue);
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
   const { isDark, toggleTheme } = useTheme();
   const theme = useThemeColors();
@@ -55,6 +68,12 @@ export default function SettingsScreen() {
   const [updatingOnlineStatus, setUpdatingOnlineStatus] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteEmailInput, setDeleteEmailInput] = useState('');
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
+  const [termsInput, setTermsInput] = useState('');
+  const [termsKey, setTermsKey] = useState<string | null>(null);
+  const [termsLabel, setTermsLabel] = useState('');
+  const [termsDescription, setTermsDescription] = useState('');
+  const [termsSaving, setTermsSaving] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -117,6 +136,14 @@ export default function SettingsScreen() {
   const canConfirmDelete = Boolean(normalizedTargetEmail) && normalizedInputEmail === normalizedTargetEmail;
   const showMismatch = Boolean(deleteEmailInput) && !canConfirmDelete;
   const confirmDisabled = !canConfirmDelete || loading;
+  const blockedTerms = useMemo(
+    () => parseStringArrayConfig(featureConfigValues[FEATURE_CONFIG_KEYS.blockedTerms]),
+    [featureConfigValues]
+  );
+  const reviewTerms = useMemo(
+    () => parseStringArrayConfig(featureConfigValues[FEATURE_CONFIG_KEYS.reviewTerms]),
+    [featureConfigValues]
+  );
 
   if (isGuest) {
     return (
@@ -299,6 +326,80 @@ export default function SettingsScreen() {
     );
   };
 
+  const openTermsModal = (
+    key: string,
+    label: string,
+    description: string,
+    defaultTerms: string[]
+  ) => {
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return;
+    }
+    if (!isAdmin) {
+      return;
+    }
+    setTermsKey(key);
+    setTermsLabel(label);
+    setTermsDescription(description);
+    setTermsInput(formatStringArrayConfig(defaultTerms));
+    setTermsModalVisible(true);
+  };
+
+  const closeTermsModal = (force = false) => {
+    if (termsSaving && !force) {
+      return;
+    }
+    setTermsModalVisible(false);
+    setTermsKey(null);
+    setTermsLabel('');
+    setTermsDescription('');
+    setTermsInput('');
+  };
+
+  const saveTerms = async () => {
+    if (!termsKey) {
+      return;
+    }
+    const isOnline = await ensureAdminOnline();
+    if (!isOnline) {
+      return;
+    }
+    try {
+      setTermsSaving(true);
+      const terms = parseStringArrayConfig(termsInput);
+      await featureConfigRepository.upsertConfig(termsKey, terms, termsDescription);
+      setFeatureConfigValue(termsKey, terms);
+      Alert.alert(
+        settingsCopy.admin.alerts.successTitle,
+        settingsCopy.admin.alerts.configSuccess(termsLabel)
+      );
+      closeTermsModal(true);
+    } catch (error) {
+      showAdminError(error);
+    } finally {
+      setTermsSaving(false);
+    }
+  };
+
+  const handleUpdateBlockedTerms = () => {
+    openTermsModal(
+      FEATURE_CONFIG_KEYS.blockedTerms,
+      settingsCopy.options.adminBlockedTerms,
+      FEATURE_CONFIG_DESCRIPTIONS.blockedTerms,
+      blockedTerms
+    );
+  };
+
+  const handleUpdateReviewTerms = () => {
+    openTermsModal(
+      FEATURE_CONFIG_KEYS.reviewTerms,
+      settingsCopy.options.adminReviewTerms,
+      FEATURE_CONFIG_DESCRIPTIONS.reviewTerms,
+      reviewTerms
+    );
+  };
+
   const handleGlobalBan = () => {
     if (!session?.user?.id) {
       Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
@@ -441,181 +542,114 @@ export default function SettingsScreen() {
         <Text style={styles.title}>{settingsCopy.title}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionLabel}>{settingsCopy.sections.preferences}</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="dark-mode" size={20} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.rowText}>{settingsCopy.options.darkMode}</Text>
-            </View>
-            <Switch
-              value={isDark}
-              onValueChange={() => {
-                toggleTheme();
-              }}
-              testID={settingsCopy.testIds.darkMode}
-              accessibilityLabel={settingsCopy.testIds.darkMode}
-              trackColor={{ false: theme.outline, true: theme.primary }}
-              thumbColor={isDark ? theme.onPrimary : theme.onSurface}
+        <SettingsSection title={settingsCopy.sections.preferences} note={settingsCopy.sections.preferencesNote}>
+          <SettingsCard>
+            <SettingsRow
+              label={settingsCopy.options.darkMode}
+              iconName="dark-mode"
+              right={(
+                <Switch
+                  value={isDark}
+                  onValueChange={() => {
+                    toggleTheme();
+                  }}
+                  testID={settingsCopy.testIds.darkMode}
+                  accessibilityLabel={settingsCopy.testIds.darkMode}
+                  trackColor={{ false: theme.outline, true: theme.primary }}
+                  thumbColor={isDark ? theme.onPrimary : theme.onSurface}
+                />
+              )}
             />
-          </View>
-          <View style={[styles.row, styles.rowDivider]}>
-            <View style={styles.rowLeft}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="visibility" size={20} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.rowText}>{settingsCopy.options.onlineStatus}</Text>
-            </View>
-            <Switch
-              value={isOnlineVisible}
-              onValueChange={handleOnlineStatusChange}
-              testID={settingsCopy.testIds.onlineStatus}
-              accessibilityLabel={settingsCopy.testIds.onlineStatus}
-              disabled={updatingOnlineStatus}
-              trackColor={{ false: theme.outline, true: theme.primary }}
-              thumbColor={isOnlineVisible ? theme.onPrimary : theme.onSurface}
+            <SettingsRow
+              label={settingsCopy.options.onlineStatus}
+              iconName="visibility"
+              divider
+              right={(
+                <Switch
+                  value={isOnlineVisible}
+                  onValueChange={handleOnlineStatusChange}
+                  testID={settingsCopy.testIds.onlineStatus}
+                  accessibilityLabel={settingsCopy.testIds.onlineStatus}
+                  disabled={updatingOnlineStatus}
+                  trackColor={{ false: theme.outline, true: theme.primary }}
+                  thumbColor={isOnlineVisible ? theme.onPrimary : theme.onSurface}
+                />
+              )}
             />
-          </View>
-          <View style={[styles.row, styles.rowDivider]}>
-            <View style={styles.rowLeft}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="notifications" size={20} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.rowText}>{settingsCopy.options.notifications}</Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleNotificationsToggle}
-              testID={settingsCopy.testIds.notifications}
-              accessibilityLabel={settingsCopy.testIds.notifications}
-              trackColor={{ false: theme.outline, true: theme.primary }}
-              thumbColor={notificationsEnabled ? theme.onPrimary : theme.onSurface}
+            <SettingsRow
+              label={settingsCopy.options.notifications}
+              iconName="notifications"
+              divider
+              right={(
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={handleNotificationsToggle}
+                  testID={settingsCopy.testIds.notifications}
+                  accessibilityLabel={settingsCopy.testIds.notifications}
+                  trackColor={{ false: theme.outline, true: theme.primary }}
+                  thumbColor={notificationsEnabled ? theme.onPrimary : theme.onSurface}
+                />
+              )}
             />
-          </View>
-          <Pressable
-            style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
-            onPress={showLanguagePicker}
-            testID="settings-language"
-            accessibilityLabel="settings-language"
-          >
-            <View style={styles.rowLeft}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="language" size={20} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.rowText}>{settingsCopy.options.language}</Text>
-            </View>
-            <View style={styles.languageValue}>
-              <Text style={styles.languageValueText}>{t(`language.${locale}`)}</Text>
-              <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-            </View>
-          </Pressable>
-        </View>
-        <Text style={styles.sectionNote}>{settingsCopy.sections.preferencesNote}</Text>
-
-        <Text style={styles.sectionLabel}>{settingsCopy.sections.account}</Text>
-        <View style={styles.card}>
-          {/* Edit Profile */}
-          <Pressable
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-            onPress={() => navigation.navigate('EditProfile')}
-            testID="settings-edit-profile"
-            accessibilityLabel="settings-edit-profile"
-          >
-            <View style={styles.rowLeft}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="edit" size={20} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.rowText}>{settingsCopy.options.editProfile}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-          </Pressable>
-          {/* Logout */}
-          <Pressable
-            style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
-            onPress={handleLogout}
-            testID={settingsCopy.testIds.logout}
-            accessibilityLabel={settingsCopy.testIds.logout}
-          >
-            <View style={styles.rowLeft}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="logout" size={20} color={theme.onSurfaceVariant} />
-              </View>
-              <Text style={styles.rowText}>{settingsCopy.options.logout}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
-            onPress={openDeleteModal}
-            disabled={loading}
-            testID={settingsCopy.testIds.delete}
-            accessibilityLabel={settingsCopy.testIds.delete}
-          >
-            <View style={styles.rowLeft}>
-              <View style={[styles.iconCircle, styles.dangerIconCircle]}>
-                <MaterialIcons name="delete" size={20} color={theme.error} />
-              </View>
-              <Text style={[styles.rowText, styles.dangerText]}>{settingsCopy.options.deleteAccount}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-          </Pressable>
-        </View>
-        <Text style={styles.sectionNote}>{settingsCopy.sections.accountNote}</Text>
-
-        {canManageUsers ? (
-          <>
-            <Text style={styles.sectionLabel}>{settingsCopy.sections.admin}</Text>
-            <View style={styles.card}>
-              <Pressable
-                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                onPress={handleGlobalBan}
-                testID={settingsCopy.testIds.adminBanUser}
-                accessibilityLabel={settingsCopy.testIds.adminBanUser}
-              >
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconCircle, styles.dangerIconCircle]}>
-                    <MaterialIcons name="block" size={20} color={theme.error} />
-                  </View>
-                  <Text style={[styles.rowText, styles.dangerText]}>{settingsCopy.options.adminBanUser}</Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
-                onPress={handleGlobalUnban}
-                testID={settingsCopy.testIds.adminUnbanUser}
-                accessibilityLabel={settingsCopy.testIds.adminUnbanUser}
-              >
-                <View style={styles.rowLeft}>
-                  <View style={styles.iconCircle}>
-                    <MaterialIcons name="lock-open" size={20} color={theme.onSurfaceVariant} />
-                  </View>
-                  <Text style={styles.rowText}>{settingsCopy.options.adminUnbanUser}</Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-              </Pressable>
-              {isAdmin ? (
-                <Pressable
-                  style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
-                  onPress={handleSetRole}
-                  testID={settingsCopy.testIds.adminSetRole}
-                  accessibilityLabel={settingsCopy.testIds.adminSetRole}
-                >
-                  <View style={styles.rowLeft}>
-                    <View style={styles.iconCircle}>
-                      <MaterialIcons name="admin-panel-settings" size={20} color={theme.onSurfaceVariant} />
-                    </View>
-                    <Text style={styles.rowText}>{settingsCopy.options.adminSetRole}</Text>
-                  </View>
+            <SettingsRow
+              label={settingsCopy.options.language}
+              iconName="language"
+              divider
+              onPress={showLanguagePicker}
+              right={(
+                <View style={styles.languageValue}>
+                  <Text style={styles.languageValueText}>{t(`language.${locale}`)}</Text>
                   <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
-                </Pressable>
-              ) : null}
-            </View>
-            <Text style={styles.sectionNote}>{settingsCopy.sections.adminNote}</Text>
-          </>
-        ) : null}
+                </View>
+              )}
+              testID="settings-language"
+              accessibilityLabel="settings-language"
+            />
+          </SettingsCard>
+        </SettingsSection>
+
+        <SettingsSection title={settingsCopy.sections.account} note={settingsCopy.sections.accountNote}>
+          <SettingsCard>
+            <SettingsRow
+              label={settingsCopy.options.editProfile}
+              iconName="edit"
+              onPress={() => navigation.navigate('EditProfile')}
+              chevron
+              testID="settings-edit-profile"
+              accessibilityLabel="settings-edit-profile"
+            />
+            <SettingsRow
+              label={settingsCopy.options.logout}
+              iconName="logout"
+              divider
+              onPress={handleLogout}
+              chevron
+              testID={settingsCopy.testIds.logout}
+              accessibilityLabel={settingsCopy.testIds.logout}
+            />
+            <SettingsRow
+              label={settingsCopy.options.deleteAccount}
+              iconName="delete"
+              tone="danger"
+              divider
+              onPress={openDeleteModal}
+              disabled={loading}
+              chevron
+              testID={settingsCopy.testIds.delete}
+              accessibilityLabel={settingsCopy.testIds.delete}
+            />
+          </SettingsCard>
+        </SettingsSection>
+
+        <AdminToolsSection
+          canManageUsers={canManageUsers}
+          isAdmin={isAdmin}
+          onBanUser={handleGlobalBan}
+          onUnbanUser={handleGlobalUnban}
+          onSetRole={handleSetRole}
+          onEditBlockedTerms={handleUpdateBlockedTerms}
+          onEditReviewTerms={handleUpdateReviewTerms}
+        />
 
         <View style={styles.footer}>
           <Text style={styles.footerVersion}>{versionLabel}</Text>
@@ -644,64 +678,52 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-      <Modal
-        transparent
+      <DeleteAccountModal
         visible={deleteModalVisible}
-        animationType="fade"
-        onRequestClose={closeDeleteModal}
-        testID={settingsCopy.testIds.deleteModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{settingsCopy.deleteModal.title}</Text>
-            <Text style={styles.modalBody}>{settingsCopy.deleteModal.body}</Text>
-            <Text style={styles.modalHint}>{settingsCopy.deleteModal.hint(maskedEmail)}</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder={settingsCopy.deleteModal.placeholder}
-              placeholderTextColor={theme.onSurfaceVariant}
-              value={deleteEmailInput}
-              onChangeText={setDeleteEmailInput}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              testID={settingsCopy.testIds.deleteEmail}
-              accessibilityLabel={settingsCopy.testIds.deleteEmail}
-            />
-            {showMismatch ? (
-              <Text style={styles.modalError}>{settingsCopy.deleteModal.mismatch}</Text>
-            ) : null}
-            <View style={styles.modalActions}>
-              <Pressable
-                style={({ pressed }) => [styles.modalCancel, pressed && styles.modalButtonPressed]}
-                onPress={closeDeleteModal}
-                testID={settingsCopy.testIds.deleteCancel}
-                accessibilityLabel={settingsCopy.testIds.deleteCancel}
-              >
-                <Text style={styles.modalCancelText}>{settingsCopy.deleteModal.cancel}</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.modalConfirm,
-                  confirmDisabled && styles.modalConfirmDisabled,
-                  pressed && !confirmDisabled && styles.modalButtonPressed,
-                ]}
-                onPress={async () => {
-                  if (confirmDisabled) return;
-                  const deleted = await handleDelete();
-                  if (deleted) {
-                    closeDeleteModal();
-                  }
-                }}
-                disabled={confirmDisabled}
-                testID={settingsCopy.testIds.deleteConfirm}
-                accessibilityLabel={settingsCopy.testIds.deleteConfirm}
-              >
-                <Text style={styles.modalConfirmText}>{settingsCopy.deleteModal.confirm}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title={settingsCopy.deleteModal.title}
+        body={settingsCopy.deleteModal.body}
+        hint={settingsCopy.deleteModal.hint(maskedEmail)}
+        placeholder={settingsCopy.deleteModal.placeholder}
+        value={deleteEmailInput}
+        onChange={setDeleteEmailInput}
+        showMismatch={showMismatch}
+        mismatchText={settingsCopy.deleteModal.mismatch}
+        confirmDisabled={confirmDisabled}
+        onCancel={closeDeleteModal}
+        onConfirm={async () => {
+          if (confirmDisabled) return;
+          const deleted = await handleDelete();
+          if (deleted) {
+            closeDeleteModal();
+          }
+        }}
+        cancelLabel={settingsCopy.deleteModal.cancel}
+        confirmLabel={settingsCopy.deleteModal.confirm}
+        testIds={{
+          modal: settingsCopy.testIds.deleteModal,
+          input: settingsCopy.testIds.deleteEmail,
+          cancel: settingsCopy.testIds.deleteCancel,
+          confirm: settingsCopy.testIds.deleteConfirm,
+        }}
+      />
+      <AdminTermsModal
+        visible={termsModalVisible}
+        title={termsLabel}
+        message={settingsCopy.admin.prompts.termsMessage}
+        value={termsInput}
+        onChange={setTermsInput}
+        onCancel={() => closeTermsModal()}
+        onConfirm={saveTerms}
+        cancelLabel={settingsCopy.admin.prompts.cancel}
+        confirmLabel={settingsCopy.admin.prompts.confirm}
+        loading={termsSaving}
+        testIds={{
+          modal: settingsCopy.testIds.adminTermsModal,
+          input: settingsCopy.testIds.adminTermsInput,
+          cancel: settingsCopy.testIds.adminTermsCancel,
+          confirm: settingsCopy.testIds.adminTermsConfirm,
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -739,156 +761,6 @@ const createStyles = (theme: ThemeColors) =>
     content: {
       paddingBottom: 32,
       paddingTop: 4,
-    },
-    sectionLabel: {
-      marginTop: 16,
-      marginBottom: 8,
-      marginHorizontal: 20,
-      fontSize: 12,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      color: theme.onSurfaceVariant,
-      fontWeight: '600',
-    },
-    sectionNote: {
-      marginTop: 8,
-      marginHorizontal: 20,
-      fontSize: 12,
-      color: theme.onSurfaceVariant,
-    },
-    card: {
-      marginHorizontal: 16,
-      borderRadius: 20,
-      backgroundColor: theme.surface,
-      borderWidth: 1,
-      borderColor: theme.outline,
-      shadowColor: theme.shadow,
-      shadowOpacity: 0.06,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 8,
-      elevation: 2,
-      overflow: 'hidden',
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-    },
-    rowDivider: {
-      borderTopWidth: 1,
-      borderTopColor: theme.outlineVariant,
-    },
-    rowPressed: {
-      backgroundColor: theme.surfaceVariant,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: theme.scrim,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
-    },
-    modalCard: {
-      width: '100%',
-      maxWidth: 360,
-      backgroundColor: theme.surface,
-      borderRadius: 20,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: theme.outlineVariant,
-    },
-    modalTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: theme.onSurface,
-      marginBottom: 8,
-    },
-    modalBody: {
-      color: theme.onSurfaceVariant,
-      fontSize: 13,
-      marginBottom: 12,
-    },
-    modalHint: {
-      color: theme.onSurface,
-      fontSize: 12,
-      marginBottom: 12,
-    },
-    modalInput: {
-      borderWidth: 1,
-      borderColor: theme.outline,
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      color: theme.onSurface,
-      backgroundColor: theme.surfaceVariant,
-    },
-    modalError: {
-      color: theme.error,
-      fontSize: 12,
-      marginTop: 8,
-    },
-    modalActions: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 16,
-      gap: 12,
-    },
-    modalCancel: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: theme.outline,
-      alignItems: 'center',
-    },
-    modalCancelText: {
-      color: theme.onSurface,
-      fontWeight: '600',
-    },
-    modalConfirm: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: 12,
-      backgroundColor: theme.error,
-      alignItems: 'center',
-    },
-    modalConfirmDisabled: {
-      backgroundColor: theme.outlineVariant,
-    },
-    modalConfirmText: {
-      color: theme.onError,
-      fontWeight: '600',
-    },
-    modalButtonPressed: {
-      opacity: 0.8,
-    },
-    rowLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      flex: 1,
-      paddingRight: 12,
-    },
-    iconCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.surfaceVariant,
-    },
-    rowText: {
-      fontSize: 15,
-      color: theme.onSurface,
-      fontWeight: '500',
-    },
-    dangerIconCircle: {
-      backgroundColor: theme.errorContainer,
-    },
-    dangerText: {
-      color: theme.error,
     },
     footer: {
       marginTop: 24,
