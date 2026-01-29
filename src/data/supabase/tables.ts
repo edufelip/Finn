@@ -20,4 +20,5 @@ export const TABLES = {
   userBlocks: 'user_blocks',
   communityBans: 'community_bans',
   userBans: 'user_bans',
+  featureConfig: 'feature_config',
 } as const;

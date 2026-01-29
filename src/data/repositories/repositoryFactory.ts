@@ -11,6 +11,7 @@ import type { ModerationLogRepository } from '../../domain/repositories/Moderati
 import type { UserBlockRepository } from '../../domain/repositories/UserBlockRepository';
 import type { CommunityBanRepository } from '../../domain/repositories/CommunityBanRepository';
 import type { UserBanRepository } from '../../domain/repositories/UserBanRepository';
+import type { FeatureConfigRepository } from '../../domain/repositories/FeatureConfigRepository';
 import { isMockMode } from '../../config/appConfig';
 import { SupabaseCommentRepository } from './SupabaseCommentRepository';
 import { SupabaseChatRepository } from './SupabaseChatRepository';
@@ -25,6 +26,7 @@ import { SupabaseModerationLogRepository } from './SupabaseModerationLogReposito
 import { SupabaseUserBlockRepository } from './SupabaseUserBlockRepository';
 import { SupabaseCommunityBanRepository } from './SupabaseCommunityBanRepository';
 import { SupabaseUserBanRepository } from './SupabaseUserBanRepository';
+import { SupabaseFeatureConfigRepository } from './SupabaseFeatureConfigRepository';
 import { MockCommentRepository } from './mock/MockCommentRepository';
 import { MockChatRepository } from './mock/MockChatRepository';
 import { MockCommunityRepository } from './mock/MockCommunityRepository';
@@ -38,6 +40,7 @@ import { MockModerationLogRepository } from './mock/MockModerationLogRepository'
 import { MockUserBlockRepository } from './mock/MockUserBlockRepository';
 import { MockCommunityBanRepository } from './mock/MockCommunityBanRepository';
 import { MockUserBanRepository } from './mock/MockUserBanRepository';
+import { MockFeatureConfigRepository } from './mock/MockFeatureConfigRepository';
 
 export type RepositoryBundle = {
   chats: ChatRepository;
@@ -53,6 +56,7 @@ export type RepositoryBundle = {
   userBlocks: UserBlockRepository;
   communityBans: CommunityBanRepository;
   userBans: UserBanRepository;
+  featureConfigs: FeatureConfigRepository;
 };
 
 export function createRepositories(): RepositoryBundle {
@@ -71,6 +75,7 @@ export function createRepositories(): RepositoryBundle {
       userBlocks: new MockUserBlockRepository(),
       communityBans: new MockCommunityBanRepository(),
       userBans: new MockUserBanRepository(),
+      featureConfigs: new MockFeatureConfigRepository(),
     };
   }
 
@@ -88,5 +93,6 @@ export function createRepositories(): RepositoryBundle {
     userBlocks: new SupabaseUserBlockRepository(),
     communityBans: new SupabaseCommunityBanRepository(),
     userBans: new SupabaseUserBanRepository(),
+    featureConfigs: new SupabaseFeatureConfigRepository(),
   };
 }

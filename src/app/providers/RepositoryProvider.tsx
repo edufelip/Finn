@@ -13,6 +13,7 @@ import type { ModerationLogRepository } from '../../domain/repositories/Moderati
 import type { UserBlockRepository } from '../../domain/repositories/UserBlockRepository';
 import type { CommunityBanRepository } from '../../domain/repositories/CommunityBanRepository';
 import type { UserBanRepository } from '../../domain/repositories/UserBanRepository';
+import type { FeatureConfigRepository } from '../../domain/repositories/FeatureConfigRepository';
 import { createRepositories } from '../../data/repositories/repositoryFactory';
 
 export type RepositoryContextValue = {
@@ -29,6 +30,7 @@ export type RepositoryContextValue = {
   userBlocks: UserBlockRepository;
   communityBans: CommunityBanRepository;
   userBans: UserBanRepository;
+  featureConfigs: FeatureConfigRepository;
 };
 
 const RepositoryContext = createContext<RepositoryContextValue | undefined>(undefined);
@@ -56,6 +58,7 @@ type RepositoryProviderProps = {
     userBlocks?: Partial<UserBlockRepository>;
     communityBans?: Partial<CommunityBanRepository>;
     userBans?: Partial<UserBanRepository>;
+    featureConfigs?: Partial<FeatureConfigRepository>;
   };
 };
 
@@ -76,6 +79,7 @@ export function RepositoryProvider({ children, overrides }: RepositoryProviderPr
       userBlocks: applyOverrides(defaultRepositories.userBlocks, overrides?.userBlocks),
       communityBans: applyOverrides(defaultRepositories.communityBans, overrides?.communityBans),
       userBans: applyOverrides(defaultRepositories.userBans, overrides?.userBans),
+      featureConfigs: applyOverrides(defaultRepositories.featureConfigs, overrides?.featureConfigs),
     }),
     [defaultRepositories, overrides]
   );
