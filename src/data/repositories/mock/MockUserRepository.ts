@@ -1,10 +1,11 @@
-import type { User } from '../../../domain/models/user';
+import type { User, UserRole } from '../../../domain/models/user';
 import type { UserRepository } from '../../../domain/repositories/UserRepository';
 
 const mockUser: User = {
   id: 'mock-user',
   name: 'Mock User',
   photoUrl: null,
+  role: 'user',
   bio: null,
   location: null,
   onlineVisible: true,
@@ -63,6 +64,17 @@ export class MockUserRepository implements UserRepository {
     if (updates.name !== undefined) mockUser.name = updates.name;
     if (updates.bio !== undefined) mockUser.bio = updates.bio;
     if (updates.location !== undefined) mockUser.location = updates.location;
+    return mockUser;
+  }
+
+  async updateUserRole(_userId: string, role: UserRole): Promise<User> {
+    mockUser.role = role;
+    return mockUser;
+  }
+
+  async acceptTerms(_userId: string, version: string): Promise<User> {
+    mockUser.termsVersion = version;
+    mockUser.termsAcceptedAt = new Date().toISOString();
     return mockUser;
   }
 

@@ -6,7 +6,8 @@ export type ModerationAction =
   | 'mark_safe'
   | 'moderator_added'
   | 'moderator_removed'
-  | 'settings_changed';
+  | 'settings_changed'
+  | 'user_banned';
 
 export type ModerationLog = {
   id: number;

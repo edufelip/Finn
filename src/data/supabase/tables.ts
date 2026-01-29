@@ -17,4 +17,7 @@ export const TABLES = {
   topics: 'topics',
   communityModerators: 'community_moderators',
   moderationLogs: 'moderation_logs',
+  userBlocks: 'user_blocks',
+  communityBans: 'community_bans',
+  userBans: 'user_bans',
 } as const;

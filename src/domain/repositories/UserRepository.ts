@@ -1,4 +1,4 @@
-import type { User } from '../models/user';
+import type { User, UserRole } from '../models/user';
 import type { Notification } from '../models/notification';
 
 export interface UserRepository {
@@ -15,6 +15,8 @@ export interface UserRepository {
   markAllNotificationsRead(userId: string): Promise<void>;
   updateProfilePhoto(userId: string, imageUri: string, previousPhotoUrl?: string | null): Promise<User>;
   updateProfile(userId: string, updates: { name?: string; bio?: string | null; location?: string | null }): Promise<User>;
+  updateUserRole(userId: string, role: UserRole): Promise<User>;
+  acceptTerms(userId: string, version: string): Promise<User>;
   followUser(followerId: string, followingId: string): Promise<void>;
   unfollowUser(followerId: string, followingId: string): Promise<void>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;

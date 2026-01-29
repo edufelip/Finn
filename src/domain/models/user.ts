@@ -1,7 +1,10 @@
+export type UserRole = 'user' | 'staff' | 'admin';
+
 export type User = {
   id: string;
   name: string;
   photoUrl?: string | null;
+  role?: UserRole;
   createdAt?: string;
   followersCount?: number;
   followingCount?: number;
@@ -10,4 +13,6 @@ export type User = {
   lastSeenAt?: string | null;
   bio?: string | null;
   location?: string | null;
+  termsVersion?: string | null;
+  termsAcceptedAt?: string | null;
 };

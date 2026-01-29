@@ -10,6 +10,9 @@ import type { CommunityReportRepository } from '../../domain/repositories/Commun
 import type { TopicRepository } from '../../domain/repositories/TopicRepository';
 import type { CommunityModeratorRepository } from '../../domain/repositories/CommunityModeratorRepository';
 import type { ModerationLogRepository } from '../../domain/repositories/ModerationLogRepository';
+import type { UserBlockRepository } from '../../domain/repositories/UserBlockRepository';
+import type { CommunityBanRepository } from '../../domain/repositories/CommunityBanRepository';
+import type { UserBanRepository } from '../../domain/repositories/UserBanRepository';
 import { createRepositories } from '../../data/repositories/repositoryFactory';
 
 export type RepositoryContextValue = {
@@ -23,6 +26,9 @@ export type RepositoryContextValue = {
   topics: TopicRepository;
   communityModerators: CommunityModeratorRepository;
   moderationLogs: ModerationLogRepository;
+  userBlocks: UserBlockRepository;
+  communityBans: CommunityBanRepository;
+  userBans: UserBanRepository;
 };
 
 const RepositoryContext = createContext<RepositoryContextValue | undefined>(undefined);
@@ -47,6 +53,9 @@ type RepositoryProviderProps = {
     topics?: Partial<TopicRepository>;
     communityModerators?: Partial<CommunityModeratorRepository>;
     moderationLogs?: Partial<ModerationLogRepository>;
+    userBlocks?: Partial<UserBlockRepository>;
+    communityBans?: Partial<CommunityBanRepository>;
+    userBans?: Partial<UserBanRepository>;
   };
 };
 
@@ -64,6 +73,9 @@ export function RepositoryProvider({ children, overrides }: RepositoryProviderPr
       topics: applyOverrides(defaultRepositories.topics, overrides?.topics),
       communityModerators: applyOverrides(defaultRepositories.communityModerators, overrides?.communityModerators),
       moderationLogs: applyOverrides(defaultRepositories.moderationLogs, overrides?.moderationLogs),
+      userBlocks: applyOverrides(defaultRepositories.userBlocks, overrides?.userBlocks),
+      communityBans: applyOverrides(defaultRepositories.communityBans, overrides?.communityBans),
+      userBans: applyOverrides(defaultRepositories.userBans, overrides?.userBans),
     }),
     [defaultRepositories, overrides]
   );

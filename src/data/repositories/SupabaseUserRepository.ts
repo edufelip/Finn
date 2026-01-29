@@ -1,5 +1,5 @@
 import type { Notification } from '../../domain/models/notification';
-import type { User } from '../../domain/models/user';
+import type { User, UserRole } from '../../domain/models/user';
 import type { UserRepository } from '../../domain/repositories/UserRepository';
 import { CacheKey, CACHE_TTL_MS } from '../cache/cachePolicy';
 import { cacheFirst } from '../cache/cacheHelpers';
@@ -15,6 +15,7 @@ type UserRow = {
   id: string;
   name: string;
   photo_url?: string | null;
+  role?: 'user' | 'staff' | 'admin' | null;
   created_at?: string;
   online_visible?: boolean | null;
   notifications_enabled?: boolean | null;
@@ -23,6 +24,8 @@ type UserRow = {
   following_count?: number | null;
   bio?: string | null;
   location?: string | null;
+  terms_version?: string | null;
+  terms_accepted_at?: string | null;
 };
 
 type NotificationActorRow = {
@@ -102,6 +105,7 @@ function toDomain(row: UserRow): User {
     id: row.id,
     name: row.name,
     photoUrl: resolveUserPhotoUrl(row.photo_url ?? null),
+    role: row.role ?? 'user',
     createdAt: row.created_at,
     onlineVisible: row.online_visible ?? true,
     notificationsEnabled: row.notifications_enabled ?? true,
@@ -110,6 +114,8 @@ function toDomain(row: UserRow): User {
     followingCount: row.following_count ?? undefined,
     bio: row.bio ?? null,
     location: row.location ?? null,
+    termsVersion: row.terms_version ?? null,
+    termsAcceptedAt: row.terms_accepted_at ?? null,
   };
 }
 
@@ -385,6 +391,45 @@ export class SupabaseUserRepository implements UserRepository {
     const { data, error } = await supabase
       .from(TABLES.users)
       .update(updateData)
+      .eq('id', userId)
+      .select('*')
+      .single<UserRow>();
+
+    if (error) {
+      throw error;
+    }
+
+    const cachedUser = await getCache<User>(CacheKey.user(userId), { allowExpired: true });
+    const payload = mergeFollowCounts(toDomain(data), cachedUser);
+    await setCache(CacheKey.user(userId), payload, CACHE_TTL_MS.profiles);
+    return payload;
+  }
+
+  async updateUserRole(userId: string, role: UserRole): Promise<User> {
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .update({ role })
+      .eq('id', userId)
+      .select('*')
+      .single<UserRow>();
+
+    if (error) {
+      throw error;
+    }
+
+    const cachedUser = await getCache<User>(CacheKey.user(userId), { allowExpired: true });
+    const payload = mergeFollowCounts(toDomain(data), cachedUser);
+    await setCache(CacheKey.user(userId), payload, CACHE_TTL_MS.profiles);
+    return payload;
+  }
+
+  async acceptTerms(userId: string, version: string): Promise<User> {
+    const { data, error } = await supabase
+      .from(TABLES.users)
+      .update({
+        terms_version: version,
+        terms_accepted_at: new Date().toISOString(),
+      })
       .eq('id', userId)
       .select('*')
       .single<UserRow>();

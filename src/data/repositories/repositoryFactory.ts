@@ -8,6 +8,9 @@ import type { CommunityReportRepository } from '../../domain/repositories/Commun
 import type { TopicRepository } from '../../domain/repositories/TopicRepository';
 import type { CommunityModeratorRepository } from '../../domain/repositories/CommunityModeratorRepository';
 import type { ModerationLogRepository } from '../../domain/repositories/ModerationLogRepository';
+import type { UserBlockRepository } from '../../domain/repositories/UserBlockRepository';
+import type { CommunityBanRepository } from '../../domain/repositories/CommunityBanRepository';
+import type { UserBanRepository } from '../../domain/repositories/UserBanRepository';
 import { isMockMode } from '../../config/appConfig';
 import { SupabaseCommentRepository } from './SupabaseCommentRepository';
 import { SupabaseChatRepository } from './SupabaseChatRepository';
@@ -19,6 +22,9 @@ import { SupabaseCommunityReportRepository } from './SupabaseCommunityReportRepo
 import { SupabaseTopicRepository } from './SupabaseTopicRepository';
 import { SupabaseCommunityModeratorRepository } from './SupabaseCommunityModeratorRepository';
 import { SupabaseModerationLogRepository } from './SupabaseModerationLogRepository';
+import { SupabaseUserBlockRepository } from './SupabaseUserBlockRepository';
+import { SupabaseCommunityBanRepository } from './SupabaseCommunityBanRepository';
+import { SupabaseUserBanRepository } from './SupabaseUserBanRepository';
 import { MockCommentRepository } from './mock/MockCommentRepository';
 import { MockChatRepository } from './mock/MockChatRepository';
 import { MockCommunityRepository } from './mock/MockCommunityRepository';
@@ -29,6 +35,9 @@ import { MockCommunityReportRepository } from './mock/MockCommunityReportReposit
 import { MockTopicRepository } from './mock/MockTopicRepository';
 import { MockCommunityModeratorRepository } from './mock/MockCommunityModeratorRepository';
 import { MockModerationLogRepository } from './mock/MockModerationLogRepository';
+import { MockUserBlockRepository } from './mock/MockUserBlockRepository';
+import { MockCommunityBanRepository } from './mock/MockCommunityBanRepository';
+import { MockUserBanRepository } from './mock/MockUserBanRepository';
 
 export type RepositoryBundle = {
   chats: ChatRepository;
@@ -41,6 +50,9 @@ export type RepositoryBundle = {
   topics: TopicRepository;
   communityModerators: CommunityModeratorRepository;
   moderationLogs: ModerationLogRepository;
+  userBlocks: UserBlockRepository;
+  communityBans: CommunityBanRepository;
+  userBans: UserBanRepository;
 };
 
 export function createRepositories(): RepositoryBundle {
@@ -56,6 +68,9 @@ export function createRepositories(): RepositoryBundle {
       topics: new MockTopicRepository(),
       communityModerators: new MockCommunityModeratorRepository(),
       moderationLogs: new MockModerationLogRepository(),
+      userBlocks: new MockUserBlockRepository(),
+      communityBans: new MockCommunityBanRepository(),
+      userBans: new MockUserBanRepository(),
     };
   }
 
@@ -70,5 +85,8 @@ export function createRepositories(): RepositoryBundle {
     topics: new SupabaseTopicRepository(),
     communityModerators: new SupabaseCommunityModeratorRepository(),
     moderationLogs: new SupabaseModerationLogRepository(),
+    userBlocks: new SupabaseUserBlockRepository(),
+    communityBans: new SupabaseCommunityBanRepository(),
+    userBans: new SupabaseUserBanRepository(),
   };
 }
