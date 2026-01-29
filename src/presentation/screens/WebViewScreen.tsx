@@ -7,11 +7,12 @@ import type { RouteProp } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 
 import type { MainStackParamList } from '../navigation/MainStack';
+import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { webViewCopy } from '../content/webViewCopy';
 
-type WebViewRoute = RouteProp<MainStackParamList, 'WebView'>;
+type WebViewRoute = RouteProp<MainStackParamList & RootStackParamList, 'WebView'>;
 
 export default function WebViewScreen() {
   const navigation = useNavigation();
@@ -41,19 +42,19 @@ export default function WebViewScreen() {
             startInLoadingState
             style={styles.webView}
             renderLoading={() => (
-              <View style={styles.loading}>
+              <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="small" color={theme.primary} />
                 <Text style={styles.statusText}>{webViewCopy.loading}</Text>
               </View>
             )}
             renderError={() => (
-              <View style={styles.loading}>
+              <View style={styles.loadingOverlay}>
                 <Text style={styles.statusText}>{webViewCopy.error}</Text>
               </View>
             )}
           />
         ) : (
-          <View style={styles.loading}>
+          <View style={styles.loadingContainer}>
             <Text style={styles.statusText}>{webViewCopy.error}</Text>
           </View>
         )}
@@ -95,14 +96,22 @@ const createStyles = (theme: ThemeColors) =>
     },
     content: {
       flex: 1,
+      position: 'relative',
       backgroundColor: theme.background,
     },
     webView: {
       flex: 1,
       backgroundColor: theme.background,
     },
-    loading: {
+    loadingContainer: {
       flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: theme.background,
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,

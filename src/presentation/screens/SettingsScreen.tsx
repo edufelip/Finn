@@ -28,6 +28,7 @@ import env from '../../config/env';
 import { supabase } from '../../data/supabase/client';
 import { isMockMode } from '../../config/appConfig';
 import { links } from '../../config/links';
+import type { UserRole } from '../../domain/models/user';
 import type { ThemeColors } from '../theme/colors';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { settingsCopy } from '../content/settingsCopy';
@@ -43,7 +44,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
   const { locale, setLocale, supportedLocales } = useLocalization();
-  const { users: userRepository } = useRepositories();
+  const { users: userRepository, userBans: userBanRepository } = useRepositories();
   const { isOnlineVisible, setOnlineVisibility } = usePresence();
   const { isDark, toggleTheme } = useTheme();
   const theme = useThemeColors();
@@ -63,6 +64,8 @@ export default function SettingsScreen() {
   }, []);
 
   const currentUser = useUserStore((state) => state.currentUser);
+  const isAdmin = currentUser?.role === 'admin';
+  const canManageUsers = currentUser?.role === 'staff' || isAdmin;
   const userNotificationsEnabled = currentUser?.notificationsEnabled ?? true;
 
   useEffect(() => {
@@ -258,6 +261,161 @@ export default function SettingsScreen() {
     }
   };
 
+  const ensureAdminOnline = async (): Promise<boolean> => {
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      Alert.alert(settingsCopy.admin.alerts.offlineTitle, settingsCopy.admin.alerts.offlineMessage);
+      return false;
+    }
+    return true;
+  };
+
+  const showAdminError = (error: unknown) => {
+    if (error instanceof Error) {
+      Alert.alert(settingsCopy.admin.alerts.failedTitle, error.message || settingsCopy.admin.alerts.failedMessage);
+      return;
+    }
+    Alert.alert(settingsCopy.admin.alerts.failedTitle, settingsCopy.admin.alerts.failedMessage);
+  };
+
+  const promptForUserId = (onConfirm: (userId: string) => void) => {
+    Alert.prompt(
+      settingsCopy.admin.prompts.userIdTitle,
+      settingsCopy.admin.prompts.userIdMessage,
+      [
+        { text: settingsCopy.admin.prompts.cancel, style: 'cancel' },
+        {
+          text: settingsCopy.admin.prompts.confirm,
+          onPress: (value?: string) => {
+            const trimmed = value?.trim();
+            if (!trimmed) {
+              return;
+            }
+            onConfirm(trimmed);
+          },
+        },
+      ],
+      'plain-text'
+    );
+  };
+
+  const handleGlobalBan = () => {
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return;
+    }
+    if (!canManageUsers) {
+      return;
+    }
+    promptForUserId(async (targetUserId) => {
+      const isOnline = await ensureAdminOnline();
+      if (!isOnline) {
+        return;
+      }
+
+      Alert.prompt(
+        settingsCopy.admin.prompts.reasonTitle,
+        settingsCopy.admin.prompts.reasonMessage,
+        [
+          { text: settingsCopy.admin.prompts.cancel, style: 'cancel' },
+          {
+            text: settingsCopy.admin.prompts.confirm,
+            style: 'destructive',
+            onPress: async (value?: string) => {
+              try {
+                await userBanRepository.banUser(
+                  targetUserId,
+                  session.user.id,
+                  value?.trim() || null,
+                  null
+                );
+                Alert.alert(
+                  settingsCopy.admin.alerts.successTitle,
+                  settingsCopy.admin.alerts.banSuccess(targetUserId)
+                );
+              } catch (error) {
+                showAdminError(error);
+              }
+            },
+          },
+        ],
+        'plain-text'
+      );
+    });
+  };
+
+  const handleGlobalUnban = () => {
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return;
+    }
+    if (!canManageUsers) {
+      return;
+    }
+    promptForUserId(async (targetUserId) => {
+      const isOnline = await ensureAdminOnline();
+      if (!isOnline) {
+        return;
+      }
+      try {
+        await userBanRepository.unbanUser(targetUserId);
+        Alert.alert(
+          settingsCopy.admin.alerts.successTitle,
+          settingsCopy.admin.alerts.unbanSuccess(targetUserId)
+        );
+      } catch (error) {
+        showAdminError(error);
+      }
+    });
+  };
+
+  const handleSetRole = () => {
+    if (!session?.user?.id) {
+      Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
+      return;
+    }
+    if (!isAdmin) {
+      return;
+    }
+    promptForUserId(async (targetUserId) => {
+      const isOnline = await ensureAdminOnline();
+      if (!isOnline) {
+        return;
+      }
+
+      const applyRole = async (role: UserRole) => {
+        try {
+          await userRepository.updateUserRole(targetUserId, role);
+          if (currentUser?.id === targetUserId) {
+            useUserStore.getState().updateUser({ role });
+          }
+          const roleLabel = role === 'admin'
+            ? settingsCopy.admin.roles.admin
+            : role === 'staff'
+              ? settingsCopy.admin.roles.staff
+              : settingsCopy.admin.roles.user;
+          Alert.alert(
+            settingsCopy.admin.alerts.successTitle,
+            settingsCopy.admin.alerts.roleSuccess(targetUserId, roleLabel)
+          );
+        } catch (error) {
+          showAdminError(error);
+        }
+      };
+
+      Alert.alert(
+        settingsCopy.admin.prompts.roleTitle,
+        settingsCopy.admin.prompts.roleMessage,
+        [
+          { text: settingsCopy.admin.roles.user, onPress: () => void applyRole('user') },
+          { text: settingsCopy.admin.roles.staff, onPress: () => void applyRole('staff') },
+          { text: settingsCopy.admin.roles.admin, onPress: () => void applyRole('admin') },
+          { text: settingsCopy.admin.prompts.cancel, style: 'cancel' },
+        ]
+      );
+    });
+  };
+
   const handleLogout = () => {
     Alert.alert(settingsCopy.alerts.logout.title, settingsCopy.alerts.logout.message, [
       { text: settingsCopy.alerts.logout.cancel, style: 'cancel' },
@@ -406,6 +564,59 @@ export default function SettingsScreen() {
         </View>
         <Text style={styles.sectionNote}>{settingsCopy.sections.accountNote}</Text>
 
+        {canManageUsers ? (
+          <>
+            <Text style={styles.sectionLabel}>{settingsCopy.sections.admin}</Text>
+            <View style={styles.card}>
+              <Pressable
+                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                onPress={handleGlobalBan}
+                testID={settingsCopy.testIds.adminBanUser}
+                accessibilityLabel={settingsCopy.testIds.adminBanUser}
+              >
+                <View style={styles.rowLeft}>
+                  <View style={[styles.iconCircle, styles.dangerIconCircle]}>
+                    <MaterialIcons name="block" size={20} color={theme.error} />
+                  </View>
+                  <Text style={[styles.rowText, styles.dangerText]}>{settingsCopy.options.adminBanUser}</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
+                onPress={handleGlobalUnban}
+                testID={settingsCopy.testIds.adminUnbanUser}
+                accessibilityLabel={settingsCopy.testIds.adminUnbanUser}
+              >
+                <View style={styles.rowLeft}>
+                  <View style={styles.iconCircle}>
+                    <MaterialIcons name="lock-open" size={20} color={theme.onSurfaceVariant} />
+                  </View>
+                  <Text style={styles.rowText}>{settingsCopy.options.adminUnbanUser}</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
+              </Pressable>
+              {isAdmin ? (
+                <Pressable
+                  style={({ pressed }) => [styles.row, styles.rowDivider, pressed && styles.rowPressed]}
+                  onPress={handleSetRole}
+                  testID={settingsCopy.testIds.adminSetRole}
+                  accessibilityLabel={settingsCopy.testIds.adminSetRole}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={styles.iconCircle}>
+                      <MaterialIcons name="admin-panel-settings" size={20} color={theme.onSurfaceVariant} />
+                    </View>
+                    <Text style={styles.rowText}>{settingsCopy.options.adminSetRole}</Text>
+                  </View>
+                  <MaterialIcons name="chevron-right" size={22} color={theme.onSurfaceVariant} />
+                </Pressable>
+              ) : null}
+            </View>
+            <Text style={styles.sectionNote}>{settingsCopy.sections.adminNote}</Text>
+          </>
+        ) : null}
+
         <View style={styles.footer}>
           <Text style={styles.footerVersion}>{versionLabel}</Text>
           <View style={styles.footerLinks}>
@@ -417,7 +628,7 @@ export default function SettingsScreen() {
               <Text style={styles.footerLinkText}>{settingsCopy.footer.privacy}</Text>
             </Pressable>
             <Pressable
-              onPress={showUnavailable}
+              onPress={() => openWebView(settingsCopy.footer.terms, links.termsOfService)}
               testID={settingsCopy.testIds.terms}
               accessibilityLabel={settingsCopy.testIds.terms}
             >
