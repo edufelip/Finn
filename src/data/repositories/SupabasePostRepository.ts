@@ -609,6 +609,7 @@ export class SupabasePostRepository implements PostRepository {
           community_id: post.communityId,
           user_id: post.userId,
           image_url: insertImageUrl,
+          moderation_status: post.moderationStatus ?? ModerationStatus.Approved,
         })
         .select(select)
         .single<PostRow>()

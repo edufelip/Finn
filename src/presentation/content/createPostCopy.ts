@@ -26,6 +26,10 @@ export const createPostCopy = {
       get title() { return t('createPost.alert.contentRequired.title'); },
       get message() { return t('createPost.alert.contentRequired.message'); },
     },
+    filtered: {
+      get title() { return t('createPost.alert.filtered.title'); },
+      get message() { return t('createPost.alert.filtered.message'); },
+    },
     communityRequired: {
       get title() { return t('createPost.alert.communityRequired.title'); },
       get message() { return t('createPost.alert.communityRequired.message'); },

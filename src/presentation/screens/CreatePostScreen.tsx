@@ -24,6 +24,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { Community } from '../../domain/models/community';
 import { ModerationStatus } from '../../domain/models/post';
+import { evaluateTextForModeration } from '../../domain/moderation/contentFilter';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { isMockMode } from '../../config/appConfig';
@@ -216,7 +217,8 @@ export default function CreatePostScreen() {
       Alert.alert(createPostCopy.alerts.signInRequired.title, createPostCopy.alerts.signInRequired.message);
       return;
     }
-    if (!content.trim()) {
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
       Alert.alert(createPostCopy.alerts.contentRequired.title, createPostCopy.alerts.contentRequired.message);
       return;
     }
@@ -234,7 +236,15 @@ export default function CreatePostScreen() {
     // Determine moderation status
     // If user is owner/moderator OR community doesn't require moderation, approve immediately
     const needsModeration = selectedCommunity.postPermission === 'moderated' && !userCanModerate;
-    const moderationStatus = needsModeration ? ModerationStatus.Pending : ModerationStatus.Approved;
+    const textModeration = evaluateTextForModeration(trimmedContent);
+    if (textModeration.action === 'block') {
+      Alert.alert(createPostCopy.alerts.filtered.title, createPostCopy.alerts.filtered.message);
+      return;
+    }
+
+    const needsImageReview = Boolean(imageUri) && !userCanModerate;
+    const needsReview = needsModeration || textModeration.action === 'review' || needsImageReview;
+    const moderationStatus = needsReview ? ModerationStatus.Pending : ModerationStatus.Approved;
 
     setLoading(true);
     const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
@@ -244,7 +254,7 @@ export default function CreatePostScreen() {
         id: `${Date.now()}`,
         type: 'create_post',
         payload: {
-          content: content.trim(),
+          content: trimmedContent,
           communityId: selectedCommunityId,
           userId: session.user.id,
           imageUri: persistedImageUri,
@@ -262,7 +272,7 @@ export default function CreatePostScreen() {
       await postRepository.savePost(
         {
           id: 0,
-          content: content.trim(),
+          content: trimmedContent,
           communityId: selectedCommunityId,
           userId: session.user.id,
           moderationStatus,
@@ -270,7 +280,7 @@ export default function CreatePostScreen() {
         imageUri ?? null
       );
       
-      if (needsModeration) {
+      if (moderationStatus === ModerationStatus.Pending) {
         Alert.alert(
           createPostCopy.alerts.pendingModeration.title,
           createPostCopy.alerts.pendingModeration.message

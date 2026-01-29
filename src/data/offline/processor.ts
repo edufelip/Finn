@@ -2,6 +2,7 @@ import type { QueuedWrite } from './queueStore';
 import type { CommentRepository } from '../../domain/repositories/CommentRepository';
 import type { CommunityRepository } from '../../domain/repositories/CommunityRepository';
 import type { PostRepository } from '../../domain/repositories/PostRepository';
+import { ModerationStatus } from '../../domain/models/post';
 import { isMockMode } from '../../config/appConfig';
 import { supabase } from '../supabase/client';
 
@@ -10,6 +11,7 @@ type CreatePostPayload = {
   communityId: number;
   userId: string;
   imageUri?: string | null;
+  moderationStatus?: string;
 };
 
 type CreateCommunityPayload = {
@@ -46,6 +48,7 @@ export async function processQueuedWrite(item: QueuedWrite, repositories: Proces
       content: payload.content,
       communityId: payload.communityId,
       userId: payload.userId,
+      moderationStatus: (payload.moderationStatus as ModerationStatus) ?? ModerationStatus.Approved,
     }, payload.imageUri ?? null);
     return;
   }
