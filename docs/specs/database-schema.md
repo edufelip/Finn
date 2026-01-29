@@ -7,9 +7,12 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 
 ### 1. Profiles (`public.profiles`)
 - **Primary Key**: `id` (UUID, references `auth.users`)
-- **Fields**: `name`, `photo_url`, `bio`, `location`, `online_visible`, `notifications_enabled`, `last_seen_at`, `followers_count`, `following_count`.
+- **Fields**: `name`, `photo_url`, `bio`, `location`, `online_visible`, `notifications_enabled`, `last_seen_at`, `followers_count`, `following_count`, `terms_version`, `terms_accepted_at`, `role`.
+- **Role Values**: `user`, `staff`, `admin`.
 - **Logic**: `name` falls back to email prefix or ID slice if missing in metadata.
 - **Triggers**: `on_auth_user_created` (auto-creates profile from session metadata).
+- **Role Guard**: `profiles_role_guard` ensures only admins/service role can change `profiles.role` via `public.prevent_role_change`.
+- **Admin Updates**: `profiles_update_admin_roles` policy allows admins to update roles for other users.
 
 ### 2. Communities (`public.communities`)
 - **Primary Key**: `id` (BigSerial)
@@ -66,13 +69,13 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 - **Logs (`moderation_logs`)**: 
     - **Primary Key**: `id` (BigSerial)
     - **Fields**: `community_id`, `moderator_id`, `action`, `post_id` (nullable), `created_at`
-    - **Actions**: `approve_post`, `reject_post`, `mark_for_review`, `delete_post`, `mark_safe`, `moderator_added`, `moderator_removed`, `settings_changed`, `other`
+    - **Actions**: `approve_post`, `reject_post`, `mark_for_review`, `delete_post`, `mark_safe`, `moderator_added`, `moderator_removed`, `settings_changed`, `user_banned`
     - **Purpose**: Audit trail for all moderation activities
 - **Post Reports (`post_reports`)**: 
     - **Primary Key**: `id` (BigSerial)
     - **Fields**: `post_id`, `user_id`, `reason`, `status`, `created_at`
     - **Constraint**: `reason` must be 15-300 characters
-    - **Constraint**: `status` in (`pending`, `reviewed`, `resolved`)
+    - **Constraint**: `status` in (`pending`, `resolved_safe`, `resolved_deleted`)
     - **Unique Constraint**: (user_id, post_id) - prevents duplicate reports from same user
     - **Indexes**: post_id, user_id, created_at desc, status
     - **Referential Integrity**: Cascade delete on post/user deletion
@@ -84,6 +87,23 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
     - **Indexes**: community_id, user_id, created_at desc
     - **Referential Integrity**: Cascade delete on community/user deletion
     - **Purpose**: Track reported communities that violate guidelines
+- **User Blocks (`user_blocks`)**:
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `blocker_id`, `blocked_id`, `reason`, `source_post_id`, `created_at`
+    - **Constraint**: `blocker_id <> blocked_id`
+    - **Constraint**: `reason` must be 15-300 characters
+    - **Unique Constraint**: (blocker_id, blocked_id)
+    - **Purpose**: User-to-user block records for abuse reporting
+- **Community Bans (`community_bans`)**:
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `community_id`, `user_id`, `banned_by` (nullable), `reason`, `source_post_id`, `created_at`
+    - **Unique Constraint**: (community_id, user_id)
+    - **Purpose**: Community-level ejections after objectionable content
+- **User Bans (`user_bans`)**:
+    - **Primary Key**: `id` (BigSerial)
+    - **Fields**: `user_id`, `banned_by` (nullable), `reason`, `source_post_id`, `created_at`
+    - **Unique Constraint**: (user_id)
+    - **Purpose**: Global platform bans that hide users and their communities
 
 ### 8. Topics (`public.topics`)
 - **Primary Key**: `id` (BigSerial)
@@ -132,7 +152,7 @@ search_communities(
 
 ## Security (RLS)
 - **Global Rule**: `enable row level security` on all tables.
-- **Privacy Rule**: `profiles` only allows updates where `auth.uid() = id`.
+- **Privacy Rule**: `profiles` allows updates for the owner, with admin overrides for role management; role changes are guarded by `profiles_role_guard`.
 - **Community Rule**: Only owners/moderators can update community settings or post statuses.
 
 ## Storage Buckets
