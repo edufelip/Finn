@@ -55,6 +55,7 @@ export default function PendingContentScreen() {
   const { community, loading: authLoading, isAuthorized } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
+    allowStaff: true,
     alerts: authAlerts,
   });
 

@@ -50,6 +50,13 @@ export const formatTimeAgo = (value: string | number | Date) => {
   return formatRelative(diffYears, 'year');
 };
 
+export const getHoursRemainingUntil = (value: string | number | Date) => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const diffMs = date.getTime() - Date.now();
+  return Math.ceil(diffMs / (60 * 60 * 1000));
+};
+
 type RelativeTimeUnit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
 
 const createRelativeTimeFormatter = () => {

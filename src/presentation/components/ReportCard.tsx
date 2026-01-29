@@ -7,7 +7,7 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import { useLocalization } from '../../app/providers/LocalizationProvider';
 import type { ThemeColors } from '../theme/colors';
 import { reportedContentCopy } from '../content/reportedContentCopy';
-import { formatTimeAgo } from '../i18n/formatters';
+import { formatTimeAgo, getHoursRemainingUntil } from '../i18n/formatters';
 
 type ReportCardProps = {
   report: PostReport;
@@ -20,6 +20,18 @@ const ReportCard = ({ report, onDelete, onMarkSafe, isProcessing }: ReportCardPr
   const theme = useThemeColors();
   useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const { dueLabel, isOverdue } = useMemo(() => {
+    const dueAt = new Date(report.createdAt);
+    dueAt.setHours(dueAt.getHours() + 24);
+    const hoursRemaining = getHoursRemainingUntil(dueAt);
+    const overdue = (hoursRemaining ?? 0) <= 0;
+    return {
+      isOverdue: overdue,
+      dueLabel: overdue
+        ? reportedContentCopy.overdue
+        : reportedContentCopy.dueIn(Math.max(1, hoursRemaining ?? 0)),
+    };
+  }, [report.createdAt]);
 
   return (
     <View style={styles.reportCard}>
@@ -37,6 +49,7 @@ const ReportCard = ({ report, onDelete, onMarkSafe, isProcessing }: ReportCardPr
               {reportedContentCopy.reportedBy(report.userName ?? 'Unknown User')}
             </Text>
             <Text style={styles.reportDate}>{formatTimeAgo(report.createdAt)}</Text>
+            <Text style={[styles.reportDue, isOverdue && styles.reportDueOverdue]}>{dueLabel}</Text>
           </View>
         </View>
         <View style={styles.reportBadge}>
@@ -75,7 +88,7 @@ const ReportCard = ({ report, onDelete, onMarkSafe, isProcessing }: ReportCardPr
           ) : (
             <>
               <MaterialIcons name="delete" size={20} color="#fff" />
-              <Text style={styles.deleteButtonText}>{reportedContentCopy.deleteButton}</Text>
+              <Text style={styles.deleteButtonText}>{reportedContentCopy.deleteAndBanButton}</Text>
             </>
           )}
         </Pressable>
@@ -146,6 +159,15 @@ const createStyles = (theme: ThemeColors) =>
     reportDate: {
       fontSize: 13,
       color: theme.onSurfaceVariant,
+    },
+    reportDue: {
+      fontSize: 12,
+      color: theme.onSurfaceVariant,
+      marginTop: 2,
+    },
+    reportDueOverdue: {
+      color: theme.error,
+      fontWeight: '600',
     },
     reportBadge: {
       width: 32,

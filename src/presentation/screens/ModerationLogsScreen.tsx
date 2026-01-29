@@ -48,6 +48,7 @@ export default function ModerationLogsScreen() {
   const { community, loading: authLoading, isAuthorized } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
+    allowStaff: true,
     alerts: authAlerts,
   });
 
@@ -96,6 +97,8 @@ export default function ModerationLogsScreen() {
             return 'person-remove';
           case 'settings_changed':
             return 'settings';
+          case 'user_banned':
+            return 'block';
           default:
             return 'info';
         }
@@ -116,6 +119,8 @@ export default function ModerationLogsScreen() {
             return theme.onSurfaceVariant;
           case 'mark_for_review':
             return theme.secondary;
+          case 'user_banned':
+            return theme.error;
           default:
             return theme.onSurfaceVariant;
         }

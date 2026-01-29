@@ -8,13 +8,14 @@ export const reportedContentCopy = {
   },
   reportedBy: (userName: string) => t('reportedContent.reportedBy', { userName }),
   get reason() { return t('reportedContent.reason'); },
-  get deleteButton() { return t('reportedContent.deleteButton'); },
+  get deleteAndBanButton() { return t('reportedContent.deleteAndBanButton'); },
   get markSafeButton() { return t('reportedContent.markSafeButton'); },
-  confirmDelete: {
-    get title() { return t('reportedContent.confirmDelete.title'); },
-    get message() { return t('reportedContent.confirmDelete.message'); },
-    get confirm() { return t('reportedContent.confirmDelete.confirm'); },
-    get cancel() { return t('reportedContent.confirmDelete.cancel'); },
+  confirmDeleteAndBan: {
+    get title() { return t('reportedContent.confirmDeleteAndBan.title'); },
+    get message() { return t('reportedContent.confirmDeleteAndBan.message'); },
+    get confirmCommunity() { return t('reportedContent.confirmDeleteAndBan.confirmCommunity'); },
+    get confirmGlobal() { return t('reportedContent.confirmDeleteAndBan.confirmGlobal'); },
+    get cancel() { return t('reportedContent.confirmDeleteAndBan.cancel'); },
   },
   confirmMarkSafe: {
     get title() { return t('reportedContent.confirmMarkSafe.title'); },
@@ -22,6 +23,8 @@ export const reportedContentCopy = {
     get confirm() { return t('reportedContent.confirmMarkSafe.confirm'); },
     get cancel() { return t('reportedContent.confirmMarkSafe.cancel'); },
   },
+  dueIn: (hours: number) => t('reportedContent.dueIn', { hours }),
+  get overdue() { return t('reportedContent.overdue'); },
   alerts: {
     signInRequired: {
       get title() { return t('reportedContent.alert.signInRequired.title'); },
@@ -45,6 +48,7 @@ export const reportedContentCopy = {
     },
     failed: {
       get title() { return t('reportedContent.alert.failed.title'); },
+      get missingAuthor() { return t('reportedContent.alert.failed.missingAuthor'); },
     },
   },
   testIds: {

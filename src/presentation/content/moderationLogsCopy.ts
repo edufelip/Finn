@@ -15,6 +15,7 @@ export const moderationLogsCopy = {
     get report_resolved_deleted() { return t('moderationLogs.actions.report_resolved_deleted'); },
     get moderator_added() { return t('moderationLogs.actions.moderator_added'); },
     get moderator_removed() { return t('moderationLogs.actions.moderator_removed'); },
+    get user_banned() { return t('moderationLogs.actions.user_banned'); },
   },
   by: (moderatorName: string) => t('moderationLogs.by', { moderatorName }),
   alerts: {

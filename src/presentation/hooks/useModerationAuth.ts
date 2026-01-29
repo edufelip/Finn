@@ -7,6 +7,7 @@ import type { Community } from '../../domain/models/community';
 import type { MainStackParamList } from '../navigation/MainStack';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useUserStore } from '../../app/store/userStore';
 
 export interface ModerationAuthConfig {
   communityId: number;
@@ -15,6 +16,11 @@ export interface ModerationAuthConfig {
    * Default: false (allows both owners and moderators)
    */
   requireOwner?: boolean;
+  /**
+   * Allow staff/admin roles to access moderation screens.
+   * Default: false
+   */
+  allowStaff?: boolean;
   /**
    * Custom alert messages for different error scenarios
    */
@@ -47,6 +53,10 @@ export interface ModerationAuthResult {
    * Whether the current user is a moderator (but not owner)
    */
   isModerator: boolean;
+  /**
+   * Whether the current user is staff/admin
+   */
+  isStaff: boolean;
   /**
    * Reload the community data and re-check authorization
    */
@@ -81,9 +91,11 @@ export interface ModerationAuthResult {
  * ```
  */
 export function useModerationAuth(config: ModerationAuthConfig): ModerationAuthResult {
-  const { communityId, requireOwner = false, alerts } = config;
+  const { communityId, requireOwner = false, allowStaff = false, alerts } = config;
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { session } = useAuth();
+  const currentUserRole = useUserStore((state) => state.currentUser?.role ?? 'user');
+  const isUserLoading = useUserStore((state) => state.isLoading);
   const {
     communities: communityRepository,
     communityModerators: moderatorRepository,
@@ -93,6 +105,7 @@ export function useModerationAuth(config: ModerationAuthConfig): ModerationAuthR
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   const checkAuthorization = useCallback(async () => {
@@ -130,6 +143,11 @@ export function useModerationAuth(config: ModerationAuthConfig): ModerationAuthR
       return;
     }
 
+    if (allowStaff && isUserLoading) {
+      setLoading(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const communityData = await communityRepository.getCommunity(communityId);
@@ -142,13 +160,18 @@ export function useModerationAuth(config: ModerationAuthConfig): ModerationAuthR
       const ownerCheck = communityData.ownerId === session.user.id;
       setIsOwner(ownerCheck);
 
+      const staffCheck = allowStaff && (currentUserRole === 'staff' || currentUserRole === 'admin');
+      setIsStaff(staffCheck);
+
       let moderatorCheck = false;
       if (!requireOwner) {
         moderatorCheck = await moderatorRepository.isModerator(communityId, session.user.id);
         setIsModerator(moderatorCheck);
       }
 
-      const authorized = requireOwner ? ownerCheck : ownerCheck || moderatorCheck;
+      const authorized = requireOwner
+        ? ownerCheck || staffCheck
+        : ownerCheck || moderatorCheck || staffCheck;
       setIsAuthorized(authorized);
 
       if (!authorized) {
@@ -169,7 +192,10 @@ export function useModerationAuth(config: ModerationAuthConfig): ModerationAuthR
   }, [
     communityId,
     requireOwner,
+    allowStaff,
     session?.user?.id,
+    currentUserRole,
+    isUserLoading,
     navigation,
     communityRepository,
     moderatorRepository,
@@ -186,6 +212,7 @@ export function useModerationAuth(config: ModerationAuthConfig): ModerationAuthR
     isAuthorized,
     isOwner,
     isModerator,
+    isStaff,
     reload: checkAuthorization,
   };
 }

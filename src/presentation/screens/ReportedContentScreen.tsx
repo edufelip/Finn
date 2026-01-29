@@ -19,6 +19,7 @@ import type { MainStackParamList } from '../navigation/MainStack';
 import type { PostReport } from '../../domain/models/postReport';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useUserStore } from '../../app/store/userStore';
 import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
@@ -37,7 +38,10 @@ export default function ReportedContentScreen() {
     posts: postRepository,
     postReports: reportRepository,
     moderationLogs: moderationLogRepository,
+    communityBans: communityBanRepository,
+    userBans: userBanRepository,
   } = useRepositories();
+  const currentUser = useUserStore((state) => state.currentUser);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -52,11 +56,13 @@ export default function ReportedContentScreen() {
   }), []);
 
   // Use moderation auth hook to handle authorization
-  const { community, loading: authLoading, isAuthorized } = useModerationAuth({
+  const { community, loading: authLoading, isAuthorized, isOwner } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
+    allowStaff: true,
     alerts: authAlerts,
   });
+  const canGlobalBan = Boolean(isOwner || currentUser?.role === 'admin' || currentUser?.role === 'staff');
 
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<PostReport[]>([]);
@@ -85,66 +91,116 @@ export default function ReportedContentScreen() {
     loadReports();
   }, [loadReports]);
 
-  const handleDelete = useCallback(
-    async (report: PostReport) => {
+  const executeBan = useCallback(
+    async (report: PostReport, scope: 'community' | 'global') => {
       if (!session?.user?.id) {
         return;
       }
 
+      const postAuthorId = report.postAuthorId;
+      if (!postAuthorId) {
+        Alert.alert(reportedContentCopy.alerts.failed.title, reportedContentCopy.alerts.failed.missingAuthor);
+        return;
+      }
+
+      const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+      if (!status.isConnected) {
+        Alert.alert(
+          reportedContentCopy.alerts.offline.title,
+          reportedContentCopy.alerts.offline.message
+        );
+        return;
+      }
+
+      setProcessingReportIds((prev) => new Set(prev).add(report.id));
+      try {
+        await postRepository.deletePost(report.postId);
+        await reportRepository.updateReportStatus(report.id, 'resolved_deleted');
+
+        if (scope === 'community') {
+          await communityBanRepository.banUser(
+            communityId,
+            postAuthorId,
+            session.user.id,
+            report.reason,
+            report.postId
+          );
+        } else {
+          await userBanRepository.banUser(
+            postAuthorId,
+            session.user.id,
+            report.reason,
+            report.postId
+          );
+        }
+
+        await moderationLogRepository.createLog({
+          communityId,
+          moderatorId: session.user.id,
+          action: 'user_banned',
+          postId: report.postId,
+        });
+
+        setReports((prev) => prev.filter((r) => r.id !== report.id));
+        Alert.alert(
+          reportedContentCopy.alerts.deleted.title,
+          reportedContentCopy.alerts.deleted.message
+        );
+      } catch (err) {
+        if (err instanceof Error) {
+          Alert.alert(reportedContentCopy.alerts.failed.title, err.message);
+        }
+      } finally {
+        setProcessingReportIds((prev) => {
+          const next = new Set(prev);
+          next.delete(report.id);
+          return next;
+        });
+      }
+    },
+    [
+      communityBanRepository,
+      communityId,
+      moderationLogRepository,
+      postRepository,
+      reportRepository,
+      session?.user?.id,
+      userBanRepository,
+    ]
+  );
+
+  const handleDelete = useCallback(
+    async (report: PostReport) => {
       Alert.alert(
-        reportedContentCopy.confirmDelete.title,
-        reportedContentCopy.confirmDelete.message,
+        reportedContentCopy.confirmDeleteAndBan.title,
+        reportedContentCopy.confirmDeleteAndBan.message,
         [
           {
-            text: reportedContentCopy.confirmDelete.cancel,
+            text: reportedContentCopy.confirmDeleteAndBan.cancel,
             style: 'cancel',
           },
           {
-            text: reportedContentCopy.confirmDelete.confirm,
+            text: reportedContentCopy.confirmDeleteAndBan.confirmCommunity,
             style: 'destructive',
-            onPress: async () => {
-              const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
-              if (!status.isConnected) {
-                Alert.alert(
-                  reportedContentCopy.alerts.offline.title,
-                  reportedContentCopy.alerts.offline.message
-                );
-                return;
-              }
-
-              setProcessingReportIds((prev) => new Set(prev).add(report.id));
-              try {
-                await postRepository.deletePost(report.postId);
-                await reportRepository.updateReportStatus(report.id, 'resolved_deleted');
-                await moderationLogRepository.createLog({
-                  communityId,
-                  moderatorId: session.user.id,
-                  action: 'delete_post',
-                  postId: report.postId,
-                });
-
-                setReports((prev) => prev.filter((r) => r.id !== report.id));
-                Alert.alert(
-                  reportedContentCopy.alerts.deleted.title,
-                  reportedContentCopy.alerts.deleted.message
-                );
-              } catch (err) {
-                if (err instanceof Error) {
-                  Alert.alert(reportedContentCopy.alerts.failed.title, err.message);
-                }
-              } finally {
-                setProcessingReportIds((prev) => {
-                  const next = new Set(prev);
-                  next.delete(report.id);
-                  return next;
-                });
-              }
+            onPress: () => {
+              void executeBan(report, 'community');
             },
           },
+          ...(canGlobalBan
+            ? [
+                {
+                  text: reportedContentCopy.confirmDeleteAndBan.confirmGlobal,
+                  style: 'destructive' as const,
+                  onPress: () => {
+                    void executeBan(report, 'global');
+                  },
+                },
+              ]
+            : []),
         ]
       );
     },
-    [communityId, moderationLogRepository, postRepository, reportRepository, session?.user?.id]
+    [canGlobalBan, executeBan]
   );
 
   const handleMarkSafe = useCallback(

@@ -55,6 +55,7 @@ export default function ManageModeratorsScreen() {
   const { community, loading: authLoading, isAuthorized, isOwner } = useModerationAuth({
     communityId,
     requireOwner: false, // Allow both owners and moderators
+    allowStaff: true,
     alerts: authAlerts,
   });
 

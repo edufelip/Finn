@@ -55,11 +55,13 @@ export default function EditCommunityScreen() {
   }), []);
 
   // Use moderation auth hook to handle authorization
-  const { community, loading, isAuthorized } = useModerationAuth({
+  const { community, loading, isAuthorized, isOwner } = useModerationAuth({
     communityId,
     requireOwner: true, // Only owners can edit community settings
+    allowStaff: true,
     alerts: authAlerts,
   });
+  const canEdit = isOwner;
 
   const [saving, setSaving] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -114,6 +116,9 @@ export default function EditCommunityScreen() {
   }, [navigation, hasChanges]);
 
   const handlePickFromGallery = async () => {
+    if (!canEdit) {
+      return;
+    }
     setImageSourceOpen(false);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -135,6 +140,9 @@ export default function EditCommunityScreen() {
   };
 
   const handlePickFromCamera = async () => {
+    if (!canEdit) {
+      return;
+    }
     setImageSourceOpen(false);
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
@@ -156,6 +164,9 @@ export default function EditCommunityScreen() {
   };
 
   const handleSave = async () => {
+    if (!canEdit) {
+      return;
+    }
     if (!session?.user?.id || !community) {
       return;
     }
@@ -248,12 +259,18 @@ export default function EditCommunityScreen() {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
           <CommunityImageUpload
             imageUri={imageUri}
-            onPress={() => setImageSourceOpen(true)}
+            onPress={() => {
+              if (!canEdit) return;
+              setImageSourceOpen(true);
+            }}
           />
 
           <PostPermissionSelector
             selected={postPermission}
-            onSelect={setPostPermission}
+            onSelect={(permission) => {
+              if (!canEdit) return;
+              setPostPermission(permission);
+            }}
           />
 
           <ModerationNavSection onNavigate={handleNavigateToModeration} />
@@ -261,26 +278,28 @@ export default function EditCommunityScreen() {
           <View style={styles.bottomSpacer} />
         </ScrollView>
 
-        <View style={styles.footer}>
-          <Pressable
-            style={[styles.saveButton, (!hasChanges || saving) && styles.saveButtonDisabled]}
-            onPress={handleSave}
-            disabled={!hasChanges || saving}
-            testID={editCommunityCopy.testIds.saveButton}
-          >
-            {saving ? (
-              <>
-                <ActivityIndicator size="small" color={theme.onPrimary} style={styles.saveButtonSpinner} />
-                <Text style={styles.saveButtonText}>{editCommunityCopy.savingButton}</Text>
-              </>
-            ) : (
-              <>
-                <MaterialIcons name="save" size={20} color={theme.onPrimary} />
-                <Text style={styles.saveButtonText}>{editCommunityCopy.saveButton}</Text>
-              </>
-            )}
-          </Pressable>
-        </View>
+        {canEdit ? (
+          <View style={styles.footer}>
+            <Pressable
+              style={[styles.saveButton, (!hasChanges || saving) && styles.saveButtonDisabled]}
+              onPress={handleSave}
+              disabled={!hasChanges || saving}
+              testID={editCommunityCopy.testIds.saveButton}
+            >
+              {saving ? (
+                <>
+                  <ActivityIndicator size="small" color={theme.onPrimary} style={styles.saveButtonSpinner} />
+                  <Text style={styles.saveButtonText}>{editCommunityCopy.savingButton}</Text>
+                </>
+              ) : (
+                <>
+                  <MaterialIcons name="save" size={20} color={theme.onPrimary} />
+                  <Text style={styles.saveButtonText}>{editCommunityCopy.saveButton}</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
 
       <ImageSourceSheet
