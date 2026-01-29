@@ -43,6 +43,7 @@ describe('processQueuedWrite', () => {
         content: 'Hello',
         communityId: 1,
         userId: 'user-1',
+        moderationStatus: 'approved',
       },
       null
     );
@@ -83,6 +84,7 @@ describe('processQueuedWrite', () => {
         content: 'Hello',
         communityId: 1,
         userId: 'user-1',
+        moderationStatus: 'approved',
       },
       'file://post.jpg'
     );

@@ -158,6 +158,11 @@ describe('SupabasePostRepository', () => {
       userId: 'user-1',
     });
 
+    expect(postsQuery.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        moderation_status: 'approved',
+      })
+    );
     expect(clearCache).toHaveBeenCalledWith(CacheKey.feedByUser('user-1', 0));
   });
 

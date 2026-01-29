@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import RegisterScreen from '../src/presentation/screens/RegisterScreen';
 import { registerCopy } from '../src/presentation/content/registerCopy';
+import { authCopy } from '../src/presentation/content/authCopy';
 
 const mockGoBack = jest.fn();
 
@@ -15,10 +16,43 @@ jest.mock('expo-network', () => ({
   getNetworkStateAsync: jest.fn(),
 }));
 
+jest.mock('expo-auth-session', () => ({
+  makeRedirectUri: jest.fn(() => 'finn://callback'),
+}));
+
+jest.mock('expo-web-browser', () => ({
+  maybeCompleteAuthSession: jest.fn(),
+  openAuthSessionAsync: jest.fn().mockResolvedValue({ type: 'cancel' }),
+}));
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      scheme: 'finn',
+      version: '1.0.0',
+    },
+  },
+}));
+
+jest.mock('expo-apple-authentication', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(false),
+  AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
+  signInAsync: jest.fn(),
+}));
+
+jest.mock('expo-crypto', () => ({
+  digestStringAsync: jest.fn().mockResolvedValue('hashed-nonce'),
+  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+}));
+
 jest.mock('../src/data/supabase/client', () => ({
   supabase: {
     auth: {
       signUp: jest.fn(),
+      signInWithOAuth: jest.fn(),
+      setSession: jest.fn(),
+      signInWithIdToken: jest.fn(),
     },
   },
 }));
@@ -111,7 +145,7 @@ describe('RegisterScreen', () => {
     expect(getByPlaceholderText(registerCopy.placeholders.password)).toBeTruthy();
     expect(getByPlaceholderText(registerCopy.placeholders.confirm)).toBeTruthy();
     expect(getByText(registerCopy.submit)).toBeTruthy();
-    expect(getByText(registerCopy.or)).toBeTruthy();
-    expect(getByText(registerCopy.google)).toBeTruthy();
+    expect(getByText(authCopy.divider)).toBeTruthy();
+    expect(getByText(authCopy.google)).toBeTruthy();
   });
 });

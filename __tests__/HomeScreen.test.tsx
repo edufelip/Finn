@@ -7,6 +7,7 @@ import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { homeCopy } from '../src/presentation/content/homeCopy';
 import { guestCopy } from '../src/presentation/content/guestCopy';
 import { usePostsStore } from '../src/app/store/postsStore';
+import { useUserStore } from '../src/app/store/userStore';
 
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
@@ -48,6 +49,7 @@ describe('HomeScreen', () => {
     mockNavigate.mockReset();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     usePostsStore.getState().reset();
+    useUserStore.getState().clearUser();
   });
 
   it('renders posts and search entry', async () => {
