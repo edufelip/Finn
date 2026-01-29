@@ -11,6 +11,7 @@ import { syncQueuedWrites } from '../../data/offline/syncManager';
 import { useRepositories } from './RepositoryProvider';
 import { registerPushToken, setNotificationGatePreference } from '../notifications/pushTokens';
 import { useUserStore } from '../store/userStore';
+import { useBlockedUsersStore } from '../store/blockedUsersStore';
 
 const resolveProfileName = (session: Session): string => {
   const metadata = session.user.user_metadata as { name?: string } | null | undefined;
@@ -70,6 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
   const [initializing, setInitializing] = useState(() => !isMockMode());
   const repositories = useRepositories();
+  const banStatus = useUserStore((state) => state.banStatus);
+  const banStatusLoaded = useUserStore((state) => state.banStatusLoaded);
 
   useEffect(() => {
     let mounted = true;
@@ -110,6 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
       } else {
         useUserStore.getState().clearUser();
+        useUserStore.getState().clearBanStatus();
+        useBlockedUsersStore.getState().reset();
       }
     });
 
@@ -120,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !banStatusLoaded || banStatus.isBanned) return;
     syncQueuedWrites((item) =>
       processQueuedWrite(item, {
         posts: repositories.posts,
@@ -130,10 +135,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ).catch(() => {
       // Retry will happen on next app start or auth change.
     });
-  }, [session, repositories]);
+  }, [banStatus.isBanned, banStatusLoaded, session, repositories]);
 
   useEffect(() => {
-    if (!session || isMockMode()) return;
+    if (!session || isMockMode() || banStatus.isBanned) return;
     let active = true;
     repositories.users
       .getUser(session.user.id)
@@ -159,6 +164,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const loadUser = async () => {
       try {
         useUserStore.getState().setLoading(true);
+        useUserStore.getState().setBanStatusLoaded(false);
+        const ban = await repositories.userBans.getBan(session.user.id);
+        if (active && ban) {
+          useUserStore.getState().setBanStatus({
+            isBanned: true,
+            reason: ban.reason ?? null,
+            bannedAt: ban.createdAt ?? null,
+          });
+          useUserStore.getState().setUser(null);
+          return;
+        }
+
+        useUserStore.getState().setBanStatus({ isBanned: false, reason: null, bannedAt: null });
+
         const profile = await repositories.users.getUser(session.user.id);
         if (active && profile) {
           useUserStore.getState().setUser(profile);
@@ -174,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         if (active) {
+          useUserStore.getState().setBanStatus({ isBanned: false, reason: null, bannedAt: null });
           useUserStore.getState().setError(
             error instanceof Error ? error.message : 'Failed to load user'
           );
@@ -190,7 +210,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, [session, session?.user?.id, repositories.users]);
+  }, [session, session?.user?.id, repositories.userBans, repositories.users]);
+
+  // Load blocked users list for current session
+  useEffect(() => {
+    if (!session?.user?.id || isMockMode() || banStatus.isBanned || !banStatusLoaded) return;
+
+    let active = true;
+    const loadBlockedUsers = async () => {
+      try {
+        const blockedState = useBlockedUsersStore.getState();
+        if (blockedState.ownerId && blockedState.ownerId !== session.user.id) {
+          blockedState.reset();
+        }
+        blockedState.setOwnerId(session.user.id);
+
+        const blockedIds = await repositories.userBlocks.getBlockedUserIds(session.user.id);
+        if (active) {
+          useBlockedUsersStore.getState().setBlockedUserIds(blockedIds);
+        }
+      } catch {
+        if (active) {
+          useBlockedUsersStore.getState().setBlockedUserIds([]);
+        }
+      }
+    };
+
+    loadBlockedUsers();
+
+    return () => {
+      active = false;
+    };
+  }, [banStatus.isBanned, banStatusLoaded, session, session?.user?.id, repositories.userBlocks]);
 
   useEffect(() => {
     if (!session || isMockMode()) return;
