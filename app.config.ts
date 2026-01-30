@@ -78,6 +78,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: isDevVariant ? 'com.edufelip.finn.dev' : 'com.edufelip.finn',
+      associatedDomains: ['applinks:finnsocial.fun', 'applinks:www.finnsocial.fun'],
     },
     android: {
       package: isDevVariant ? 'com.edufelip.finn.dev' : 'com.edufelip.finn',
@@ -87,6 +88,19 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          category: ['BROWSABLE', 'DEFAULT'],
+          data: [
+            { scheme: 'https', host: 'finnsocial.fun', pathPrefix: '/post' },
+            { scheme: 'https', host: 'finnsocial.fun', pathPrefix: '/community' },
+            { scheme: 'https', host: 'www.finnsocial.fun', pathPrefix: '/post' },
+            { scheme: 'https', host: 'www.finnsocial.fun', pathPrefix: '/community' },
+          ],
+        },
+      ],
     },
     web: {
       favicon: './assets/favicon.png',

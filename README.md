@@ -11,6 +11,17 @@ npm run ios
 Expo prebuild has been run once to generate `ios/` and `android/`.
 Manage native projects directly going forward; avoid re-running prebuild unless explicitly planned.
 
+## Web Landing (Next.js)
+```bash
+cd web
+npm install
+npm run dev
+```
+The web module lives in `web/` and shares brand tokens from `packages/brand`.
+Optional store URLs (to enable live badges):
+- `NEXT_PUBLIC_APP_STORE_URL`
+- `NEXT_PUBLIC_PLAY_STORE_URL`
+
 ## Environment
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`

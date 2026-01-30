@@ -11,7 +11,7 @@ Connects external links to internal app content.
 ## Use Cases
 ### UC-LINK-01: Share a Post
 1. User clicks "Share" on a post.
-2. System generates `https://finn.app/post/{id}`.
+2. System generates `https://finnsocial.fun/post/{id}`.
 3. User sends link to a friend.
 4. Friend clicks link; if app is installed, it opens to the post detail screen.
 
@@ -23,8 +23,8 @@ Connects external links to internal app content.
 
 ### Prefixes
 - `finn://`
-- `https://finn.app`
-- `https://*.finn.app`
+- `https://finnsocial.fun`
+- `https://www.finnsocial.fun`
 
 ### Screen Mappings
 - **Onboarding**: `/onboarding`

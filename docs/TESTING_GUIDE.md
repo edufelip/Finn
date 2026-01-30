@@ -40,6 +40,15 @@ You'll need at least 3 test users:
 
 ---
 
+## ✅ App Links QA (Quick)
+- Confirm `https://finnsocial.fun/.well-known/apple-app-site-association` and `https://www.finnsocial.fun/.well-known/assetlinks.json` return 200 with `Content-Type: application/json`.
+- iOS (release build): open `https://finnsocial.fun/post/123` and `https://finnsocial.fun/community/123`; app should open to PostDetail/CommunityDetail.
+- Android (release build): open the same links; app should open without the browser chooser when verified.
+- Uninstall the app and re-open the links; they should fall back to the web page.
+- Verify `www.finnsocial.fun` redirects to `finnsocial.fun` except for `/.well-known/*`.
+
+---
+
 ## 🧪 Test Scenarios
 
 ### Scenario 1: Create & Configure Moderated Community

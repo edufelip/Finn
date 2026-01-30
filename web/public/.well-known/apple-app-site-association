@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "L4N9Z3Z82V.com.edufelip.finn",
+        "paths": ["/post/*", "/community/*"]
+      },
+      {
+        "appID": "L4N9Z3Z82V.com.edufelip.finn.dev",
+        "paths": ["/post/*", "/community/*"]
+      }
+    ]
+  }
+}

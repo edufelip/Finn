@@ -40,8 +40,8 @@ export default function RootNavigator() {
     return {
       prefixes: [
         `${scheme}://`,
-        'https://finn.app',
-        'https://*.finn.app',
+        'https://finnsocial.fun',
+        'https://www.finnsocial.fun',
       ],
       config: {
         screens: {

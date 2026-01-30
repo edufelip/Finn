@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+:root {
+  --background: var(--brand-background);
+  --foreground: var(--brand-on-surface);
+  --surface: var(--brand-surface);
+  --muted: var(--brand-muted);
+  --outline: var(--brand-outline);
+  --primary: var(--brand-primary);
+  --secondary: var(--brand-secondary);
+  --accent: var(--brand-accent);
+  --shadow-color: 16 24 40;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-outline: var(--outline);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 20%, white);
+}
+
+.bg-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(60px);
+  opacity: 0.6;
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: transform, opacity;
+  animation-fill-mode: both;
+}
+
+.blob-one {
+  animation: drift-one 24s ease-in-out infinite alternate;
+  animation-delay: -6s;
+}
+
+.blob-two {
+  animation: drift-two 28s ease-in-out infinite alternate;
+  animation-delay: -12s;
+}
+
+.blob-three {
+  animation: drift-three 22s ease-in-out infinite alternate;
+  animation-delay: -4s;
+}
+
+.blob-four {
+  animation: drift-four 30s ease-in-out infinite alternate;
+  animation-delay: -16s;
+}
+
+@keyframes drift-one {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  35% {
+    transform: translate3d(80px, -70px, 0) scale(1.18);
+    opacity: 0.8;
+  }
+  70% {
+    transform: translate3d(-70px, 60px, 0) scale(0.92);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+}
+
+@keyframes drift-two {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translate3d(-90px, 50px, 0) scale(1.22);
+    opacity: 0.78;
+  }
+  65% {
+    transform: translate3d(70px, 90px, 0) scale(0.88);
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+    opacity: 0.5;
+  }
+}
+
+@keyframes drift-three {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+    opacity: 0.6;
+  }
+  40% {
+    transform: translate3d(60px, 70px, 0) scale(1.18);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate3d(-55px, -70px, 0) scale(0.98);
+    opacity: 0.52;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.95);
+    opacity: 0.6;
+  }
+}
+
+@keyframes drift-four {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.45;
+  }
+  25% {
+    transform: translate3d(110px, 30px, 0) scale(1.2);
+    opacity: 0.72;
+  }
+  55% {
+    transform: translate3d(-80px, -40px, 0) scale(0.9);
+    opacity: 0.5;
+  }
+  85% {
+    transform: translate3d(50px, 90px, 0) scale(1.08);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-blob {
+    animation: none;
+  }
+}
+
+.force-motion .blob-one {
+  animation: drift-one 24s ease-in-out infinite alternate;
+  animation-delay: -6s;
+}
+
+.force-motion .blob-two {
+  animation: drift-two 28s ease-in-out infinite alternate;
+  animation-delay: -12s;
+}
+
+.force-motion .blob-three {
+  animation: drift-three 22s ease-in-out infinite alternate;
+  animation-delay: -4s;
+}
+
+.force-motion .blob-four {
+  animation: drift-four 30s ease-in-out infinite alternate;
+  animation-delay: -16s;
+}
