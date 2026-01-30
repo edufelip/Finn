@@ -28,11 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write .env
+      - name: Write env files
         run: |
-          cat <<'ENVEOF' > .env
+          cat <<'ENVEOF' > .env.development
           ${{ secrets.ENV_FILE_DEV }}
           ENVEOF
+          cp .env.development .env
         working-directory: .
 
       - name: Export env vars
@@ -42,7 +43,7 @@ jobs:
               ''|\#*) continue ;;
               EXPO_PUBLIC_*=*) echo "$line" >> "$GITHUB_ENV" ;;
             esac
-          done < <(sed -e 's/\r$//' .env)
+          done < <(sed -e 's/\r$//' .env.development)
         working-directory: .
 
       - name: Set debug API flag
@@ -52,16 +53,21 @@ jobs:
 
       - name: Set Expo environment
         run: |
-          echo "EXPO_PUBLIC_ENV=dev" >> "$GITHUB_ENV"
+          echo "APP_ENV=dev" >> "$GITHUB_ENV"
+          echo "APP_VARIANT=dev" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_ENV=dev" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_VARIANT=dev" >> "$GITHUB_ENV"
+          echo "NODE_ENV=development" >> "$GITHUB_ENV"
         working-directory: .
 
       - name: Validate Expo environment
         run: |
-          if [ "$EXPO_PUBLIC_ENV" != "dev" ]; then
-            echo "EXPO_PUBLIC_ENV must be 'dev' (got '$EXPO_PUBLIC_ENV')" >&2
+          if [ "$APP_ENV" != "dev" ]; then
+            echo "APP_ENV must be 'dev' (got '$APP_ENV')" >&2
             exit 1
           fi
-          echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
+          echo "APP_ENV=$APP_ENV"
+          echo "EXPO_PUBLIC_APP_ENV=$EXPO_PUBLIC_APP_ENV"
         working-directory: .
         
       - name: Validate Firebase secrets

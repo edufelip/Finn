@@ -19,31 +19,37 @@ jobs:
         working-directory: android
     steps:
       - uses: actions/checkout@v4
-      - name: Write .env
+      - name: Write env files
         run: |
-          cat <<'EOF' > .env
+          cat <<'EOF' > .env.production
           ${{ secrets.ENV_FILE }}
           EOF
+          cp .env.production .env
         working-directory: .
       - name: Export env vars
         run: |
-          tr -d '\r' < .env | \
+          tr -d '\r' < .env.production | \
             awk '/^[[:space:]]*(export[[:space:]]+)?EXPO_PUBLIC_[A-Za-z0-9_]+=/ { sub(/^[[:space:]]*export[[:space:]]+/, "", $0); print $0; }' \
             >> "$GITHUB_ENV"
         working-directory: .
 
       - name: Set Expo environment
         run: |
-          echo "EXPO_PUBLIC_ENV=prod" >> "$GITHUB_ENV"
+          echo "APP_ENV=prod" >> "$GITHUB_ENV"
+          echo "APP_VARIANT=prod" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_ENV=prod" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_VARIANT=prod" >> "$GITHUB_ENV"
+          echo "NODE_ENV=production" >> "$GITHUB_ENV"
         working-directory: .
 
       - name: Validate Expo environment
         run: |
-          if [ "$EXPO_PUBLIC_ENV" != "prod" ]; then
-            echo "EXPO_PUBLIC_ENV must be 'prod' (got '$EXPO_PUBLIC_ENV')" >&2
+          if [ "$APP_ENV" != "prod" ]; then
+            echo "APP_ENV must be 'prod' (got '$APP_ENV')" >&2
             exit 1
           fi
-          echo "EXPO_PUBLIC_ENV=$EXPO_PUBLIC_ENV"
+          echo "APP_ENV=$APP_ENV"
+          echo "EXPO_PUBLIC_APP_ENV=$EXPO_PUBLIC_APP_ENV"
         working-directory: .
 
       - name: Validate Firebase secrets
