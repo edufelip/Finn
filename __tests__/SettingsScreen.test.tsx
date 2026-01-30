@@ -341,4 +341,43 @@ describe('SettingsScreen', () => {
       );
     });
   });
+
+  it('allows admins to update terms version', async () => {
+    useUserStore.getState().setUser({
+      id: 'user-1',
+      name: 'Admin',
+      role: 'admin',
+      notificationsEnabled: true,
+    });
+    const featureConfigRepo = {
+      upsertConfig: jest.fn().mockResolvedValue({
+        key: FEATURE_CONFIG_KEYS.termsVersion,
+        value: '2026-02-01',
+      }),
+    };
+    const usersRepo = {
+      deleteUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({ notificationsEnabled: true }),
+      setNotificationsEnabled: mockSetNotificationsEnabled,
+      savePushToken: mockSavePushToken,
+    };
+
+    const { getByTestId } = render(
+      <RepositoryProvider overrides={{ users: usersRepo, featureConfigs: featureConfigRepo }}>
+        <SettingsScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent.press(getByTestId(settingsCopy.testIds.adminTermsVersion));
+    fireEvent.changeText(getByTestId(settingsCopy.testIds.adminTermsInput), '2026-02-01');
+    fireEvent.press(getByTestId(settingsCopy.testIds.adminTermsConfirm));
+
+    await waitFor(() => {
+      expect(featureConfigRepo.upsertConfig).toHaveBeenCalledWith(
+        FEATURE_CONFIG_KEYS.termsVersion,
+        '2026-02-01',
+        expect.any(String)
+      );
+    });
+  });
 });
