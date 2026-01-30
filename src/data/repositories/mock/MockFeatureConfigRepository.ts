@@ -1,7 +1,24 @@
 import type { FeatureConfigEntry, FeatureConfigValue } from '../../../domain/models/featureConfig';
 import type { FeatureConfigRepository } from '../../../domain/repositories/FeatureConfigRepository';
+import { FEATURE_CONFIG_DESCRIPTIONS, FEATURE_CONFIG_KEYS } from '../../../config/featureConfig';
 
-const mockConfigs: FeatureConfigEntry[] = [];
+const defaultTimestamp = new Date().toISOString();
+const mockConfigs: FeatureConfigEntry[] = [
+  {
+    key: FEATURE_CONFIG_KEYS.termsVersion,
+    value: '2026-01-28',
+    description: FEATURE_CONFIG_DESCRIPTIONS.termsVersion,
+    createdAt: defaultTimestamp,
+    updatedAt: defaultTimestamp,
+  },
+  {
+    key: FEATURE_CONFIG_KEYS.termsUrl,
+    value: 'https://www.portfolio.eduwaldo.com/projects/finn/terms_eula',
+    description: FEATURE_CONFIG_DESCRIPTIONS.termsUrl,
+    createdAt: defaultTimestamp,
+    updatedAt: defaultTimestamp,
+  },
+];
 
 const findIndex = (key: string) => mockConfigs.findIndex((entry) => entry.key === key);
 

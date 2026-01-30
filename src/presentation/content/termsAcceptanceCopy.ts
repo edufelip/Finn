@@ -11,6 +11,10 @@ export const termsAcceptanceCopy = {
       get title() { return t('terms.alert.failed.title'); },
       get message() { return t('terms.alert.failed.message'); },
     },
+    offline: {
+      get title() { return t('terms.alert.offline.title'); },
+      get message() { return t('terms.alert.offline.message'); },
+    },
   },
   testIds: {
     checkbox: 'terms-checkbox',

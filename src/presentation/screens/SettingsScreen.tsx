@@ -31,6 +31,7 @@ import {
   FEATURE_CONFIG_KEYS,
   formatStringArrayConfig,
   parseStringArrayConfig,
+  parseStringConfig,
 } from '../../config/featureConfig';
 import { links } from '../../config/links';
 import type { UserRole } from '../../domain/models/user';
@@ -50,6 +51,8 @@ import { DeleteAccountModal } from '../components/settings/DeleteAccountModal';
 import { SettingsCard } from '../components/settings/SettingsCard';
 import { SettingsRow } from '../components/settings/SettingsRow';
 import { SettingsSection } from '../components/settings/SettingsSection';
+
+type AdminConfigValueType = 'stringArray' | 'string';
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
@@ -73,7 +76,9 @@ export default function SettingsScreen() {
   const [termsKey, setTermsKey] = useState<string | null>(null);
   const [termsLabel, setTermsLabel] = useState('');
   const [termsDescription, setTermsDescription] = useState('');
+  const [termsMessage, setTermsMessage] = useState('');
   const [termsSaving, setTermsSaving] = useState(false);
+  const [termsValueType, setTermsValueType] = useState<AdminConfigValueType>('stringArray');
 
   useEffect(() => {
     mountedRef.current = true;
@@ -142,6 +147,14 @@ export default function SettingsScreen() {
   );
   const reviewTerms = useMemo(
     () => parseStringArrayConfig(featureConfigValues[FEATURE_CONFIG_KEYS.reviewTerms]),
+    [featureConfigValues]
+  );
+  const currentTermsVersion = useMemo(
+    () => parseStringConfig(featureConfigValues[FEATURE_CONFIG_KEYS.termsVersion]),
+    [featureConfigValues]
+  );
+  const currentTermsUrl = useMemo(
+    () => parseStringConfig(featureConfigValues[FEATURE_CONFIG_KEYS.termsUrl]),
     [featureConfigValues]
   );
 
@@ -330,7 +343,9 @@ export default function SettingsScreen() {
     key: string,
     label: string,
     description: string,
-    defaultTerms: string[]
+    message: string,
+    defaultValue: string[] | string | null,
+    valueType: AdminConfigValueType
   ) => {
     if (!session?.user?.id) {
       Alert.alert(settingsCopy.alerts.signInRequired.title, settingsCopy.alerts.signInRequired.message);
@@ -342,7 +357,13 @@ export default function SettingsScreen() {
     setTermsKey(key);
     setTermsLabel(label);
     setTermsDescription(description);
-    setTermsInput(formatStringArrayConfig(defaultTerms));
+    setTermsMessage(message);
+    setTermsValueType(valueType);
+    if (valueType === 'stringArray') {
+      setTermsInput(formatStringArrayConfig(Array.isArray(defaultValue) ? defaultValue : []));
+    } else {
+      setTermsInput(typeof defaultValue === 'string' ? defaultValue : '');
+    }
     setTermsModalVisible(true);
   };
 
@@ -354,7 +375,9 @@ export default function SettingsScreen() {
     setTermsKey(null);
     setTermsLabel('');
     setTermsDescription('');
+    setTermsMessage('');
     setTermsInput('');
+    setTermsValueType('stringArray');
   };
 
   const saveTerms = async () => {
@@ -367,9 +390,19 @@ export default function SettingsScreen() {
     }
     try {
       setTermsSaving(true);
-      const terms = parseStringArrayConfig(termsInput);
-      await featureConfigRepository.upsertConfig(termsKey, terms, termsDescription);
-      setFeatureConfigValue(termsKey, terms);
+      let value: string[] | string;
+      if (termsValueType === 'stringArray') {
+        value = parseStringArrayConfig(termsInput);
+      } else {
+        const trimmed = termsInput.trim();
+        if (!trimmed) {
+          Alert.alert(settingsCopy.admin.alerts.failedTitle, settingsCopy.admin.alerts.failedMessage);
+          return;
+        }
+        value = trimmed;
+      }
+      await featureConfigRepository.upsertConfig(termsKey, value, termsDescription);
+      setFeatureConfigValue(termsKey, value);
       Alert.alert(
         settingsCopy.admin.alerts.successTitle,
         settingsCopy.admin.alerts.configSuccess(termsLabel)
@@ -387,7 +420,9 @@ export default function SettingsScreen() {
       FEATURE_CONFIG_KEYS.blockedTerms,
       settingsCopy.options.adminBlockedTerms,
       FEATURE_CONFIG_DESCRIPTIONS.blockedTerms,
-      blockedTerms
+      settingsCopy.admin.prompts.termsMessage,
+      blockedTerms,
+      'stringArray'
     );
   };
 
@@ -396,7 +431,31 @@ export default function SettingsScreen() {
       FEATURE_CONFIG_KEYS.reviewTerms,
       settingsCopy.options.adminReviewTerms,
       FEATURE_CONFIG_DESCRIPTIONS.reviewTerms,
-      reviewTerms
+      settingsCopy.admin.prompts.termsMessage,
+      reviewTerms,
+      'stringArray'
+    );
+  };
+
+  const handleUpdateTermsVersion = () => {
+    openTermsModal(
+      FEATURE_CONFIG_KEYS.termsVersion,
+      settingsCopy.options.adminTermsVersion,
+      FEATURE_CONFIG_DESCRIPTIONS.termsVersion,
+      settingsCopy.admin.prompts.termsVersionMessage,
+      currentTermsVersion,
+      'string'
+    );
+  };
+
+  const handleUpdateTermsUrl = () => {
+    openTermsModal(
+      FEATURE_CONFIG_KEYS.termsUrl,
+      settingsCopy.options.adminTermsUrl,
+      FEATURE_CONFIG_DESCRIPTIONS.termsUrl,
+      settingsCopy.admin.prompts.termsUrlMessage,
+      currentTermsUrl,
+      'string'
     );
   };
 
@@ -649,6 +708,8 @@ export default function SettingsScreen() {
           onSetRole={handleSetRole}
           onEditBlockedTerms={handleUpdateBlockedTerms}
           onEditReviewTerms={handleUpdateReviewTerms}
+          onEditTermsVersion={handleUpdateTermsVersion}
+          onEditTermsUrl={handleUpdateTermsUrl}
         />
 
         <View style={styles.footer}>
@@ -662,7 +723,7 @@ export default function SettingsScreen() {
               <Text style={styles.footerLinkText}>{settingsCopy.footer.privacy}</Text>
             </Pressable>
             <Pressable
-              onPress={() => openWebView(settingsCopy.footer.terms, links.termsOfService)}
+              onPress={() => openWebView(settingsCopy.footer.terms, currentTermsUrl ?? undefined)}
               testID={settingsCopy.testIds.terms}
               accessibilityLabel={settingsCopy.testIds.terms}
             >
@@ -709,7 +770,7 @@ export default function SettingsScreen() {
       <AdminTermsModal
         visible={termsModalVisible}
         title={termsLabel}
-        message={settingsCopy.admin.prompts.termsMessage}
+        message={termsMessage}
         value={termsInput}
         onChange={setTermsInput}
         onCancel={() => closeTermsModal()}

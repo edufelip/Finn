@@ -23,6 +23,8 @@ export const settingsCopy = {
     get adminSetRole() { return t('settings.option.adminSetRole'); },
     get adminBlockedTerms() { return t('settings.option.adminBlockedTerms'); },
     get adminReviewTerms() { return t('settings.option.adminReviewTerms'); },
+    get adminTermsVersion() { return t('settings.option.adminTermsVersion'); },
+    get adminTermsUrl() { return t('settings.option.adminTermsUrl'); },
   },
   admin: {
     prompts: {
@@ -33,6 +35,8 @@ export const settingsCopy = {
       get roleTitle() { return t('settings.admin.prompt.role.title'); },
       get roleMessage() { return t('settings.admin.prompt.role.message'); },
       get termsMessage() { return t('settings.admin.prompt.terms.message'); },
+      get termsVersionMessage() { return t('settings.admin.prompt.termsVersion.message'); },
+      get termsUrlMessage() { return t('settings.admin.prompt.termsUrl.message'); },
       get cancel() { return t('settings.admin.prompt.cancel'); },
       get confirm() { return t('settings.admin.prompt.confirm'); },
     },
@@ -135,6 +139,8 @@ export const settingsCopy = {
     adminSetRole: 'settings-admin-set-role',
     adminBlockedTerms: 'settings-admin-blocked-terms',
     adminReviewTerms: 'settings-admin-review-terms',
+    adminTermsVersion: 'settings-admin-terms-version',
+    adminTermsUrl: 'settings-admin-terms-url',
     adminTermsModal: 'settings-admin-terms-modal',
     adminTermsInput: 'settings-admin-terms-input',
     adminTermsCancel: 'settings-admin-terms-cancel',

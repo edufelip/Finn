@@ -6,7 +6,8 @@ import Constants from 'expo-constants';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useAppStore } from '../../app/store/appStore';
 import { useUserStore } from '../../app/store/userStore';
-import { TERMS_VERSION } from '../../config/appConfig';
+import { useFeatureConfigStore } from '../../app/store/featureConfigStore';
+import { FEATURE_CONFIG_KEYS, parseStringConfig } from '../../config/featureConfig';
 import AuthStack, { AuthStackParamList } from './AuthStack';
 import MainStack, { MainStackParamList } from './MainStack';
 import LoadingScreen from '../screens/LoadingScreen';
@@ -30,8 +31,17 @@ export default function RootNavigator() {
   const { session, initializing, isGuest } = useAuth();
   const { hasSeenOnboarding } = useAppStore();
   const { currentUser, isLoading: isUserLoading, banStatus } = useUserStore();
-  const needsTerms =
-    Boolean(session && !isGuest && (!currentUser || currentUser.termsVersion !== TERMS_VERSION));
+  const featureConfigValues = useFeatureConfigStore((state) => state.values);
+  const featureConfigLoading = useFeatureConfigStore((state) => state.isLoading);
+  const currentTermsVersion = parseStringConfig(featureConfigValues[FEATURE_CONFIG_KEYS.termsVersion]);
+  const needsTerms = Boolean(
+    session &&
+      !isGuest &&
+      (!currentUser ||
+        (currentTermsVersion
+          ? currentUser.termsVersion !== currentTermsVersion
+          : !currentUser.termsVersion))
+  );
   const isBanned = Boolean(session && !isGuest && banStatus.isBanned);
 
   const linking = useMemo(() => {
@@ -72,6 +82,10 @@ export default function RootNavigator() {
   }, []);
 
   if (initializing || (session && !isGuest && isUserLoading)) {
+    return <LoadingScreen />;
+  }
+
+  if (session && !isGuest && featureConfigLoading && !isBanned) {
     return <LoadingScreen />;
   }
 

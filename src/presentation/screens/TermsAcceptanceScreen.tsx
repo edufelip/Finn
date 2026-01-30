@@ -4,14 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import * as Network from 'expo-network';
 
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useFeatureConfigStore } from '../../app/store/featureConfigStore';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { termsAcceptanceCopy } from '../content/termsAcceptanceCopy';
-import { links } from '../../config/links';
-import { TERMS_VERSION } from '../../config/appConfig';
+import { isMockMode } from '../../config/appConfig';
+import { FEATURE_CONFIG_KEYS, parseStringConfig } from '../../config/featureConfig';
 import { useUserStore } from '../../app/store/userStore';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
@@ -19,15 +21,23 @@ export default function TermsAcceptanceScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();
+  const featureConfigValues = useFeatureConfigStore((state) => state.values);
+  const featureConfigError = useFeatureConfigStore((state) => state.error);
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [accepted, setAccepted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const currentTermsVersion = parseStringConfig(featureConfigValues[FEATURE_CONFIG_KEYS.termsVersion]);
+  const currentTermsUrl = parseStringConfig(featureConfigValues[FEATURE_CONFIG_KEYS.termsUrl]);
 
   const openTerms = () => {
+    if (!currentTermsUrl) {
+      Alert.alert(termsAcceptanceCopy.alerts.offline.title, termsAcceptanceCopy.alerts.offline.message);
+      return;
+    }
     navigation.navigate('WebView', {
       title: termsAcceptanceCopy.linkLabel,
-      url: links.termsOfService,
+      url: currentTermsUrl,
     });
   };
 
@@ -35,9 +45,18 @@ export default function TermsAcceptanceScreen() {
     if (!session?.user?.id || !accepted) {
       return;
     }
+    if (!currentTermsVersion || featureConfigError) {
+      Alert.alert(termsAcceptanceCopy.alerts.offline.title, termsAcceptanceCopy.alerts.offline.message);
+      return;
+    }
+    const status = isMockMode() ? { isConnected: true } : await Network.getNetworkStateAsync();
+    if (!status.isConnected) {
+      Alert.alert(termsAcceptanceCopy.alerts.offline.title, termsAcceptanceCopy.alerts.offline.message);
+      return;
+    }
     setSaving(true);
     try {
-      const updated = await userRepository.acceptTerms(session.user.id, TERMS_VERSION);
+      const updated = await userRepository.acceptTerms(session.user.id, currentTermsVersion);
       useUserStore.getState().setUser(updated);
     } catch {
       Alert.alert(termsAcceptanceCopy.alerts.failed.title, termsAcceptanceCopy.alerts.failed.message);

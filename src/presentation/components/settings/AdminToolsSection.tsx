@@ -13,6 +13,8 @@ type AdminToolsSectionProps = {
   onSetRole: () => void;
   onEditBlockedTerms: () => void;
   onEditReviewTerms: () => void;
+  onEditTermsVersion: () => void;
+  onEditTermsUrl: () => void;
 };
 
 export function AdminToolsSection({
@@ -23,6 +25,8 @@ export function AdminToolsSection({
   onSetRole,
   onEditBlockedTerms,
   onEditReviewTerms,
+  onEditTermsVersion,
+  onEditTermsUrl,
 }: AdminToolsSectionProps) {
   if (!canManageUsers) {
     return null;
@@ -77,6 +81,23 @@ export function AdminToolsSection({
                 chevron
                 testID={settingsCopy.testIds.adminReviewTerms}
                 accessibilityLabel={settingsCopy.testIds.adminReviewTerms}
+              />
+              <SettingsRow
+                label={settingsCopy.options.adminTermsVersion}
+                iconName="policy"
+                onPress={onEditTermsVersion}
+                divider
+                chevron
+                testID={settingsCopy.testIds.adminTermsVersion}
+                accessibilityLabel={settingsCopy.testIds.adminTermsVersion}
+              />
+              <SettingsRow
+                label={settingsCopy.options.adminTermsUrl}
+                iconName="link"
+                onPress={onEditTermsUrl}
+                chevron
+                testID={settingsCopy.testIds.adminTermsUrl}
+                accessibilityLabel={settingsCopy.testIds.adminTermsUrl}
               />
             </>
           ) : null}
