@@ -112,7 +112,7 @@ Provides a mapping between Domain Models and the Supabase PostgreSQL schema, inc
 ### 9. Feature Config (`public.feature_config`)
 - **Primary Key**: `key` (Text)
 - **Fields**: `value` (JSONB), `description`, `created_at`, `updated_at`
-- **Purpose**: Remote-config style values (e.g., moderation blocked/review terms).
+- **Purpose**: Remote-config style values (e.g., moderation blocked/review terms, `terms_version`, `terms_url`).
 - **RLS**: Readable by all clients; admin-only insert/update/delete; globally banned admins are blocked from writes.
 
 ## RPC Functions

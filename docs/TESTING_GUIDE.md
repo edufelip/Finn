@@ -468,9 +468,14 @@ You'll need at least 3 test users:
 5. Create a moderated community owned by the Admin/Owner.
 
 ### 1) Terms/EULA Acceptance Gate
+1. Ensure feature config is set:
+   ```sql
+   SELECT key, value FROM feature_config WHERE key IN ('terms_version', 'terms_url');
+   ```
+   **Expected:** `terms_version` is a non-empty string (e.g., `2026-01-28`) and `terms_url` is a valid public URL.
 1. Sign in as the Regular User.
 2. Confirm the Terms screen appears before any feeds.
-3. Tap the terms link and verify it opens the EULA URL in the in-app webview.
+3. Tap the terms link and verify it opens the `terms_url` value in the in-app webview.
 4. Accept the terms.
 5. Relaunch the app; Terms screen should no longer appear.
 6. Verify in DB:
@@ -717,6 +722,7 @@ Use this for rapid testing:
 - [ ] Settings → Admin tools allows staff to ban/unban users
 - [ ] Settings → Admin tools allows admins to update user roles
 - [ ] Settings → Admin tools allows admins to update blocked/review terms
+- [ ] Settings → Admin tools allows admins to update terms version + terms URL
 
 ---
 

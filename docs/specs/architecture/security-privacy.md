@@ -25,7 +25,7 @@ Defines the measures taken to protect user data and ensure compliance with priva
 
 ### 3. Data Privacy
 - **Privacy Policy**: A public PDF link is hosted at the URL defined in `src/config/links.ts`.
-- **Terms of Service (EULA)**: A public link is defined in `src/config/links.ts`, and acceptance is tracked per user in `profiles.terms_version` and `profiles.terms_accepted_at`.
+- **Terms of Service (EULA)**: The public URL and required version are stored in `public.feature_config` (`terms_url`, `terms_version`), and acceptance is tracked per user in `profiles.terms_version` and `profiles.terms_accepted_at`.
 - **Account Deletion**: Users have the right to be forgotten. Account deletion triggers a complete cascade of data and file removal (see `user-profile.md`).
 
 ## Use Cases
