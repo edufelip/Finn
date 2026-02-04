@@ -134,6 +134,12 @@ android {
     }
 }
 
+// CMake clean fails on fresh runners before codegen outputs exist.
+// Skip external native clean tasks; release builds still generate codegen artifacts.
+tasks.matching { it.name.startsWith("externalNativeBuildClean") }.configureEach {
+    enabled = false
+}
+
 // Apply static values from `gradle.properties` to the `android.packagingOptions`
 // Accepts values in comma delimited lists, example:
 // android.packagingOptions.pickFirsts=/LICENSE,**/picasa.ini

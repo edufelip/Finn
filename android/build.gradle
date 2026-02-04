@@ -24,3 +24,31 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+
+def preferredNdkVersion = findProperty("android.ndkVersion")
+if (preferredNdkVersion) {
+  rootProject.ext.ndkVersion = preferredNdkVersion
+}
+
+// Ensure Reanimated's CMake config waits for Worklets Prefab package generation.
+gradle.projectsEvaluated {
+  def workletsProject = rootProject.findProject(":react-native-worklets")
+  def reanimatedProject = rootProject.findProject(":react-native-reanimated")
+  if (workletsProject == null || reanimatedProject == null) {
+    return
+  }
+
+  def prefabRelease = workletsProject.tasks.findByName("prefabReleasePackage")
+  if (prefabRelease != null) {
+    reanimatedProject.tasks.matching { it.name.startsWith("configureCMakeRelWithDebInfo") }.configureEach {
+      dependsOn(prefabRelease)
+    }
+  }
+
+  def prefabDebug = workletsProject.tasks.findByName("prefabDebugPackage")
+  if (prefabDebug != null) {
+    reanimatedProject.tasks.matching { it.name.startsWith("configureCMakeDebug") }.configureEach {
+      dependsOn(prefabDebug)
+    }
+  }
+}
