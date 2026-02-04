@@ -73,6 +73,27 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Install Android NDK r28
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          if [ -z "$SDK_ROOT" ]; then
+            echo "ANDROID_SDK_ROOT or ANDROID_HOME must be set" >&2
+            exit 1
+          fi
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$SDK_ROOT/cmdline-tools/bin/sdkmanager"
+          fi
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager not found under $SDK_ROOT/cmdline-tools" >&2
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;28.0.12433566"
+          if [ ! -d "$SDK_ROOT/ndk/28.0.12433566" ]; then
+            echo "NDK install failed (missing $SDK_ROOT/ndk/28.0.12433566)" >&2
+            exit 1
+          fi
       - name: Set CI version code
         run: echo "CI_VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
 
@@ -103,6 +124,65 @@ jobs:
             clean
             bundleRelease
             -PCI_VERSION_CODE=${{ env.CI_VERSION_CODE }}
+
+      - name: Validate 16 KB page size alignment
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          NDK_ROOT="$SDK_ROOT/ndk/28.0.12433566"
+          READELF="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          if [ ! -x "$READELF" ]; then
+            echo "llvm-readelf not found at $READELF" >&2
+            exit 1
+          fi
+          AAB_FILE="app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -f "$AAB_FILE" ]; then
+            echo "AAB file not found at $AAB_FILE" >&2
+            exit 1
+          fi
+          TMP_DIR=$(mktemp -d)
+          unzip -q "$AAB_FILE" -d "$TMP_DIR"
+          READELF="$READELF" TMP_DIR="$TMP_DIR" python3 - <<'PY'
+          import os
+          import subprocess
+          import sys
+          
+          readelf = os.environ["READELF"]
+          root = os.environ["TMP_DIR"]
+          bad = []
+          checked = 0
+          
+          for dirpath, _, filenames in os.walk(root):
+            for name in filenames:
+              if not name.endswith(".so"):
+                continue
+              path = os.path.join(dirpath, name)
+              try:
+                output = subprocess.check_output([readelf, "-lW", path], text=True)
+              except subprocess.CalledProcessError as exc:
+                print(f"Failed to read ELF headers for {path}: {exc}", file=sys.stderr)
+                sys.exit(1)
+              checked += 1
+              for line in output.splitlines():
+                if line.strip().startswith("LOAD"):
+                  align = line.split()[-1]
+                  if align.startswith("0x") and int(align, 16) < 0x4000:
+                    bad.append((path, align))
+                    break
+          
+          if checked == 0:
+            print("No native libraries found in AAB.")
+            sys.exit(0)
+          
+          if bad:
+            print("❌ Found libraries not aligned for 16 KB pages:")
+            for path, align in bad:
+              rel = os.path.relpath(path, root)
+              print(f" - {rel} (align {align})")
+            sys.exit(1)
+          
+          print(f"✅ All {checked} native libraries are 16 KB aligned.")
+          PY
 
       - name: Verify mapping file exists
         run: |
