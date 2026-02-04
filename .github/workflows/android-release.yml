@@ -67,7 +67,7 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install JS deps
-        run: npm ci
+        run: npm ci --include=dev
         working-directory: .
       - uses: actions/setup-java@v4
         with:
