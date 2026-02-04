@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const OFFLINE_IMAGE_DIR = `${FileSystem.documentDirectory ?? ''}offline-images`;
 
