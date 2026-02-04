@@ -81,6 +81,16 @@ jest.mock('expo-file-system', () => ({
   deleteAsync: jest.fn(async () => undefined),
 }));
 
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file://documents/',
+  EncodingType: { Base64: 'base64' },
+  readAsStringAsync: jest.fn(async () => 'Zm9v'),
+  getInfoAsync: jest.fn(async () => ({ exists: true })),
+  makeDirectoryAsync: jest.fn(async () => undefined),
+  moveAsync: jest.fn(async () => undefined),
+  deleteAsync: jest.fn(async () => undefined),
+}));
+
 jest.mock('@expo/vector-icons', () => {
   const React = require('react');
   const { Text } = require('react-native');

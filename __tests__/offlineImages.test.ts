@@ -1,12 +1,12 @@
 import { persistOfflineImage } from '../src/data/offline/offlineImages';
 
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file://documents/',
   makeDirectoryAsync: jest.fn(),
   copyAsync: jest.fn(),
 }));
 
-const FileSystem = jest.requireMock('expo-file-system');
+const FileSystem = jest.requireMock('expo-file-system/legacy');
 
 describe('persistOfflineImage', () => {
   beforeEach(() => {
