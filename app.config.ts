@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: isDevVariant ? 'Finn Dev' : 'Finn',
     slug: isDevVariant ? 'finn-dev' : 'finn',
-    version: '2.0.0',
+    version: '2.1.0',
     orientation: 'portrait',
     scheme: isDevVariant ? 'finn-dev' : 'finn',
     icon: './assets/icon.png',
