@@ -1,3 +1,5 @@
+import * as brandColors from '../../../packages/brand/colors';
+
 export type ColorRoles = {
   primary: string;
   onPrimary: string;
@@ -33,11 +35,5 @@ export type ColorRoles = {
 };
 
 export type ThemeColors = ColorRoles;
-
-const brandColors = require('../../../packages/brand/colors') as {
-  lightColors: ColorRoles;
-  darkColors: ColorRoles;
-};
-
 export const lightColors: ColorRoles = brandColors.lightColors;
 export const darkColors: ColorRoles = brandColors.darkColors;
