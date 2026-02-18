@@ -24,11 +24,14 @@ import { sharePost } from '../../utils/shareUtils';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 import { useBlockedUsersStore } from '../../app/store/blockedUsersStore';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type RouteParams = {
   post: Post;
 };
 
 export default function PostDetailScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute();
   const { post: initialPost } = route.params as RouteParams;
@@ -70,7 +73,7 @@ export default function PostDetailScreen() {
           Alert.alert(postDetailCopy.alerts.loadFailed.title, error.message);
         }
       });
-  }, [commentsRepository, post?.id]);
+  }, [commentsRepository, post]);
 
   const handleToggleLike = async () => {
     if (!post) return;

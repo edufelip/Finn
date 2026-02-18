@@ -151,10 +151,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setNotificationGatePreference(true);
       });
 
-    return () => {
+  return () => {
       active = false;
     };
-  }, [session, repositories.users]);
+  }, [banStatus.isBanned, session, repositories.users]);
 
   // Load (or create) user profile into Zustand store
   useEffect(() => {
