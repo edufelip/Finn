@@ -127,6 +127,34 @@ describe('HomeScreen', () => {
     expect(getByTestId(homeCopy.testIds.notifications)).toBeTruthy();
   });
 
+  it('navigates to search with normalized query when tapping suggested topic', async () => {
+    const postsRepo = {
+      getUserFeed: jest.fn().mockResolvedValue([]),
+      likePost: jest.fn(),
+      dislikePost: jest.fn(),
+      bookmarkPost: jest.fn(),
+      unbookmarkPost: jest.fn(),
+    };
+
+    const usersRepo = {
+      getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
+    };
+
+    const { getAllByText } = render(
+      <RepositoryProvider overrides={{ posts: postsRepo, users: usersRepo }}>
+        <HomeScreen />
+      </RepositoryProvider>
+    );
+
+    await waitForHomeEffects(postsRepo, usersRepo);
+    fireEvent.press(getAllByText(homeCopy.tags[0])[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith('SearchResults', {
+      query: homeCopy.tags[0].replace(/^#+/, '').trim(),
+      focus: false,
+    });
+  });
+
   it('navigates to notifications from header', async () => {
     const postsRepo = {
       getUserFeed: jest.fn().mockResolvedValue([]),

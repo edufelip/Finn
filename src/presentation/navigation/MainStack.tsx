@@ -37,7 +37,7 @@ export type MainStackParamList = {
   PostDetail: { post?: Post; postId?: number };
   Profile: undefined;
   Notifications: undefined;
-  SearchResults: { focus?: boolean; sort?: SearchSort; topicId?: number } | undefined;
+  SearchResults: { focus?: boolean; sort?: SearchSort; topicId?: number; query?: string } | undefined;
   WebView: { title: string; url: string };
   EditCommunity: { communityId: number };
   PendingContent: { communityId: number };

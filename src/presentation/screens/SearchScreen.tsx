@@ -16,20 +16,27 @@ import { CommunityCard } from '../components/CommunityCard';
 import { SearchFilters } from '../components/SearchFilters';
 import { SearchEmptyState } from '../components/SearchEmptyState';
 import { useSearchCommunities } from '../hooks/useSearchCommunities';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'SearchResults'>;
 
 export default function SearchScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<RouteProp<MainStackParamList, 'SearchResults'>>();
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const [searchText, setSearchText] = React.useState('');
+  const routeQuery = useMemo(
+    () => (route.params?.query ?? '').replace(/^#+/, '').trim(),
+    [route.params?.query]
+  );
+  const [searchText, setSearchText] = React.useState(routeQuery);
   const inputRef = useRef<TextInput>(null);
+  const appliedRouteQueryRef = useRef<string | null>(null);
 
   // Load on mount unless user explicitly wants to focus the search input
-  const shouldLoadOnMount = !route.params?.focus;
+  const shouldLoadOnMount = !route.params?.focus && !routeQuery;
 
   const {
     communities,
@@ -60,6 +67,16 @@ export default function SearchScreen() {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [route.params?.focus]);
+
+  useEffect(() => {
+    if (!routeQuery) {
+      appliedRouteQueryRef.current = null;
+      return;
+    }
+    if (appliedRouteQueryRef.current === routeQuery) return;
+    appliedRouteQueryRef.current = routeQuery;
+    searchCommunities(routeQuery);
+  }, [routeQuery, searchCommunities]);
 
   const handleSearch = useCallback(() => {
     searchCommunities(searchText);

@@ -6,6 +6,7 @@ import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { searchCopy } from '../src/presentation/content/searchCopy';
 
 const mockNavigate = jest.fn();
+const mockRouteParams: Record<string, unknown> = {};
 
 jest.mock('@react-navigation/native', () => {
   const React = require('react');
@@ -15,7 +16,7 @@ jest.mock('@react-navigation/native', () => {
       getParent: () => ({ openDrawer: jest.fn() }),
       goBack: jest.fn(),
     }),
-    useRoute: () => ({ params: {} }),
+    useRoute: () => ({ params: mockRouteParams }),
     useFocusEffect: (effect: () => void | (() => void)) =>
       React.useEffect(() => effect(), [effect]),
   };
@@ -29,6 +30,11 @@ jest.mock('../src/app/providers/AuthProvider', () => ({
 }));
 
 describe('SearchScreen', () => {
+  beforeEach(() => {
+    Object.keys(mockRouteParams).forEach((key) => delete mockRouteParams[key]);
+    mockNavigate.mockReset();
+  });
+
   it('loads communities and opens detail on press', async () => {
     const communitiesRepo = {
       getCommunities: jest.fn().mockResolvedValue([
@@ -87,5 +93,43 @@ describe('SearchScreen', () => {
     expect(getByPlaceholderText(searchCopy.placeholder)).toBeTruthy();
 
     await waitFor(() => expect(getByText(searchCopy.empty)).toBeTruthy());
+  });
+
+  it('prefills and searches when query is provided by route params', async () => {
+    mockRouteParams.query = '#General';
+    const communitiesRepo = {
+      getCommunities: jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          title: 'General',
+          description: 'General',
+          ownerId: 'user-1',
+          imageUrl: 'https://example.com/community.jpg',
+          subscribersCount: 12,
+        },
+      ]),
+      getSubscription: jest.fn().mockResolvedValue(null),
+    };
+
+    const topicsRepo = {
+      getTopics: jest.fn().mockResolvedValue([]),
+    };
+
+    const usersRepo = {
+      getUser: jest.fn().mockResolvedValue({ id: 'user-1', name: 'Tester' }),
+    };
+
+    const { getByDisplayValue } = render(
+      <RepositoryProvider overrides={{ communities: communitiesRepo, users: usersRepo, topics: topicsRepo }}>
+        <SearchScreen />
+      </RepositoryProvider>
+    );
+
+    await waitFor(() =>
+      expect(communitiesRepo.getCommunities).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'General' })
+      )
+    );
+    expect(getByDisplayValue('General')).toBeTruthy();
   });
 });

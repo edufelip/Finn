@@ -34,6 +34,8 @@ import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUti
 import { useHeaderProfile } from '../hooks/useHeaderProfile';
 import TabSafeAreaView from '../components/TabSafeAreaView';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
   NativeStackNavigationProp<MainStackParamList>
@@ -42,6 +44,7 @@ type Navigation = CompositeNavigationProp<
 type Tab = 'communities' | 'people';
 
 export default function HomeScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const { session, isGuest, exitGuest } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
@@ -79,6 +82,15 @@ export default function HomeScreen() {
   const theme = useThemeColors();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const tabBarHeight = useBottomTabBarHeight();
+
+  const handleSuggestedTagPress = useCallback(
+    (tag: string) => {
+      const normalizedQuery = tag.replace(/^#+/, '').trim();
+      if (!normalizedQuery) return;
+      navigation.navigate('SearchResults', { query: normalizedQuery, focus: false });
+    },
+    [navigation]
+  );
 
   useEffect(() => {
     const isPeople = activeTab === 'people';
@@ -395,9 +407,9 @@ export default function HomeScreen() {
             <Text style={styles.tagsTitle}>{homeCopy.tagsTitle}</Text>
             <View style={styles.tagsRow}>
               {homeCopy.tags.map((tag) => (
-                <View key={tag} style={styles.tagChip}>
+                <Pressable key={tag} style={styles.tagChip} onPress={() => handleSuggestedTagPress(tag)}>
                   <Text style={styles.tagText}>{tag}</Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
