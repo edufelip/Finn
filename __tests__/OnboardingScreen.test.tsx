@@ -3,6 +3,39 @@ import { render, fireEvent } from '@testing-library/react-native';
 import OnboardingScreen from '../src/presentation/screens/OnboardingScreen';
 import { onboardingCopy } from '../src/presentation/content/onboardingCopy';
 
+let mockLocale: 'en' | 'es' = 'en';
+const tMockMap: Record<'en' | 'es', Record<string, string>> = {
+  en: {
+    'onboarding.skip': 'Skip',
+    'onboarding.slides.discover.title': 'Discover',
+    'onboarding.slides.discover.description': 'Discover description',
+    'onboarding.slides.share.title': 'Share',
+    'onboarding.slides.share.description': 'Share description',
+    'onboarding.slides.connect.title': 'Connect',
+    'onboarding.slides.connect.description': 'Connect description',
+    'onboarding.buttons.next': 'Next',
+    'onboarding.buttons.previous': 'Previous',
+    'onboarding.buttons.getStarted': 'Get Started',
+  },
+  es: {
+    'onboarding.skip': 'Saltar',
+    'onboarding.slides.discover.title': 'Descubrir',
+    'onboarding.slides.discover.description': 'Descubre descripción',
+    'onboarding.slides.share.title': 'Compartir',
+    'onboarding.slides.share.description': 'Comparte descripción',
+    'onboarding.slides.connect.title': 'Conectar',
+    'onboarding.slides.connect.description': 'Conectar descripción',
+    'onboarding.buttons.next': 'Siguiente',
+    'onboarding.buttons.previous': 'Anterior',
+    'onboarding.buttons.getStarted': 'Comenzar',
+  },
+};
+
+jest.mock('../src/presentation/i18n', () => ({
+  t: (key: string) => tMockMap[mockLocale][key] ?? key,
+  tList: () => [],
+}));
+
 // Mock dependencies
 const mockCompleteOnboarding = jest.fn();
 
@@ -33,8 +66,13 @@ jest.mock('../src/app/providers/ThemeProvider', () => ({
   }),
 }));
 
+jest.mock('../src/app/providers/LocalizationProvider', () => ({
+  useLocalization: () => ({ locale: mockLocale }),
+}));
+
 describe('OnboardingScreen', () => {
   beforeEach(() => {
+    mockLocale = 'en';
     mockCompleteOnboarding.mockClear();
   });
 
@@ -46,6 +84,24 @@ describe('OnboardingScreen', () => {
     expect(getByTestId(onboardingCopy.testIds.slideTitle(0))).toBeTruthy();
     expect(getByTestId(onboardingCopy.testIds.slideDescription(0))).toBeTruthy();
     expect(getByTestId(onboardingCopy.testIds.nextButton)).toBeTruthy();
+  });
+
+  it('updates text when locale changes', () => {
+    const { getByText, queryByText, rerender } = render(<OnboardingScreen />);
+
+    expect(getByText('Skip')).toBeTruthy();
+    expect(getByText('Discover')).toBeTruthy();
+    expect(getByText('Discover description')).toBeTruthy();
+
+    mockLocale = 'es';
+    rerender(<OnboardingScreen />);
+
+    expect(getByText('Saltar')).toBeTruthy();
+    expect(getByText('Descubrir')).toBeTruthy();
+    expect(getByText('Descubre descripción')).toBeTruthy();
+    expect(queryByText('Discover')).toBeNull();
+
+    mockLocale = 'en';
   });
 
   it('navigates to the next slide on next button press', () => {
