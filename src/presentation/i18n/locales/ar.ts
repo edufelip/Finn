@@ -107,6 +107,7 @@ export const ar = {
   // Topic Selector
   'topic.selector.title': 'اختر موضوعاً',
   'topic.selector.searchPlaceholder': 'ابحث عن مواضيع...',
+  'topic.selector.empty': 'لم يتم العثور على مواضيع',
 
   // Create bottom sheet
   'createSheet.title': 'إنشاء جديد',
@@ -220,6 +221,8 @@ export const ar = {
   'register.alert.offline.title': 'غير متصل بالإنترنت',
   'register.alert.offline.message': 'اتصل بالإنترنت لإنشاء حسابك.',
   'register.alert.failed.title': 'فشل التسجيل',
+  'register.alert.rateLimit.title': 'محاولات كثيرة جدًا',
+  'register.alert.rateLimit.message': 'تم الوصول إلى حد إرسال البريد الإلكتروني. يُرجى الانتظار بضع دقائق ثم المحاولة مرة أخرى.',
   'register.alert.checkEmail.title': 'تحقق من بريدك الإلكتروني',
   'register.alert.checkEmail.message': 'أكد بريدك الإلكتروني لإنهاء إنشاء حسابك.',
 

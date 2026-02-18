@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,28 +21,10 @@ import { spacing, radii } from '../theme/metrics';
 import { onboardingCopy } from '../content/onboardingCopy';
 import { Images } from '@assets/images';
 
-const SLIDES = [
-  {
-    id: '1',
-    title: onboardingCopy.slides.discover.title,
-    description: onboardingCopy.slides.discover.description,
-    image: Images.onboardingFirst,
-  },
-  {
-    id: '2',
-    title: onboardingCopy.slides.share.title,
-    description: onboardingCopy.slides.share.description,
-    image: Images.onboardingSecond,
-  },
-  {
-    id: '3',
-    title: onboardingCopy.slides.connect.title,
-    description: onboardingCopy.slides.connect.description,
-    image: Images.onboardingThird,
-  },
-];
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 export default function OnboardingScreen() {
+  const { locale } = useLocalization();
   const theme = useThemeColors();
   const { completeOnboarding } = useAppStore();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -53,9 +35,32 @@ export default function OnboardingScreen() {
   const imageMaxWidth = screenWidth - spacing.xl * 2;
   const imageMaxHeight = Math.floor(screenHeight * (isLandscape ? 0.38 : 0.45));
   const imageSize = isTablet ? Math.min(imageMaxWidth, imageMaxHeight) : imageMaxWidth;
+  const slides = useMemo(
+    () => [
+      {
+        id: '1',
+        title: onboardingCopy.slides.discover.title,
+        description: onboardingCopy.slides.discover.description,
+        image: Images.onboardingFirst,
+      },
+      {
+        id: '2',
+        title: onboardingCopy.slides.share.title,
+        description: onboardingCopy.slides.share.description,
+        image: Images.onboardingSecond,
+      },
+      {
+        id: '3',
+        title: onboardingCopy.slides.connect.title,
+        description: onboardingCopy.slides.connect.description,
+        image: Images.onboardingThird,
+      },
+    ],
+    [locale]
+  );
 
   const handleNext = () => {
-    if (currentIndex < SLIDES.length - 1) {
+    if (currentIndex < slides.length - 1) {
       scrollViewRef.current?.scrollTo({
         x: (currentIndex + 1) * screenWidth,
         animated: true,
@@ -92,7 +97,7 @@ export default function OnboardingScreen() {
       testID={onboardingCopy.testIds.container}
     >
       <View style={styles.header}>
-        {currentIndex < SLIDES.length - 1 && (
+        {currentIndex < slides.length - 1 && (
           <TouchableOpacity 
             onPress={handleSkip} 
             style={styles.skipButton}
@@ -115,7 +120,7 @@ export default function OnboardingScreen() {
         style={{ flex: 1 }}
         testID={onboardingCopy.testIds.scrollView}
       >
-        {SLIDES.map((slide, index) => (
+        {slides.map((slide, index) => (
           <View 
             key={slide.id} 
             style={[styles.slide, { width: screenWidth }]}
@@ -166,7 +171,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.footer}>
         <View style={styles.pagination}>
-          {SLIDES.map((_, index) => (
+          {slides.map((_, index) => (
             <View
               key={index}
               style={[

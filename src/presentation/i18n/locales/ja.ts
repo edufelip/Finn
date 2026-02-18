@@ -107,6 +107,7 @@ export const ja = {
   // Topic Selector
   'topic.selector.title': 'トピックを選択',
   'topic.selector.searchPlaceholder': 'トピックを検索...',
+  'topic.selector.empty': 'トピックが見つかりません',
 
   // Create bottom sheet
   'createSheet.title': '新規作成',
@@ -219,6 +220,8 @@ export const ja = {
   'register.alert.offline.title': 'オフライン',
   'register.alert.offline.message': 'アカウントを作成するにはインターネットに接続してください。',
   'register.alert.failed.title': '登録に失敗しました',
+  'register.alert.rateLimit.title': '試行回数が多すぎます',
+  'register.alert.rateLimit.message': 'メール送信の上限に達しました。数分待ってからもう一度お試しください。',
   'register.alert.checkEmail.title': 'メールを確認してください',
   'register.alert.checkEmail.message': 'メールを確認して、アカウント作成を完了してください。',
 

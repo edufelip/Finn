@@ -20,9 +20,12 @@ import { palette } from '../theme/palette';
 import { authCopy } from '../content/authCopy';
 import { registerCopy } from '../content/registerCopy';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 WebBrowser.maybeCompleteAuthSession();
 
 const emailRegex = /\S+@\S+\.\S+/;
+const EMAIL_RATE_LIMIT_ERROR = 'email rate limit exceeded';
 
 const GoogleLogo = ({ size = 20 }: { size?: number }) => {
   return (
@@ -48,6 +51,7 @@ const GoogleLogo = ({ size = 20 }: { size?: number }) => {
 };
 
 export default function RegisterScreen() {
+  useLocalization();
   const navigation = useNavigation();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [name, setName] = useState('');
@@ -292,7 +296,14 @@ export default function RegisterScreen() {
     });
 
     if (error) {
-      Alert.alert(registerCopy.alerts.failed.title, error.message);
+      const errorMessage = error.message?.toLowerCase?.() ?? '';
+      const isEmailRateLimitError = errorMessage.includes(EMAIL_RATE_LIMIT_ERROR);
+
+      if (isEmailRateLimitError) {
+        Alert.alert(registerCopy.alerts.rateLimit.title, registerCopy.alerts.rateLimit.message);
+      } else {
+        Alert.alert(registerCopy.alerts.failed.title, error.message);
+      }
     } else {
       Alert.alert(registerCopy.alerts.checkEmail.title, registerCopy.alerts.checkEmail.message);
       navigation.goBack();

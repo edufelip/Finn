@@ -33,9 +33,32 @@ import ImageSourceSheet from '../components/ImageSourceSheet';
 import TopicSelectorModal from '../components/TopicSelectorModal';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+import { t } from '../i18n';
+
+const CATEGORY_NAME_ALIASES: Record<string, string> = {
+  fashin: 'fashion',
+};
+
+const getNormalizedCategoryKey = (name?: string | null) => {
+  const normalized = (name ?? '').trim().toLowerCase();
+  if (!normalized) return '';
+  return CATEGORY_NAME_ALIASES[normalized] ?? normalized;
+};
+
+const getLocalizedCategoryLabel = (topic: Topic) => {
+  const normalizedCategory = getNormalizedCategoryKey(topic.name);
+  if (!normalizedCategory) return topic.label;
+
+  const key = `topic.categories.${normalizedCategory}`;
+  const translated = t(key);
+  return translated === key ? topic.label : translated;
+};
 
 export default function CreateCommunityScreen() {
+  const { locale } = useLocalization();
   const navigation = useNavigation();
+
   const { session, isGuest, exitGuest } = useAuth();
   const { communities: communityRepository } = useRepositories();
   const [title, setTitle] = useState('');
@@ -56,6 +79,10 @@ export default function CreateCommunityScreen() {
     () => [`${theme.background}00`, theme.background],
     [theme.background]
   );
+  const selectedTopicLabel = useMemo(() => {
+    if (!selectedTopic) return '';
+    return getLocalizedCategoryLabel(selectedTopic);
+  }, [selectedTopic, locale]);
 
   if (isGuest) {
     return (
@@ -260,7 +287,7 @@ export default function CreateCommunityScreen() {
                   <View style={styles.topicIconContainer}>
                     <MaterialIcons name={selectedTopic.icon as any} size={20} color={theme.onPrimaryContainer} />
                   </View>
-                  <Text style={styles.topicSelectedText}>{selectedTopic.label}</Text>
+                  <Text style={styles.topicSelectedText}>{selectedTopicLabel}</Text>
                   <MaterialIcons name="edit" size={18} color={theme.onSurfaceVariant} />
                 </View>
               ) : (

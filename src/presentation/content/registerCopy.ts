@@ -44,6 +44,10 @@ export const registerCopy = {
     failed: {
       get title() { return t('register.alert.failed.title'); },
     },
+    rateLimit: {
+      get title() { return t('register.alert.rateLimit.title'); },
+      get message() { return t('register.alert.rateLimit.message'); },
+    },
     checkEmail: {
       get title() { return t('register.alert.checkEmail.title'); },
       get message() { return t('register.alert.checkEmail.message'); },

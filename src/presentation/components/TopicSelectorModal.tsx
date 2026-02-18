@@ -16,6 +16,27 @@ import type { Topic } from '../../domain/models/topic';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+import { t } from '../i18n';
+
+const CATEGORY_NAME_ALIASES: Record<string, string> = {
+  fashin: 'fashion',
+};
+
+const getNormalizedCategoryKey = (name?: string | null) => {
+  const normalized = (name ?? '').trim().toLowerCase();
+  if (!normalized) return '';
+  return CATEGORY_NAME_ALIASES[normalized] ?? normalized;
+};
+
+const getLocalizedCategoryLabel = (topic: Topic) => {
+  const normalizedCategory = getNormalizedCategoryKey(topic.name);
+  if (!normalizedCategory) return topic.label;
+
+  const key = `topic.categories.${normalizedCategory}`;
+  const translated = t(key);
+  return translated === key ? topic.label : translated;
+};
 
 type TopicSelectorModalProps = {
   visible: boolean;
@@ -30,6 +51,7 @@ export default function TopicSelectorModal({
   onClose,
   onSelectTopic,
 }: TopicSelectorModalProps) {
+  const { locale } = useLocalization();
   const theme = useThemeColors();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -62,6 +84,16 @@ export default function TopicSelectorModal({
       });
   }, [topicRepository]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const timeout = setTimeout(() => {
+      handleShow();
+    }, 0);
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [handleShow, visible]);
+
   const filteredTopics = useMemo(() => {
     if (!searchQuery.trim()) {
       return allTopics;
@@ -69,10 +101,11 @@ export default function TopicSelectorModal({
     const query = searchQuery.toLowerCase();
     return allTopics.filter(
       (topic) =>
+        getLocalizedCategoryLabel(topic).toLowerCase().includes(query) ||
         topic.label.toLowerCase().includes(query) ||
         topic.name.toLowerCase().includes(query)
     );
-  }, [allTopics, searchQuery]);
+  }, [allTopics, searchQuery, locale]);
 
   const handleSelectTopic = useCallback(
     (topic: Topic) => {
@@ -112,6 +145,7 @@ export default function TopicSelectorModal({
     ({ item }: { item: Topic }) => {
       const isSelected = item.id === selectedTopicId;
       const tonePalette = topicPalette[item.tone];
+      const label = getLocalizedCategoryLabel(item);
 
       return (
         <Pressable
@@ -139,7 +173,7 @@ export default function TopicSelectorModal({
           </View>
           <View style={styles.topicInfo}>
             <Text style={[styles.topicLabel, isSelected && { color: theme.primary }]}>
-              {item.label}
+              {label}
             </Text>
           </View>
           {isSelected && (
@@ -148,7 +182,7 @@ export default function TopicSelectorModal({
         </Pressable>
       );
     },
-    [selectedTopicId, theme, topicPalette, styles, handleSelectTopic]
+    [handleSelectTopic, selectedTopicId, styles, theme, topicPalette, locale]
   );
 
   return (
@@ -159,9 +193,9 @@ export default function TopicSelectorModal({
       onRequestClose={onClose}
       onShow={handleShow}
     >
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Select a Topic</Text>
+          <Text style={styles.title}>{t('topic.selector.title')}</Text>
           <Pressable style={styles.closeButton} onPress={onClose}>
             <MaterialIcons name="close" size={24} color={theme.onSurface} />
           </Pressable>
@@ -171,7 +205,7 @@ export default function TopicSelectorModal({
           <MaterialIcons name="search" size={20} color={theme.onSurfaceVariant} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search topics..."
+            placeholder={t('topic.selector.searchPlaceholder')}
             placeholderTextColor={theme.onSurfaceVariant}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -201,7 +235,7 @@ export default function TopicSelectorModal({
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="search-off" size={48} color={theme.onSurfaceVariant} />
-                <Text style={styles.emptyText}>No topics found</Text>
+                <Text style={styles.emptyText}>{t('topic.selector.empty')}</Text>
               </View>
             }
           />

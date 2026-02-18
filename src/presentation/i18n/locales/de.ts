@@ -107,6 +107,7 @@ export const de = {
   // Topic Selector
   'topic.selector.title': 'Thema Auswählen',
   'topic.selector.searchPlaceholder': 'Themen suchen...',
+  'topic.selector.empty': 'Keine Themen gefunden',
 
   // Create bottom sheet
   'createSheet.title': 'Neu Erstellen',
@@ -221,6 +222,8 @@ export const de = {
   'register.alert.offline.title': 'Offline',
   'register.alert.offline.message': 'Verbinden Sie sich mit dem Internet, um Ihr Konto zu erstellen.',
   'register.alert.failed.title': 'Registrierung fehlgeschlagen',
+  'register.alert.rateLimit.title': 'Zu viele Versuche',
+  'register.alert.rateLimit.message': 'E-Mail-Sendelimit erreicht. Bitte warten Sie einige Minuten und versuchen Sie es erneut.',
   'register.alert.checkEmail.title': 'Überprüfen Sie Ihre E-Mail',
   'register.alert.checkEmail.message': 'Bestätigen Sie Ihre E-Mail, um die Erstellung Ihres Kontos abzuschließen.',
 
