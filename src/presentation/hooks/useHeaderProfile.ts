@@ -3,6 +3,8 @@ import { useEffect, useMemo } from 'react';
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useRepositories } from '../../app/providers/RepositoryProvider';
 import { useUserStore } from '../../app/store/userStore';
+import { commonCopy } from '../content/commonCopy';
+import { guestCopy } from '../content/guestCopy';
 
 type HeaderProfile = {
   profilePhoto: string | null;
@@ -35,9 +37,9 @@ export const useHeaderProfile = (): HeaderProfile => {
 
   const displayName = useMemo(() => {
     if (isGuest) {
-      return 'Guest';
+      return guestCopy.userLabel;
     }
-    return currentUser?.name ?? session?.user?.email ?? 'User';
+    return currentUser?.name ?? session?.user?.email ?? commonCopy.userFallback;
   }, [currentUser?.name, isGuest, session?.user?.email]);
 
   const displayInitial = useMemo(() => {
