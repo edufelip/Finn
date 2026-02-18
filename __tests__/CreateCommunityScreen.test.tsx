@@ -6,6 +6,7 @@ import CreateCommunityScreen from '../src/presentation/screens/CreateCommunitySc
 import { RepositoryProvider } from '../src/app/providers/RepositoryProvider';
 import { createCommunityCopy } from '../src/presentation/content/createCommunityCopy';
 import { imagePickerCopy } from '../src/presentation/content/imagePickerCopy';
+import { setLocale } from '../src/presentation/i18n';
 
 const mockGoBack = jest.fn();
 
@@ -73,6 +74,10 @@ describe('CreateCommunityScreen', () => {
     imagePicker.launchImageLibraryAsync.mockReset();
     imagePicker.launchCameraAsync.mockReset();
     persistOfflineImage.mockReset();
+  });
+
+  afterEach(async () => {
+    await setLocale('en');
   });
 
   it('creates a community when online', async () => {
@@ -248,6 +253,39 @@ describe('CreateCommunityScreen', () => {
     expect(getByPlaceholderText(createCommunityCopy.descriptionPlaceholder)).toBeTruthy();
     expect(getByText(createCommunityCopy.iconLabel)).toBeTruthy();
     expect(getByTestId(createCommunityCopy.testIds.submit)).toBeTruthy();
+  });
+
+  it('shows translated category labels when selecting a topic', async () => {
+    await setLocale('pt');
+    const topicsRepo = {
+      getTopics: jest.fn().mockResolvedValue([
+        { id: 1, name: 'gaming', label: 'Gaming', icon: 'sports-esports', tone: 'orange' },
+      ]),
+    };
+
+    const { getByTestId, getByText } = render(
+      <RepositoryProvider
+        overrides={{
+          communities: { saveCommunity: jest.fn() },
+          topics: topicsRepo,
+        }}
+      >
+        <CreateCommunityScreen />
+      </RepositoryProvider>
+    );
+
+    fireEvent.press(getByTestId('community-topic-selector'));
+
+    await waitFor(() => {
+      expect(getByText('Selecionar um Tópico')).toBeTruthy();
+      expect(getByText('Jogos')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Jogos'));
+
+    await waitFor(() => {
+      expect(getByText('Jogos')).toBeTruthy();
+    });
   });
 
   it('shows error when image is missing', async () => {
