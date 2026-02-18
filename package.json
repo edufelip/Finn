@@ -10,7 +10,7 @@
     "android:dev": "cross-env APP_VARIANT=dev APP_ENV=dev expo run:android",
     "android:prod": "cross-env APP_VARIANT=prod APP_ENV=prod expo run:android",
     "ios": "expo run:ios --device",
-    "ios:dev": "cross-env APP_VARIANT=dev APP_ENV=dev expo run:ios --device --scheme FinnDev",
+    "ios:dev": "cross-env APP_VARIANT=dev APP_ENV=dev expo run:ios --scheme FinnDev",
     "ios:prod": "cross-env APP_VARIANT=dev APP_ENV=dev APP_SUPABASE_ENV=prod expo run:ios --device --scheme FinnDev",
     "ios:release": "cross-env APP_VARIANT=prod APP_ENV=prod expo run:ios --device --scheme Finn --configuration Release",
     "web": "expo start --web",
