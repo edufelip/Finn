@@ -23,11 +23,14 @@ import type { ThemeColors } from '../theme/colors';
 import { moderationLogsCopy } from '../content/moderationLogsCopy';
 import { formatTimeAgo } from '../i18n/formatters';
 import { useModerationAuth } from '../hooks/useModerationAuth';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ModerationLogs'>;
+
 type Route = RouteProp<MainStackParamList, 'ModerationLogs'>;
 
 export default function ModerationLogsScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { moderationLogs: logRepository } = useRepositories();

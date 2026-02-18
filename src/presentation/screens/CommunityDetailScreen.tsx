@@ -26,6 +26,7 @@ import { useCommunityDetail } from './community-detail/useCommunityDetail';
 import { useCommunityModeration } from './community-detail/useCommunityModeration';
 import { useCommunitySubscription } from './community-detail/useCommunitySubscription';
 import { usePostActions } from './community-detail/usePostActions';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type RouteParams = {
   communityId: number;
@@ -33,6 +34,7 @@ type RouteParams = {
 };
 
 export default function CommunityDetailScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute();
   const { communityId: communityIdParam, initialCommunity } = route.params as RouteParams;

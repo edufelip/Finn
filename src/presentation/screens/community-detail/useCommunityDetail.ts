@@ -8,9 +8,11 @@ import { usePostsStore } from '../../../app/store/postsStore';
 import { useCommunityPosts } from '../../hooks/useFilteredPosts';
 import { useCommunityStore } from '../../../app/store/communityStore';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
+import { useLocalization } from '../../../app/providers/LocalizationProvider';
 
 type UseCommunityDetailParams = {
   communityId: number;
+
   initialCommunity?: Community;
 };
 
@@ -18,6 +20,7 @@ export const useCommunityDetail = ({
   communityId,
   initialCommunity,
 }: UseCommunityDetailParams) => {
+  useLocalization();
   const { session } = useAuth();
   const { communities: communityRepository, posts: postRepository } = useRepositories();
   const posts = useCommunityPosts(communityId);

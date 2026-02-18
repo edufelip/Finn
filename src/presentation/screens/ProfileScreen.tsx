@@ -39,9 +39,12 @@ import { showGuestGateAlert } from '../components/GuestGateAlert';
 import { useUserStore } from '../../app/store/userStore';
 import { usePostsStore } from '../../app/store/postsStore';
 import { useProfilePosts, useSavedPosts } from '../hooks/useFilteredPosts';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 export default function ProfileScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
+
   const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository, posts: postRepository, communities: communityRepository } = useRepositories();
   const currentUser = useUserStore((state) => state.currentUser);

@@ -8,9 +8,11 @@ import type { Subscription as CommunitySubscription } from '../../../domain/mode
 import type { ThemeColors } from '../../theme/colors';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
 import { getPlaceholderGradient } from '../../theme/gradients';
+import { useLocalization } from '../../../app/providers/LocalizationProvider';
 
 type CommunityDetailHeaderProps = {
   community: Community;
+
   hasNoPosts: boolean;
   isGuest: boolean;
   subscription: CommunitySubscription | null;
@@ -35,6 +37,7 @@ export default function CommunityDetailHeader({
   onPressMore,
   onPressSubscribe,
 }: CommunityDetailHeaderProps) {
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const moreButtonRef = useRef<View>(null);
 

@@ -32,11 +32,14 @@ import CommunityImageUpload from '../components/CommunityImageUpload';
 import PostPermissionSelector from '../components/PostPermissionSelector';
 import ModerationNavSection from '../components/ModerationNavSection';
 import { useModerationAuth } from '../hooks/useModerationAuth';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'EditCommunity'>;
+
 type Route = RouteProp<MainStackParamList, 'EditCommunity'>;
 
 export default function EditCommunityScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { session } = useAuth();

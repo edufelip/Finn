@@ -27,10 +27,13 @@ import { manageModeratorsCopy } from '../content/manageModeratorsCopy';
 import { formatTimeAgo } from '../i18n/formatters';
 import { useModerationAuth } from '../hooks/useModerationAuth';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ManageModerators'>;
 type Route = RouteProp<MainStackParamList, 'ManageModerators'>;
 
 export default function ManageModeratorsScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { session } = useAuth();

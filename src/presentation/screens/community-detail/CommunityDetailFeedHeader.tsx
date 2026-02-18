@@ -4,14 +4,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import type { ThemeColors } from '../../theme/colors';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
+import { useLocalization } from '../../../app/providers/LocalizationProvider';
 
 type CommunityDetailFeedHeaderProps = {
   theme: ThemeColors;
+
   onPressSort?: () => void;
   sortLabel: string;
 };
 
 export default function CommunityDetailFeedHeader({ theme, onPressSort, sortLabel }: CommunityDetailFeedHeaderProps) {
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (

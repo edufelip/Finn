@@ -12,13 +12,16 @@ import { communityDetailCopy } from '../../content/communityDetailCopy';
 import { commonCopy } from '../../content/commonCopy';
 import { showGuestGateAlert } from '../../components/GuestGateAlert';
 import { applyOptimisticLike, applyOptimisticSave } from '../../utils/postToggleUtils';
+import { useLocalization } from '../../../app/providers/LocalizationProvider';
 
 type UsePostActionsParams = {
   communityId: number;
+
   canModerate: boolean;
 };
 
 export const usePostActions = ({ communityId, canModerate }: UsePostActionsParams) => {
+  useLocalization();
   const { session, exitGuest } = useAuth();
   const { posts: postRepository, moderationLogs: logRepository } = useRepositories();
   const updatePost = usePostsStore((state) => state.updatePost);

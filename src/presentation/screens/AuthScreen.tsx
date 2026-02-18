@@ -31,6 +31,8 @@ import { palette } from '../theme/palette';
 import { authCopy } from '../content/authCopy';
 import type { AuthStackParamList } from '../navigation/AuthStack';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 WebBrowser.maybeCompleteAuthSession();
 
 const emailRegex = /\S+@\S+\.\S+/;
@@ -59,6 +61,7 @@ const GoogleLogo = ({ size = 20 }: { size?: number }) => {
 };
 
 export default function AuthScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const { enterGuest } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);

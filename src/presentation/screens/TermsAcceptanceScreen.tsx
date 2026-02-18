@@ -16,9 +16,12 @@ import { isMockMode } from '../../config/appConfig';
 import { FEATURE_CONFIG_KEYS, parseStringConfig } from '../../config/featureConfig';
 import { useUserStore } from '../../app/store/userStore';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 export default function TermsAcceptanceScreen() {
+  useLocalization();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();
   const featureConfigValues = useFeatureConfigStore((state) => state.values);

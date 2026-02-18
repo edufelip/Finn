@@ -5,6 +5,8 @@ import type { CommunityRepository } from '../../../../domain/repositories/Commun
 import type { TopicRepository } from '../../../../domain/repositories/TopicRepository';
 import { exploreCopy } from '../../../content/exploreCopy';
 
+import { useLocalization } from '../../../../app/providers/LocalizationProvider';
+
 const MIN_SKELETON_MS = 350;
 
 type UseExploreDataResult = {
@@ -20,6 +22,7 @@ export function useExploreData(
   communityRepository: CommunityRepository,
   topicRepository: TopicRepository
 ): UseExploreDataResult {
+  useLocalization();
   const [trending, setTrending] = useState<Community[]>([]);
   const [feedItems, setFeedItems] = useState<Community[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);

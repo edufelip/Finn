@@ -42,9 +42,12 @@ import ImageSourceSheet from '../components/ImageSourceSheet';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type CreatePostRouteProp = RouteProp<MainStackParamList, 'CreatePost'>;
 
 export default function CreatePostScreen() {
+  useLocalization();
   const navigation = useNavigation();
   const route = useRoute<CreatePostRouteProp>();
   const initialCommunityId = route.params?.communityId;

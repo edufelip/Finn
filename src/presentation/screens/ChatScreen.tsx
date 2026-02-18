@@ -27,6 +27,7 @@ import type { ChatMessage } from '../../domain/models/chat';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
 import { chatCopy } from '../content/chatCopy';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type MessageStatus = 'sending' | 'sent' | 'failed';
 
@@ -36,6 +37,7 @@ type ChatMessageState = ChatMessage & {
 };
 
 export default function ChatScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute<RouteProp<MainStackParamList, 'Chat'>>();
   const { userId, user: initialUser, threadId: routeThreadId, isRequest } = route.params;

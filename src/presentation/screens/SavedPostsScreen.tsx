@@ -20,9 +20,12 @@ import { guestCopy } from '../content/guestCopy';
 import { usePostsStore } from '../../app/store/postsStore';
 import { useSavedPosts } from '../hooks/useFilteredPosts';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 export default function SavedPostsScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
+
   const { session, isGuest, exitGuest } = useAuth();
   const { posts: postRepository } = useRepositories();
   const [loading, setLoading] = useState(false);

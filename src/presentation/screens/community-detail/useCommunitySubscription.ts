@@ -10,9 +10,11 @@ import { enqueueWrite } from '../../../data/offline/queueStore';
 import { isMockMode } from '../../../config/appConfig';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
 import { showGuestGateAlert } from '../../components/GuestGateAlert';
+import { useLocalization } from '../../../app/providers/LocalizationProvider';
 
 type UseCommunitySubscriptionParams = {
   communityId: number;
+
   communityTitle?: string;
   subscribersCount: number;
   subscription: CommunitySubscription | null;
@@ -28,6 +30,7 @@ export const useCommunitySubscription = ({
   setSubscription,
   setSubscribersCount,
 }: UseCommunitySubscriptionParams) => {
+  useLocalization();
   const { session, isGuest, exitGuest } = useAuth();
   const { communities: communityRepository } = useRepositories();
   const [isProcessing, setIsProcessing] = useState(false);

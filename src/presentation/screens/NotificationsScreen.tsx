@@ -33,6 +33,7 @@ import { formatTimeAgo } from '../i18n/formatters';
 import { commonCopy } from '../content/commonCopy';
 import GuestGateScreen from '../components/GuestGateScreen';
 import { guestCopy } from '../content/guestCopy';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type TabKey = 'all' | 'posts';
 
@@ -43,6 +44,7 @@ type NotificationSection = {
 };
 
 export default function NotificationsScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const { session, isGuest, exitGuest } = useAuth();
   const { users: userRepository } = useRepositories();

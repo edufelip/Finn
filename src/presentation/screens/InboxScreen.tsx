@@ -40,6 +40,8 @@ import { isMockMode } from '../../config/appConfig';
 import TabSafeAreaView from '../components/TabSafeAreaView';
 import { formatTimeAgo } from '../i18n/formatters';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type SectionKey = 'unread' | 'earlier';
 
 type ThreadWithUser = ChatThread & {
@@ -54,6 +56,7 @@ type Section = {
 };
 
 export default function InboxScreen() {
+  useLocalization();
   const { isGuest, exitGuest, session } = useAuth();
   const { chats: chatRepository, users: userRepository } = useRepositories();
   const { setHasUnread } = useInboxBadge();

@@ -10,10 +10,12 @@ import { isMockMode } from '../../config/appConfig';
 import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { forgotPasswordCopy } from '../content/forgotPasswordCopy';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 const emailRegex = /\S+@\S+\.\S+/;
 
 export default function ForgotPasswordScreen() {
+  useLocalization();
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);

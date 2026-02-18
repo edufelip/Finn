@@ -26,11 +26,14 @@ import type { ThemeColors } from '../theme/colors';
 import { pendingContentCopy } from '../content/pendingContentCopy';
 import PostCard from '../components/PostCard';
 import { useModerationAuth } from '../hooks/useModerationAuth';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'PendingContent'>;
+
 type Route = RouteProp<MainStackParamList, 'PendingContent'>;
 
 export default function PendingContentScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { session } = useAuth();

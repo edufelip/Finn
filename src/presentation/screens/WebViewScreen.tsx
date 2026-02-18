@@ -12,9 +12,12 @@ import { useThemeColors } from '../../app/providers/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import { webViewCopy } from '../content/webViewCopy';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type WebViewRoute = RouteProp<MainStackParamList & RootStackParamList, 'WebView'>;
 
 export default function WebViewScreen() {
+  useLocalization();
   const navigation = useNavigation();
   const route = useRoute<WebViewRoute>();
   const theme = useThemeColors();

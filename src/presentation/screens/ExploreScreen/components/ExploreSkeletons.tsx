@@ -3,12 +3,15 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { ThemeColors } from '../../../theme/colors';
 import { exploreCopy } from '../../../content/exploreCopy';
 import Shimmer from '../../../components/Shimmer';
+import { useLocalization } from '../../../../app/providers/LocalizationProvider';
 
 type ExploreSkeleTonsProps = {
   theme: ThemeColors;
+
 };
 
 export const TrendingSkeleton = React.memo<ExploreSkeleTonsProps>(({ theme }) => {
+  useLocalization();
   const styles = React.useMemo(() => createTrendingStyles(theme), [theme]);
 
   return (

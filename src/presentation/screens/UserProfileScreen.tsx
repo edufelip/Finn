@@ -44,9 +44,12 @@ import { enqueueWrite } from '../../data/offline/queueStore';
 import { isUserOnline } from '../../domain/presence';
 import { applyOptimisticLike, applyOptimisticSave } from '../utils/postToggleUtils';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 const COVER_HEIGHT = 180;
 
 export default function UserProfileScreen() {
+  useLocalization();
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute<RouteProp<MainStackParamList, 'UserProfile'>>();
   const { userId } = route.params;

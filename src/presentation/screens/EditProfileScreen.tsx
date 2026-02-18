@@ -32,7 +32,10 @@ import { imagePickerCopy } from '../content/imagePickerCopy';
 import ImageSourceSheet from '../components/ImageSourceSheet';
 import { useUserStore } from '../../app/store/userStore';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 export default function EditProfileScreen() {
+  useLocalization();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { session } = useAuth();
   const { users: userRepository } = useRepositories();

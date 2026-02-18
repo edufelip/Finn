@@ -26,11 +26,14 @@ import type { ThemeColors } from '../theme/colors';
 import { reportedContentCopy } from '../content/reportedContentCopy';
 import ReportCard from '../components/ReportCard';
 import { useModerationAuth } from '../hooks/useModerationAuth';
+import { useLocalization } from '../../app/providers/LocalizationProvider';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList, 'ReportedContent'>;
+
 type Route = RouteProp<MainStackParamList, 'ReportedContent'>;
 
 export default function ReportedContentScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { session } = useAuth();

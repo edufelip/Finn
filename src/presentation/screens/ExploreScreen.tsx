@@ -24,12 +24,15 @@ import { createStyles } from './ExploreScreen/styles';
 import { useHeaderProfile } from '../hooks/useHeaderProfile';
 import TabSafeAreaView from '../components/TabSafeAreaView';
 
+import { useLocalization } from '../../app/providers/LocalizationProvider';
+
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Explore'>,
   NativeStackNavigationProp<MainStackParamList>
 >;
 
 export default function ExploreScreen() {
+  useLocalization();
   const navigation = useNavigation<Navigation>();
   const { isGuest, exitGuest } = useAuth();
   const { communities: communityRepository, topics: topicRepository } = useRepositories();

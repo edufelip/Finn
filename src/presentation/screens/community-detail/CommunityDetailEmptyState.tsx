@@ -4,9 +4,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import type { ThemeColors } from '../../theme/colors';
 import { communityDetailCopy } from '../../content/communityDetailCopy';
+import { useLocalization } from '../../../app/providers/LocalizationProvider';
 
 type CommunityDetailEmptyStateProps = {
   theme: ThemeColors;
+
   onStartDiscussion: () => void;
   isDisabled?: boolean;
 };
@@ -16,6 +18,7 @@ export default function CommunityDetailEmptyState({
   onStartDiscussion,
   isDisabled,
 }: CommunityDetailEmptyStateProps) {
+  useLocalization();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
