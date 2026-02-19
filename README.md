@@ -12,15 +12,9 @@ Expo prebuild has been run once to generate `ios/` and `android/`.
 Manage native projects directly going forward; avoid re-running prebuild unless explicitly planned.
 
 ## Web Landing (Next.js)
-```bash
-cd web
-npm install
-npm run dev
-```
-The web module lives in `web/` and shares brand tokens from `packages/brand`.
-Optional store URLs (to enable live badges):
-- `NEXT_PUBLIC_APP_STORE_URL`
-- `NEXT_PUBLIC_PLAY_STORE_URL`
+The web landing project has been extracted to a standalone repository:
+- Local path: `../../web/finn`
+- Git remote: `git@github.com:edufelip/Finn-Web.git`
 
 ## Environment
 - `EXPO_PUBLIC_SUPABASE_URL`
